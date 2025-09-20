@@ -1,0 +1,169 @@
+/**
+ * 플로우 기능에서 공통으로 쓰이는 스타일과 노드 설정을 모아둔 상수 파일.
+ * 노드 프리셋들
+ */
+import type {
+  ConnectionLimits,
+  FlowNodeType,
+  NodeConfig,
+  NodeTypeConfig,
+  SidebarItemConfig,
+} from "@/features/flow/types/nodes";
+
+export const SHARED_STYLES = {
+  nodeContainer:
+    "px-6 py-4 shadow-lg rounded-xl bg-gradient-to-br border-2 transition-all duration-200 relative group backdrop-blur-sm",
+  nodeButton:
+    "absolute top-2 right-2 p-1 rounded-md opacity-0 group-hover:opacity-100 transition-all duration-200",
+  nodeContent: "flex items-center",
+  emojiCircle:
+    "flex h-12 w-12 items-center justify-center rounded-full bg-gradient-to-br text-xl shadow-inner",
+  nodeInfo: "ml-3 flex-1",
+  nodeTitle: "text-lg font-bold text-gray-800",
+  nodeJob: "text-sm font-medium",
+  sidebarItem:
+    "p-4 bg-gradient-to-br from-white to-violet-50 border-2 border-violet-200 rounded-xl cursor-move hover:border-violet-300 hover:shadow-lg transition-all duration-200 group backdrop-blur-sm",
+  sidebarIcon:
+    "w-10 h-10 rounded-full bg-gradient-to-br flex items-center justify-center text-xl shadow-inner",
+} as const;
+
+export const nodeConfigs: Record<FlowNodeType, NodeConfig> = {
+  inputNode: {
+    gradient: "from-white to-violet-50",
+    border: "border-violet-200",
+    hoverBorder: "hover:border-violet-300",
+    iconColor: "text-violet-600",
+    hoverBg: "hover:bg-violet-100/50",
+    emojiGradient: "from-violet-100 to-violet-200",
+  },
+  outputNode: {
+    gradient: "from-white to-violet-50",
+    border: "border-violet-200",
+    hoverBorder: "hover:border-violet-300",
+    iconColor: "text-violet-600",
+    hoverBg: "hover:bg-violet-100/50",
+    emojiGradient: "from-violet-100 to-violet-200",
+  },
+  custom: {
+    gradient: "from-white to-violet-50",
+    border: "border-violet-200",
+    hoverBorder: "hover:border-violet-300",
+    iconColor: "text-violet-600",
+    hoverBg: "hover:bg-violet-100/50",
+    emojiGradient: "from-violet-100 to-violet-200",
+  },
+  singleInputMultiOutput: {
+    gradient: "from-purple-50 to-pink-50",
+    border: "border-purple-300",
+    hoverBorder: "hover:border-purple-400",
+    iconColor: "text-purple-600",
+    hoverBg: "hover:bg-purple-100/50",
+    emojiGradient: "from-purple-100 to-purple-200",
+  },
+  multiInputSingleOutput: {
+    gradient: "from-blue-50 to-cyan-50",
+    border: "border-blue-300",
+    hoverBorder: "hover:border-blue-400",
+    iconColor: "text-blue-600",
+    hoverBg: "hover:bg-blue-100/50",
+    emojiGradient: "from-blue-100 to-blue-200",
+  },
+  multiInputMultiOutput: {
+    gradient: "from-orange-50 to-red-50",
+    border: "border-orange-300",
+    hoverBorder: "hover:border-orange-400",
+    iconColor: "text-orange-600",
+    hoverBg: "hover:bg-orange-100/50",
+    emojiGradient: "from-orange-100 to-orange-200",
+  },
+};
+
+export const nodeTypeConfigs: Record<FlowNodeType, NodeTypeConfig> = {
+  inputNode: { emoji: "📥", job: "입력", label: "입력 노드" },
+  outputNode: { emoji: "📤", job: "출력", label: "출력 노드" },
+  custom: { emoji: "⚙️", job: "처리", label: "처리 노드" },
+  singleInputMultiOutput: { emoji: "🔀", job: "분기", label: "분기 노드" },
+  multiInputSingleOutput: { emoji: "🔄", job: "합성", label: "합성 노드" },
+  multiInputMultiOutput: { emoji: "🌐", job: "복합", label: "복합 노드" },
+};
+
+export const connectionLimits: Record<FlowNodeType, ConnectionLimits> = {
+  inputNode: {
+    outputs: [{ id: "right", max: 1 }],
+  },
+  outputNode: {
+    inputs: [{ id: "left", max: 1 }],
+  },
+  custom: {
+    inputs: [{ id: "left", max: 1 }],
+    outputs: [{ id: "right", max: 1 }],
+  },
+  singleInputMultiOutput: {
+    inputs: [{ id: "input", max: 1 }],
+    outputs: [
+      { id: "output-1", max: 1 },
+      { id: "output-2", max: 1 },
+      { id: "output-3", max: 1 },
+    ],
+  },
+  multiInputSingleOutput: {
+    inputs: [
+      { id: "input-1", max: 1 },
+      { id: "input-2", max: 1 },
+      { id: "input-3", max: 1 },
+    ],
+    outputs: [{ id: "output", max: 1 }],
+  },
+  multiInputMultiOutput: {
+    inputs: [
+      { id: "input-1", max: 1 },
+      { id: "input-2", max: 1 },
+      { id: "input-3", max: 1 },
+      { id: "input-4", max: 1 },
+    ],
+    outputs: [
+      { id: "output-1", max: 1 },
+      { id: "output-2", max: 1 },
+      { id: "output-3", max: 1 },
+    ],
+  },
+};
+
+export const sidebarItems: SidebarItemConfig[] = [
+  {
+    type: "inputNode",
+    name: "입력 노드",
+    description: "시작점 (단일 출력)",
+    iconBg: "from-blue-100 to-blue-200",
+  },
+  {
+    type: "custom",
+    name: "처리 노드",
+    description: "기본 처리 (1:1)",
+    iconBg: "from-violet-100 to-violet-200",
+  },
+  {
+    type: "singleInputMultiOutput",
+    name: "분기 노드",
+    description: "1개 입력 → 3개 출력",
+    iconBg: "from-purple-100 to-purple-200",
+  },
+  {
+    type: "multiInputSingleOutput",
+    name: "합성 노드",
+    description: "3개 입력 → 1개 출력",
+    iconBg: "from-blue-100 to-blue-200",
+  },
+  {
+    type: "multiInputMultiOutput",
+    name: "복합 노드",
+    description: "4개 입력 → 3개 출력",
+    iconBg: "from-orange-100 to-orange-200",
+  },
+  {
+    type: "outputNode",
+    name: "출력 노드",
+    description: "결과 출력 (단일 입력)",
+    iconBg: "from-red-100 to-red-200",
+  },
+];
