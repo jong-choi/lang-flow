@@ -42,7 +42,8 @@ export const hasCycle = (adj: Adjacency): boolean => {
 
   let processedCount = 0;
   while (zeroIndegreeQueue.length) {
-    const nodeId = zeroIndegreeQueue.shift()!;
+    const nodeId = zeroIndegreeQueue.shift();
+    if (nodeId === undefined) continue;
     processedCount += 1;
     for (const neighbour of adj.outMap[nodeId] ?? []) {
       indegreeCopy[neighbour] -= 1;
@@ -70,7 +71,8 @@ export const computeLevels = (
     const levelSize = queue.length;
     const levelNodes: string[] = [];
     for (let i = 0; i < levelSize; i++) {
-      const nodeId = queue.shift()!;
+      const nodeId = queue.shift();
+      if (nodeId === undefined) continue;
       levelNodes.push(nodeId);
       for (const neighbour of outMap[nodeId] ?? []) {
         indegreeCopy[neighbour] -= 1;
@@ -90,7 +92,8 @@ export const forwardReachable = (
   const visited = new Set<string>();
   const stack = [startId];
   while (stack.length) {
-    const current = stack.pop()!;
+    const current = stack.pop();
+    if (current === undefined) continue;
     if (visited.has(current)) continue;
     visited.add(current);
     for (const neighbour of adj.outMap[current] ?? []) stack.push(neighbour);
@@ -105,7 +108,8 @@ export const reverseReachable = (
   const visited = new Set<string>();
   const stack = [endId];
   while (stack.length) {
-    const current = stack.pop()!;
+    const current = stack.pop();
+    if (current === undefined) continue;
     if (visited.has(current)) continue;
     visited.add(current);
     for (const predecessor of adj.inMap[current] ?? []) stack.push(predecessor);

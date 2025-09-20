@@ -7,10 +7,13 @@ export const CustomHandle: React.FC<{
   definition: HandleDefinition;
   isConnectable: boolean;
 }> = ({ definition, isConnectable }) => {
-  const sizeClass =
-    definition.size === "large" || definition.size === undefined
-      ? "w-4 h-4"
-      : "w-3 h-3";
+  const sizeMap = {
+    large: "w-4 h-4",
+    small: "w-3 h-3",
+  } as const;
+  type SizeKey = keyof typeof sizeMap;
+  const sizeKey: SizeKey = definition.size === "small" ? "small" : "large";
+  const sizeClass = sizeMap[sizeKey];
   const colorClass =
     definition.type === "target" ? "bg-violet-500" : "bg-emerald-500";
 

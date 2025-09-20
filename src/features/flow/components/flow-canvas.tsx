@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useMemo, useRef } from "react";
+import { useCallback, useRef } from "react";
 import {
   Background,
   type Connection,
@@ -36,14 +36,9 @@ import {
   useRunMetaContext,
 } from "@/features/flow/context/run-meta-context";
 import { useDelayApi } from "@/features/flow/hooks/use-delay-api";
+import { useRunEligibility } from "@/features/flow/hooks/use-run-eligibility";
 import { useRunPipeline } from "@/features/flow/hooks/use-run-pipeline";
 import type { NodeData } from "@/features/flow/types/nodes";
-import {
-  buildAdjacency,
-  forwardReachable,
-  hasCycle,
-  reverseReachable,
-} from "@/features/flow/utils/graph";
 import { createNodeData, getId } from "@/features/flow/utils/node-factory";
 import { buildSnapshot } from "@/features/flow/utils/snapshot";
 
@@ -73,22 +68,18 @@ const DnDFlow = () => {
   } = useRunContext();
   const { callServer, cancelAll: delayCancelAll } = useDelayApi();
   const {
-    // levels,
     setLevels,
-    currentLevelIndex,
     setCurrentLevelIndex,
-    failedNodeIds,
     setFailedNodeIds,
     failedCount,
     setFailedCount,
   } = useRunMetaContext();
-  // 레벨/실패노드는 컨텍스트 값을 직접 사용
 
   const {
     runFlow: pipelineRunFlow,
-    continueFrom: pipelineContinueFrom,
     cancelAll: pipelineCancelAll,
     retryNode,
+    retryLevel: pipelineRetryLevel,
   } = useRunPipeline({
     nodes: nodes,
     setNodes,
@@ -216,52 +207,8 @@ const DnDFlow = () => {
     [nodes, edges, setEdges, setNodes],
   );
 
-  // 실행 가능 조건 검사
-  const runEligibility = useMemo(() => {
-    if (nodes.length === 0) {
-      return { ok: false, reason: "노드가 없습니다." } as const;
-    }
-
-    const inputNodes = nodes.filter((node) => node.type === "inputNode");
-    const outputNodes = nodes.filter((node) => node.type === "outputNode");
-
-    if (inputNodes.length !== 1)
-      return {
-        ok: false,
-        reason: "시작 노드는 정확히 1개여야 합니다.",
-      } as const;
-    if (outputNodes.length !== 1)
-      return {
-        ok: false,
-        reason: "종료 노드는 정확히 1개여야 합니다.",
-      } as const;
-
-    const adj = buildAdjacency(nodes, edges);
-    if (hasCycle(adj))
-      return { ok: false, reason: "사이클이 존재합니다." } as const;
-
-    // 입력에서 도달 가능한 노드
-    const startId = inputNodes[0]!.id;
-    const reachable = forwardReachable(startId, adj);
-    // 출력으로 도달 가능한 역방향 검사
-    const endId = outputNodes[0]!.id;
-    const revReach = reverseReachable(endId, adj);
-    for (const node of nodes) {
-      // 시작/종료 및 경로 위에 있지 않은 고립 노드가 있으면 실행 비활성화
-      const onMainPath = reachable.has(node.id) && revReach.has(node.id);
-      if (!onMainPath) {
-        return {
-          ok: false,
-          reason: "모든 노드가 시작→종료 경로 위에 있어야 합니다.",
-        } as const;
-      }
-    }
-
-    if (edges.length === 0)
-      return { ok: false, reason: "연결(엣지)이 필요합니다." } as const;
-
-    return { ok: true, reason: null } as const;
-  }, [nodes, edges]);
+  // 실행 가능 조건 검사 - 공용 훅 사용으로 중복 제거
+  const runEligibility = useRunEligibility(nodes, edges);
 
   // 현재 플로우 스냅샷을 서버로 전달
   const sendSnapshot = useCallback(async () => {
@@ -284,16 +231,7 @@ const DnDFlow = () => {
     }
   }, [nodes, edges, addLog]);
 
-  // 노드 실행(딜레이 API 호출)
-  const callServerApiForNode = useCallback(
-    async (nodeId: string) => {
-      const r = await callServer(nodeId);
-      if (!r.ok) addLog(`[delay] 노드 ${nodeId} 실패: ${r.error}`);
-      else addLog(`[delay] 노드 ${nodeId} 성공`);
-      return r.ok;
-    },
-    [callServer, addLog],
-  );
+  // 노드 실행은 훅 내부에서 처리 (callServer)
 
   // 실행 중단
   const cancelRun = useCallback(() => {
@@ -325,76 +263,6 @@ const DnDFlow = () => {
     pipelineRunFlow,
     nodes,
     edges,
-  ]);
-
-  // 레벨 단위 재시도
-  const handleRetryLevel = useCallback(async () => {
-    if (isRunning || failedNodeIds.size === 0) return;
-    const failedIds = new Set(failedNodeIds);
-    setIsRunning(true);
-    addLog(
-      `[run] 레벨 ${currentLevelIndex + 1} 재시도 시작 (${failedIds.size}개)`,
-    );
-    setNodes((nodes) =>
-      nodes.map((node) =>
-        failedIds.has(node.id)
-          ? { ...node, data: { ...node.data, runStatus: "running" } }
-          : node,
-      ),
-    );
-    const retryNodes = nodes.filter((node) => failedIds.has(node.id));
-    const results = await Promise.allSettled(
-      retryNodes.map(async (node) => {
-        const ok = await callServerApiForNode(node.id);
-        return { id: node.id, ok };
-      }),
-    );
-    const successSet = new Set<string>();
-    const failedSet = new Set<string>();
-    for (const r of results) {
-      if (r.status === "fulfilled") {
-        if (r.value.ok) successSet.add(r.value.id);
-        else failedSet.add(r.value.id);
-      } else {
-        addLog("[run] 재시도 중 예외 발생");
-      }
-    }
-    setNodes((nodes) =>
-      nodes.map((node) => {
-        if (successSet.has(node.id)) {
-          return { ...node, data: { ...node.data, runStatus: "success" } };
-        }
-        if (failedSet.has(node.id)) {
-          return { ...node, data: { ...node.data, runStatus: "failed" } };
-        }
-        return node;
-      }),
-    );
-    if (failedSet.size > 0) {
-      setFailedNodeIds(failedSet);
-      setFailedCount(failedSet.size);
-      addLog(
-        `[run] 재시도 실패: ${failedSet.size}개 노드, 다시 재시도하거나 중단하세요`,
-      );
-      setIsRunning(false);
-      return;
-    }
-    setFailedNodeIds(new Set());
-    setFailedCount(0);
-    addLog(`[run] 레벨 ${currentLevelIndex + 1} 재시도 성공`);
-    await pipelineContinueFrom(currentLevelIndex + 1);
-  }, [
-    isRunning,
-    setIsRunning,
-    addLog,
-    setNodes,
-    nodes,
-    callServerApiForNode,
-    setFailedNodeIds,
-    setFailedCount,
-    pipelineContinueFrom,
-    currentLevelIndex,
-    failedNodeIds,
   ]);
 
   return (
@@ -435,7 +303,7 @@ const DnDFlow = () => {
                 tooltip={runEligibility.ok ? null : runEligibility.reason}
                 onStart={runFlow}
                 onCancel={cancelRun}
-                onRetry={handleRetryLevel}
+                onRetry={pipelineRetryLevel}
               />
             </Panel>
             <Panel position="bottom-right">

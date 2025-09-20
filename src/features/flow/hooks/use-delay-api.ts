@@ -39,10 +39,16 @@ export function useDelayApi() {
               error: data?.error ?? String(response.status),
             } as const;
           return { ok: true } as const;
-        } catch {
+        } catch (error) {
           if (attemptController.signal.aborted)
             return { ok: false, error: "aborted" } as const;
-          return { ok: false, error: "network" } as const;
+          return {
+            ok: false,
+            error:
+              error instanceof Error
+                ? error.message
+                : String(error ?? "network"),
+          } as const;
         } finally {
           clearTimeout(timeoutId);
           nodeController.signal.removeEventListener("abort", onParentAbort);

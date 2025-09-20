@@ -2,16 +2,17 @@
 
 import React from "react";
 import type { Edge, Node } from "@xyflow/react";
+import { useRunContext } from "@/features/flow/context/run-context";
+import { useRunMetaContext } from "@/features/flow/context/run-meta-context";
 import type { NodeData } from "@/features/flow/types/nodes";
 import { computeLevels as computeLevelsGraph } from "@/features/flow/utils/graph";
 import {
+  RUN_STATUS,
   markAllNodesStatus,
   markFailed,
   markRunning,
   markSuccess,
 } from "@/features/flow/utils/run-status";
-import { useRunContext } from "@/features/flow/context/run-context";
-import { useRunMetaContext } from "@/features/flow/context/run-meta-context";
 
 type SetNodes = React.Dispatch<React.SetStateAction<Node<NodeData>[]>>;
 type SetEdges = React.Dispatch<React.SetStateAction<Edge[]>>;
@@ -143,13 +144,15 @@ export function useRunPipeline({
 
   const runFlow = React.useCallback(
     async (nodesArg: Node<NodeData>[], edgesArg: Edge[]) => {
+      // 새 실행 시작 시 취소 플래그 리셋
+      isCancelledRef.current = false;
       setIsRunning(true);
       setEdgesDashed(true);
       levelsRef.current = computeLevelsGraph(nodesArg, edgesArg);
       setLevels(levelsRef.current);
       setFailedNodeIds(new Set());
       setFailedCount(0);
-      setNodes((nodes) => markAllNodesStatus(nodes, "idle"));
+      setNodes((nodes) => markAllNodesStatus(nodes, RUN_STATUS.IDLE));
       await continueFrom(0);
     },
     [
@@ -178,7 +181,7 @@ export function useRunPipeline({
       setNodes((nodes) =>
         nodes.map((node) =>
           node.id === nodeId
-            ? { ...node, data: { ...node.data, runStatus: "running" } }
+            ? { ...node, data: { ...node.data, runStatus: RUN_STATUS.RUNNING } }
             : node,
         ),
       );
@@ -189,7 +192,10 @@ export function useRunPipeline({
           if (node.id !== nodeId) return node;
           return {
             ...node,
-            data: { ...node.data, runStatus: ok ? "success" : "failed" },
+            data: {
+              ...node.data,
+              runStatus: ok ? RUN_STATUS.SUCCESS : RUN_STATUS.FAILED,
+            },
           };
         }),
       );
@@ -226,5 +232,69 @@ export function useRunPipeline({
     ],
   );
 
-  return { runFlow, continueFrom, processLevel, cancelAll, retryNode };
+  const retryLevel = React.useCallback(async () => {
+    if (isRunning || failedNodeIds.size === 0) return;
+    const failedIds = new Set(failedNodeIds);
+    setIsRunning(true);
+    addLog(
+      `[run] 레벨 ${currentLevelIndex + 1} 재시도 시작 (${failedIds.size}개)`,
+    );
+    // 표시: 실패한 노드들을 running으로
+    setNodes((nodes) => markRunning(nodes, failedIds));
+    // 현재 스냅샷에서 재시도 대상 노드 목록
+    const retryNodes = nodes.filter((node) => failedIds.has(node.id));
+    const results = await Promise.allSettled(
+      retryNodes.map(async (node) => {
+        const r = await callServer(node.id);
+        return { id: node.id, ok: r.ok } as const;
+      }),
+    );
+    const successSet = new Set<string>();
+    const failedSet = new Set<string>();
+    for (const r of results) {
+      if (r.status === "fulfilled") {
+        if (r.value.ok) successSet.add(r.value.id);
+        else failedSet.add(r.value.id);
+      } else {
+        addLog("[run] 재시도 중 예외 발생");
+      }
+    }
+    if (successSet.size) setNodes((nodes) => markSuccess(nodes, successSet));
+    if (failedSet.size) setNodes((nodes) => markFailed(nodes, failedSet));
+
+    if (failedSet.size > 0) {
+      setFailedNodeIds(failedSet);
+      setFailedCount(failedSet.size);
+      addLog(
+        `[run] 재시도 실패: ${failedSet.size}개 노드, 다시 재시도하거나 중단하세요`,
+      );
+      setIsRunning(false);
+      return;
+    }
+    setFailedNodeIds(new Set());
+    setFailedCount(0);
+    addLog(`[run] 레벨 ${currentLevelIndex + 1} 재시도 성공`);
+    await continueFrom(currentLevelIndex + 1);
+  }, [
+    isRunning,
+    failedNodeIds,
+    setIsRunning,
+    addLog,
+    setNodes,
+    nodes,
+    callServer,
+    setFailedNodeIds,
+    setFailedCount,
+    continueFrom,
+    currentLevelIndex,
+  ]);
+
+  return {
+    runFlow,
+    continueFrom,
+    processLevel,
+    cancelAll,
+    retryNode,
+    retryLevel,
+  };
 }

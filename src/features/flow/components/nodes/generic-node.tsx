@@ -12,6 +12,7 @@ import type {
   MenuType,
   NodeProps,
 } from "@/features/flow/types/nodes";
+import { RUN_STATUS } from "@/features/flow/utils/run-status";
 import {
   createBasicMenuItems,
   createFullMenuItems,
@@ -63,7 +64,7 @@ export const GenericNode: React.FC<GenericNodeProps> = ({
         />
       ))}
       <NodeContent data={data} config={config} />
-      {data.runStatus === "failed" && (
+      {data.runStatus === RUN_STATUS.FAILED && (
         <div className="absolute -bottom-2 left-1/2 -translate-x-1/2 flex items-center gap-1">
           <AlertCircle className="h-4 w-4 text-red-600" />
           <button

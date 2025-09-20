@@ -1,7 +1,14 @@
 import type { Node } from "@xyflow/react";
 import type { NodeData } from "@/features/flow/types/nodes";
 
-export type RunStatus = NonNullable<NodeData["runStatus"]>;
+export const RUN_STATUS = {
+  IDLE: "idle",
+  RUNNING: "running",
+  SUCCESS: "success",
+  FAILED: "failed",
+} as const;
+
+export type RunStatus = (typeof RUN_STATUS)[keyof typeof RUN_STATUS];
 
 export function markAllNodesStatus(
   nodes: Node<NodeData>[],
@@ -26,10 +33,10 @@ export function markNodesStatus(
 }
 
 export const markRunning = (nodes: Node<NodeData>[], ids: Set<string>) =>
-  markNodesStatus(nodes, ids, "running");
+  markNodesStatus(nodes, ids, RUN_STATUS.RUNNING);
 
 export const markSuccess = (nodes: Node<NodeData>[], ids: Set<string>) =>
-  markNodesStatus(nodes, ids, "success");
+  markNodesStatus(nodes, ids, RUN_STATUS.SUCCESS);
 
 export const markFailed = (nodes: Node<NodeData>[], ids: Set<string>) =>
-  markNodesStatus(nodes, ids, "failed");
+  markNodesStatus(nodes, ids, RUN_STATUS.FAILED);
