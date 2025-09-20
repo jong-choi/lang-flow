@@ -6,8 +6,8 @@ import {
   verifyUserPassword,
 } from "@/features/auth/lib/password-auth";
 import {
-  signInSchema,
   type SignInFormValues,
+  signInSchema,
 } from "@/features/auth/types/forms";
 
 export const runtime = "nodejs";
@@ -23,10 +23,11 @@ export async function POST(request: Request) {
     if (!parsed.success) {
       const { formErrors, fieldErrors } = parsed.error.flatten();
       const fieldMessage = Object.values(fieldErrors).find(
-        (messages): messages is string[] => Array.isArray(messages) && messages.length > 0,
+        (messages): messages is string[] =>
+          Array.isArray(messages) && messages.length > 0,
       )?.[0];
       const message =
-        formErrors[0] ?? fieldMessage ?? "이메일과 비밀번호를 확인해주세요.";
+        formErrors[0] ?? fieldMessage ?? "이메일 또는 비밀번호를 확인해주세요.";
       return NextResponse.json({ error: message }, { status: 400 });
     }
 

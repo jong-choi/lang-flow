@@ -33,7 +33,7 @@ export default function SignUpPage() {
     defaultValues: {
       email: "",
       password: "",
-      name: undefined,
+      name: "",
     },
   });
 

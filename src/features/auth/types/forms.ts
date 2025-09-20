@@ -14,9 +14,7 @@ const optionalNameSchema = z
   .string()
   .trim()
   .max(50, { error: "이름은 50자 이하로 입력해주세요." })
-  .min(1, { error: "이름을 입력해주세요." })
-  .transform((value) => (value.length === 0 ? undefined : value))
-  .optional();
+  .min(1, { error: "이름을 입력해주세요." });
 
 export const signInSchema = z.object({
   email: emailSchema,
