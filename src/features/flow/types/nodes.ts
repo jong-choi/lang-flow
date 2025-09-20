@@ -17,7 +17,9 @@ export interface NodeData {
   emoji: string;
   job: string;
   nodeType?: FlowNodeType;
-  [key: string]: string | undefined;
+  runStatus?: "idle" | "running" | "success" | "failed"; // 노드 실행 상태
+  level?: number; // 실행 위치
+  [key: string]: string | number | undefined;
 }
 
 export interface NodeProps {

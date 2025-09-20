@@ -16,5 +16,7 @@ export const createNodeData = (type: FlowNodeType): NodeData => {
     emoji: config.emoji,
     job: config.job,
     nodeType: type,
+    runStatus: "idle",
+    level: undefined,
   };
 };
