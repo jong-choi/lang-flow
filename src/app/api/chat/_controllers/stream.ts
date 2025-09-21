@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from "next/server";
+import { type NextRequest, NextResponse } from "next/server";
 import { AIMessage } from "@langchain/core/messages";
 import { buildGraph } from "@/app/api/chat/_controllers/graph/graph";
 import {
@@ -102,7 +102,8 @@ export async function handleStream(request: NextRequest, sessionId: string) {
         Connection: "keep-alive",
       },
     });
-  } catch (_error) {
+  } catch (error) {
+    console.error(error);
     return NextResponse.json(
       { error: "Failed to get stream" },
       { status: 500 },

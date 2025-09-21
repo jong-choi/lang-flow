@@ -1,11 +1,11 @@
-import { NextRequest } from "next/server";
-import { buildGraph } from "@/app/api/chat/_controllers/graph/graph";
+import type { NextRequest } from "next/server";
 import {
-  HumanMessage,
   AIMessage,
+  HumanMessage,
   SystemMessage,
 } from "@langchain/core/messages";
-import type { ChatMessage } from "@/types/chat";
+import { buildGraph } from "@/app/api/chat/_controllers/graph/graph";
+import type { ChatMessage } from "@/app/api/chat/_controllers/types/chat";
 
 interface UpdateRequest {
   messages: ChatMessage[];
@@ -31,7 +31,7 @@ export async function handleUpdate(request: NextRequest, sessionId: string) {
 
     await app.updateState(
       { configurable: { thread_id: sessionId } },
-      { messages: langChainMessages, routeType: "" as const }
+      { messages: langChainMessages, routeType: "" as const },
     );
 
     return new Response(JSON.stringify({ success: true }), {

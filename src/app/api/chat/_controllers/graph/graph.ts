@@ -14,7 +14,6 @@ import {
   LangNodeName,
   type RouteType,
 } from "@/app/api/chat/_controllers/types/chat";
-import { fetchSummaryNode } from "./fetch-summary-node";
 
 export const SessionMessagesAnnotation = Annotation.Root({
   messages: Annotation<BaseMessage[]>({
@@ -51,9 +50,6 @@ export function buildGraph() {
         LangNodeName.blogSearch,
         END,
       ],
-    })
-    .addNode(LangNodeName.summary, fetchSummaryNode, {
-      ends: [LangNodeName.routing],
     })
     .addNode(LangNodeName.chat, chatNode, {
       ends: [LangNodeName.routing],

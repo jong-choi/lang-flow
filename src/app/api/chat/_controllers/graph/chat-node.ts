@@ -1,11 +1,11 @@
 import { SystemMessage } from "@langchain/core/messages";
 import { Command } from "@langchain/langgraph";
+import type { SessionMessagesAnnotation } from "@/app/api/chat/_controllers/graph/graph";
+import { LangNodeName } from "@/app/api/chat/_controllers/types/chat";
 import {
   MAX_MESSAGES_LEN,
   llmModel,
 } from "@/app/api/chat/_controllers/utils/model";
-import { LangNodeName } from "@/types/chat";
-import { SessionMessagesAnnotation } from "./graph";
 
 // 게시글 요약문을 기반으로 대화함
 export async function chatNode(state: typeof SessionMessagesAnnotation.State) {

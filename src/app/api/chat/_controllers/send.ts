@@ -1,11 +1,14 @@
-import { NextRequest, NextResponse } from "next/server";
+import { type NextRequest, NextResponse } from "next/server";
 import { randomUUID } from "crypto";
 import { HumanMessage } from "@langchain/core/messages";
+import type {
+  MessageRequest,
+  MessageResponse,
+} from "@/app/api/chat/_controllers/types/chat";
 import { checkRateLimit } from "@/app/api/chat/_controllers/utils/rate-limit";
 import { sessionStore } from "@/app/api/chat/_controllers/utils/session-store";
-import type { MessageRequest, MessageResponse } from "@/types/chat";
-import { createClient } from "@/utils/supabase/server";
 import { resetIdleTimer } from "./connect";
+import { auth } from "@/features/auth/lib/auth";
 
 export async function handleSend(request: NextRequest, sessionId: string) {
   try {
@@ -19,10 +22,8 @@ export async function handleSend(request: NextRequest, sessionId: string) {
     }
 
     // 인증 상태 확인
-    const supabase = await createClient();
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
+    const session = await auth();
+    const user = session?.user;
 
     const rateLimitResult = checkRateLimit(sessionId);
 

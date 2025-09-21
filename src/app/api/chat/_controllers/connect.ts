@@ -1,8 +1,11 @@
 import { NextResponse } from "next/server";
 import { randomUUID } from "crypto";
 import { checkpointer } from "@/app/api/chat/_controllers/graph/graph";
+import type {
+  SessionErrorResponse,
+  SessionResponse,
+} from "@/app/api/chat/_controllers/types/chat";
 import { sessionStore } from "@/app/api/chat/_controllers/utils/session-store";
-import type { SessionErrorResponse, SessionResponse } from "@/types/chat";
 
 const SESSION_IDLE_TIMEOUT_MS = 1000 * 60 * 5; // 5분
 

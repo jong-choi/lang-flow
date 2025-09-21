@@ -1,4 +1,4 @@
-import { SessionMessagesAnnotation } from "@/app/api/chat/_controllers/graph/graph";
+import type { SessionMessagesAnnotation } from "@/app/api/chat/_controllers/graph/graph";
 
 export type Session = {
   id: string;
