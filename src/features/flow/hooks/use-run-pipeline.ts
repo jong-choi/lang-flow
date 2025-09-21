@@ -68,12 +68,10 @@ export function useRunPipeline({
       if (isCancelledRef.current) return false;
       const level = levelsRef.current[levelIndex] ?? [];
       const levelNodeList = nodes.filter((node) => level.includes(node.id));
-      const processingNodes = levelNodeList.filter(
-        (node) => node.type === "custom",
-      );
-      const instantNodes = levelNodeList.filter(
-        (node) => node.type !== "custom",
-      );
+      // 기존: custom 노드는 서버 처리, 그 외는 즉시 처리
+      // 변경: custom 제거에 따라 모든 노드를 즉시 처리로 간주
+      const processingNodes: Node<NodeData>[] = [];
+      const instantNodes = levelNodeList;
 
       if (instantNodes.length) {
         const instantIds = new Set(instantNodes.map((node) => node.id));

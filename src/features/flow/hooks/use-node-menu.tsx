@@ -5,10 +5,7 @@
  */
 import { useCallback, useState } from "react";
 import { type Edge, type Node, useReactFlow } from "@xyflow/react";
-import {
-  DEFAULT_MODEL,
-  type EditNodeFormValues,
-} from "@/features/flow/components/nodes/ui/edit-dialog";
+import { type EditNodeFormValues } from "@/features/flow/components/nodes/ui/edit-dialog";
 import type { MessageNodeFormValues } from "@/features/flow/components/nodes/ui/message-edit-dialog";
 import type { NodeData } from "@/features/flow/types/nodes";
 import { createNodeData, getId } from "@/features/flow/utils/node-factory";
@@ -72,15 +69,7 @@ export const useNodeMenu = (id: string) => {
             label: values.label,
           };
 
-          const nodeType = node.data.nodeType ?? editingNodeData?.nodeType;
-
-          if (nodeType === "custom") {
-            updatedData.prompt = values.prompt ?? "";
-            updatedData.model =
-              values.model ??
-              (node.data as Partial<NodeData>).model ??
-              DEFAULT_MODEL;
-          }
+          // custom 제거됨: 편집 항목은 공용(label)만 처리
 
           return {
             ...node,
@@ -91,7 +80,7 @@ export const useNodeMenu = (id: string) => {
 
       closeEditDialog();
     },
-    [closeEditDialog, editingNodeData, id, setNodes],
+    [closeEditDialog, id, setNodes],
   );
 
   const handleMessageEditSubmit = useCallback(
@@ -152,7 +141,7 @@ export const useNodeMenu = (id: string) => {
       if (currentNode) {
         const newNode: Node<NodeData> = {
           id: getId(),
-          type: currentData.nodeType ?? "custom",
+          type: currentData.nodeType ?? "messageNode",
           position: {
             x: currentNode.position.x + 50,
             y: currentNode.position.y + 50,
@@ -178,12 +167,12 @@ export const useNodeMenu = (id: string) => {
       const newNodeId = getId();
       const newNode: Node<NodeData> = {
         id: newNodeId,
-        type: "custom",
+        type: "messageNode",
         position: {
           x: currentNode.position.x + 200,
           y: currentNode.position.y,
         },
-        data: createNodeData("custom"),
+        data: createNodeData("messageNode"),
       };
 
       const newEdge: Edge = {

@@ -25,7 +25,7 @@ describe("useRunEligibility 훅 검증", () => {
   });
 
   it("정확히 하나의 입력 노드가 필요합니다", () => {
-    const nodes = [makeNode("a", "custom"), makeNode("b", "custom")];
+    const nodes = [makeNode("a", "messageNode"), makeNode("b", "messageNode")];
     const { result } = renderHook(() => useRunEligibility(nodes, []));
     expect(result.current).toEqual({
       ok: false,
@@ -34,7 +34,7 @@ describe("useRunEligibility 훅 검증", () => {
   });
 
   it("정확히 하나의 출력 노드가 필요합니다", () => {
-    const nodes = [makeNode("a", "inputNode"), makeNode("b", "custom")];
+    const nodes = [makeNode("a", "inputNode"), makeNode("b", "messageNode")];
     const { result } = renderHook(() => useRunEligibility(nodes, []));
     expect(result.current).toEqual({
       ok: false,
@@ -45,7 +45,7 @@ describe("useRunEligibility 훅 검증", () => {
   it("사이클을 감지합니다", () => {
     const nodes = [
       makeNode("input", "inputNode"),
-      makeNode("processor", "custom"),
+      makeNode("processor", "messageNode"),
       makeNode("output", "outputNode"),
     ];
     const edges = [
@@ -64,9 +64,9 @@ describe("useRunEligibility 훅 검증", () => {
   it("모든 노드는 시작→종료 경로 위에 있어야 합니다", () => {
     const nodes = [
       makeNode("input", "inputNode"),
-      makeNode("processor", "custom"),
+      makeNode("processor", "messageNode"),
       makeNode("output", "outputNode"),
-      makeNode("isolated", "custom"),
+      makeNode("isolated", "messageNode"),
     ];
     const edges = [
       makeEdge("e1", "input", "processor"),
@@ -83,7 +83,7 @@ describe("useRunEligibility 훅 검증", () => {
   it("플로우가 유효하면 ok를 반환합니다", () => {
     const nodes = [
       makeNode("input", "inputNode"),
-      makeNode("processor", "custom"),
+      makeNode("processor", "messageNode"),
       makeNode("output", "outputNode"),
     ];
     const edges = [

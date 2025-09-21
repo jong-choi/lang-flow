@@ -26,8 +26,8 @@ const makeEdge = (id: string, source: string, target: string): Edge => ({
 describe("그래프 유틸리티", () => {
   const nodes: Node<NodeData>[] = [
     makeNode("input", "inputNode"),
-    makeNode("branch-a", "custom"),
-    makeNode("branch-b", "custom"),
+    makeNode("branch-a", "messageNode"),
+    makeNode("branch-b", "messageNode"),
     makeNode("output", "outputNode"),
   ];
 

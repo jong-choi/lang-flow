@@ -20,13 +20,5 @@ export const createNodeData = (type: FlowNodeType): NodeData => {
     level: undefined,
   };
 
-  if (type === "custom") {
-    return {
-      ...baseData,
-      prompt: "",
-      model: "gemma-1b-it",
-    };
-  }
-
   return baseData;
 };

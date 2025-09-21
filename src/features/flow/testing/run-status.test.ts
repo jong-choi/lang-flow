@@ -13,9 +13,9 @@ import {
 
 const makeNode = (id: string): Node<NodeData> => ({
   id,
-  type: "custom",
+  type: "messageNode",
   position: { x: 0, y: 0 },
-  data: { ...createNodeData("custom"), runStatus: RUN_STATUS.IDLE },
+  data: { ...createNodeData("messageNode"), runStatus: RUN_STATUS.IDLE },
 });
 
 describe("실행 상태 유틸리티", () => {

@@ -43,14 +43,6 @@ export const nodeConfigs: Record<FlowNodeType, NodeConfig> = {
     hoverBg: "hover:bg-violet-100/50",
     emojiGradient: "from-violet-100 to-violet-200",
   },
-  custom: {
-    gradient: "from-white to-violet-50",
-    border: "border-violet-200",
-    hoverBorder: "hover:border-violet-300",
-    iconColor: "text-violet-600",
-    hoverBg: "hover:bg-violet-100/50",
-    emojiGradient: "from-violet-100 to-violet-200",
-  },
   chatNode: {
     gradient: "from-green-50 to-emerald-50",
     border: "border-green-300",
@@ -91,26 +83,16 @@ export const nodeConfigs: Record<FlowNodeType, NodeConfig> = {
     hoverBg: "hover:bg-blue-100/50",
     emojiGradient: "from-blue-100 to-blue-200",
   },
-  multiInputMultiOutput: {
-    gradient: "from-orange-50 to-red-50",
-    border: "border-orange-300",
-    hoverBorder: "hover:border-orange-400",
-    iconColor: "text-orange-600",
-    hoverBg: "hover:bg-orange-100/50",
-    emojiGradient: "from-orange-100 to-orange-200",
-  },
 };
 
 export const nodeTypeConfigs: Record<FlowNodeType, NodeTypeConfig> = {
   inputNode: { emoji: "📥", job: "입력", label: "입력 노드" },
   outputNode: { emoji: "📤", job: "출력", label: "출력 노드" },
-  custom: { emoji: "⚙️", job: "처리", label: "처리 노드" },
   chatNode: { emoji: "💬", job: "채팅", label: "채팅 노드" },
   searchNode: { emoji: "🔍", job: "검색", label: "검색 노드" },
   messageNode: { emoji: "💭", job: "메시지", label: "메시지 노드" },
   singleInputMultiOutput: { emoji: "🔀", job: "분기", label: "분기 노드" },
   multiInputSingleOutput: { emoji: "🔄", job: "합성", label: "합성 노드" },
-  multiInputMultiOutput: { emoji: "🌐", job: "복합", label: "복합 노드" },
 };
 
 export const connectionLimits: Record<FlowNodeType, ConnectionLimits> = {
@@ -119,10 +101,6 @@ export const connectionLimits: Record<FlowNodeType, ConnectionLimits> = {
   },
   outputNode: {
     inputs: [{ id: "left", max: 1 }],
-  },
-  custom: {
-    inputs: [{ id: "left", max: 1 }],
-    outputs: [{ id: "right", max: 1 }],
   },
   chatNode: {
     inputs: [{ id: "left", max: 1 }],
@@ -152,19 +130,6 @@ export const connectionLimits: Record<FlowNodeType, ConnectionLimits> = {
     ],
     outputs: [{ id: "output", max: 1 }],
   },
-  multiInputMultiOutput: {
-    inputs: [
-      { id: "input-1", max: 1 },
-      { id: "input-2", max: 1 },
-      { id: "input-3", max: 1 },
-      { id: "input-4", max: 1 },
-    ],
-    outputs: [
-      { id: "output-1", max: 1 },
-      { id: "output-2", max: 1 },
-      { id: "output-3", max: 1 },
-    ],
-  },
 };
 
 export const sidebarItems: SidebarItemConfig[] = [
@@ -193,12 +158,6 @@ export const sidebarItems: SidebarItemConfig[] = [
     iconBg: "from-slate-100 to-slate-200",
   },
   {
-    type: "custom",
-    name: "처리 노드",
-    description: "기본 처리 (1:1)",
-    iconBg: "from-violet-100 to-violet-200",
-  },
-  {
     type: "singleInputMultiOutput",
     name: "분기 노드",
     description: "1개 입력 → 3개 출력",
@@ -209,12 +168,6 @@ export const sidebarItems: SidebarItemConfig[] = [
     name: "합성 노드",
     description: "3개 입력 → 1개 출력",
     iconBg: "from-blue-100 to-blue-200",
-  },
-  {
-    type: "multiInputMultiOutput",
-    name: "복합 노드",
-    description: "4개 입력 → 3개 출력",
-    iconBg: "from-orange-100 to-orange-200",
   },
   {
     type: "outputNode",

@@ -82,13 +82,13 @@ export const EditDialog: React.FC<EditDialogProps> = ({
     });
   }, [form, nodeData, open, template]);
 
-  const isProcessingNode = nodeData?.nodeType === "custom";
+  const isProcessingNode = false; // custom 노드 제거: 처리 전용 필드 비활성화
 
   const handleSubmit = form.handleSubmit((values) => {
     onSubmit({
       label: values.label,
-      prompt: isProcessingNode ? values.prompt : undefined,
-      model: isProcessingNode ? values.model : undefined,
+      prompt: undefined,
+      model: undefined,
       template: values.template,
     });
   });

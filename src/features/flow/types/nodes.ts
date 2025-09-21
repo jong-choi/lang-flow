@@ -8,13 +8,11 @@ import type { BaseNodeData, NodeId } from "@/types/flow";
 export type FlowNodeType =
   | "inputNode"
   | "outputNode"
-  | "custom"
   | "chatNode"
   | "searchNode"
   | "messageNode"
   | "singleInputMultiOutput"
-  | "multiInputSingleOutput"
-  | "multiInputMultiOutput";
+  | "multiInputSingleOutput";
 
 export interface NodeData extends BaseNodeData {
   nodeType?: FlowNodeType; // 오버라이딩

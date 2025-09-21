@@ -285,7 +285,7 @@ export function useFlowExecution({
           prompt,
           nodes: inputNodes.map((node) => ({
             id: node.id,
-            type: node.type || "custom",
+            type: node.type || "messageNode",
             position: node.position,
             data: {
               ...node.data,

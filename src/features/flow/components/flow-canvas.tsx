@@ -6,7 +6,6 @@ import {
   type Connection,
   Controls,
   type Edge,
-  type IsValidConnection,
   MiniMap,
   type Node,
   Panel,
@@ -27,6 +26,7 @@ import { Sidebar } from "@/features/flow/components/sidebar";
 import { SidebarNodePalette } from "@/features/flow/components/sidebar-node-palette";
 import { useDelayApi } from "@/features/flow/hooks/use-delay-api";
 import { useFlowExecution } from "@/features/flow/hooks/use-flow-execution";
+import { useIsValidConnection } from "@/features/flow/hooks/use-is-valid-connection";
 import { useRunEligibility } from "@/features/flow/hooks/use-run-eligibility";
 import { useFlowGeneratorStore } from "@/features/flow/providers/flow-store-provider";
 import type { NodeData } from "@/features/flow/types/nodes";
@@ -100,34 +100,8 @@ const DnDFlow = () => {
   // 마지막 사용된 프롬프트 저장
   const [lastPrompt, setLastPrompt] = useState<string>("");
 
-  // 엣지 연결 유효성 검사
-  const isValidConnection = useCallback<IsValidConnection<Edge>>(
-    (connectionItem) => {
-      const source = connectionItem.source;
-      const target = connectionItem.target;
-
-      if (!source || !target) return false;
-
-      const sourceHandle = connectionItem.sourceHandle ?? null;
-      const targetHandle = connectionItem.targetHandle ?? null;
-
-      if (source === target && sourceHandle === targetHandle && sourceHandle)
-        return false;
-
-      const sourceNode = nodes.find((node) => node.id === source);
-      const targetNode = nodes.find((node) => node.id === target);
-
-      if (!sourceNode || !targetNode) return false;
-
-      if (sourceNode.type === "inputNode" && targetNode.type === "inputNode")
-        return false;
-
-      if (sourceNode.type === "outputNode") return false;
-
-      return true;
-    },
-    [nodes],
-  );
+  // 엣지 연결 유효성 검사 (훅으로 분리)
+  const isValidConnection = useIsValidConnection(nodes);
 
   // 엣지 추가
   const onConnect = useCallback(
@@ -146,10 +120,15 @@ const DnDFlow = () => {
   // 기존 엣지를 새로운 연결로 갱신
   const onReconnect = useCallback(
     (oldEdge: Edge, newConnection: Connection) => {
+      // 재연결 시에도 동일한 유효성 검사를 적용해 우회 방지
+      if (!isValidConnection(newConnection)) {
+        edgeReconnectSuccessful.current = false;
+        return;
+      }
       edgeReconnectSuccessful.current = true;
       setEdges((edges) => reconnectEdge(oldEdge, newConnection, edges));
     },
-    [setEdges],
+    [setEdges, isValidConnection],
   );
 
   const onReconnectEnd = useCallback(
