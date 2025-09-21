@@ -1,4 +1,4 @@
-import type { FlowStateAnnotation } from "../graph-builder";
+import type { FlowStateAnnotation } from "@/app/api/flow/_engine/graph-builder";
 
 /**
  * 분기 노드 - 입력을 여러 분기로 전송합니다.

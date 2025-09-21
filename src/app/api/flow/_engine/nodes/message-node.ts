@@ -1,5 +1,5 @@
 import { HumanMessage } from "@langchain/core/messages";
-import type { FlowStateAnnotation } from "../graph-builder";
+import type { FlowStateAnnotation } from "@/app/api/flow/_engine/graph-builder";
 
 /**
  * 메시지 노드 - 템플릿을 사용하여 정적 메시지를 생성합니다.

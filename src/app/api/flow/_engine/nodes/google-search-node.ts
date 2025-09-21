@@ -1,5 +1,5 @@
 import { AIMessage } from "@langchain/core/messages";
-import type { FlowStateAnnotation } from "../graph-builder";
+import type { FlowStateAnnotation } from "@/app/api/flow/_engine/graph-builder";
 
 // Google Custom Search API 응답 타입
 interface GoogleSearchItem {

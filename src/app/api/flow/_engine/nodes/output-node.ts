@@ -1,4 +1,4 @@
-import type { FlowStateAnnotation } from "../graph-builder";
+import type { FlowStateAnnotation } from "@/app/api/flow/_engine/graph-builder";
 
 export async function outputNode(
   state: typeof FlowStateAnnotation.State,

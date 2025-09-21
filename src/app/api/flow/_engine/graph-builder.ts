@@ -7,23 +7,19 @@ import {
   StateGraph,
   messagesStateReducer,
 } from "@langchain/langgraph";
+import { branchNode } from "@/app/api/flow/_engine/nodes/branch-node";
+import { chatNode } from "@/app/api/flow/_engine/nodes/chat-node";
+import { googleSearchNode } from "@/app/api/flow/_engine/nodes/google-search-node";
+import { inputNode } from "@/app/api/flow/_engine/nodes/input-node";
+import { mergeNode } from "@/app/api/flow/_engine/nodes/merge-node";
+import { messageNode } from "@/app/api/flow/_engine/nodes/message-node";
+import { outputNode } from "@/app/api/flow/_engine/nodes/output-node";
 import type {
   FlowState,
   LangGraphNodeType,
   ReactFlowEdge,
   ReactFlowNode,
 } from "@/types/flow";
-import { branchNode } from "./nodes/branch-node";
-import { chatNode } from "./nodes/chat-node";
-import { googleSearchNode } from "./nodes/google-search-node";
-import { inputNode } from "./nodes/input-node";
-import { mergeNode } from "./nodes/merge-node";
-import { messageNode } from "./nodes/message-node";
-import { outputNode } from "./nodes/output-node";
-
-// 이 파일은 중앙의 FlowState 타입을 재사용합니다.
-// nodeOutputs와 finalResult는 이미 `src/types/flow.ts`의 `FlowState`에서
-// `unknown`으로 정의되어 있어, 개별 노드가 다양한 형태의 출력을 기록할 수 있습니다.
 
 // LangGraph 상태 어노테이션 정의
 export const FlowStateAnnotation = Annotation.Root({

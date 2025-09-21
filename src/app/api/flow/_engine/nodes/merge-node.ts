@@ -1,5 +1,5 @@
 import { AIMessage } from "@langchain/core/messages";
-import type { FlowStateAnnotation } from "../graph-builder";
+import type { FlowStateAnnotation } from "@/app/api/flow/_engine/graph-builder";
 
 /**
  * 병합 노드 - 여러 분기의 결과를 하나로 합칩니다.
@@ -8,7 +8,7 @@ import type { FlowStateAnnotation } from "../graph-builder";
 export async function mergeNode(
   state: typeof FlowStateAnnotation.State,
   nodeId: string,
-  inputNodeIds: string[] = []
+  inputNodeIds: string[] = [],
 ): Promise<Partial<typeof state>> {
   console.log("=== Executing merge node ===");
   console.log("Node ID:", nodeId);
@@ -40,7 +40,7 @@ export async function mergeNode(
       const nodeOutput = nodeOutputs[inputNodeId];
       if (nodeOutput) {
         let outputContent = "";
-        
+
         // 노드 타입에 따라 적절한 출력 내용 추출
         if (nodeOutput.type === "message" && nodeOutput.rendered) {
           outputContent = nodeOutput.rendered as string;
@@ -52,7 +52,7 @@ export async function mergeNode(
           // 기본적으로 JSON 문자열로 변환
           outputContent = JSON.stringify(nodeOutput);
         }
-        
+
         if (outputContent && outputContent.trim().length > 0) {
           inputOutputs.push(outputContent.trim());
         }
@@ -62,18 +62,19 @@ export async function mergeNode(
     }
 
     let mergedContent: string;
-    
+
     if (inputOutputs.length > 0) {
       // 분기 결과들을 \n\n으로 구분하여 병합
-      mergedContent = inputOutputs.join('\n\n');
+      mergedContent = inputOutputs.join("\n\n");
     } else {
       // fallback: 마지막 메시지의 내용을 사용
       const messages = state.messages;
       if (messages.length > 0) {
         const lastMessage = messages[messages.length - 1];
-        mergedContent = typeof lastMessage.content === "string" 
-          ? lastMessage.content 
-          : "병합할 내용이 없습니다.";
+        mergedContent =
+          typeof lastMessage.content === "string"
+            ? lastMessage.content
+            : "병합할 내용이 없습니다.";
       } else {
         mergedContent = "병합할 내용이 없습니다.";
       }
@@ -105,7 +106,7 @@ export async function mergeNode(
     console.error("Merge node error:", error);
 
     const errorMessage = new AIMessage(
-      "죄송합니다. 병합 노드에서 오류가 발생했습니다."
+      "죄송합니다. 병합 노드에서 오류가 발생했습니다.",
     );
 
     return {

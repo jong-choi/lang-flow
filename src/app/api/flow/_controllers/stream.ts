@@ -1,12 +1,12 @@
 import { type NextRequest } from "next/server";
 import { randomUUID } from "crypto";
-import { buildGraphFromFlow } from "@/app/api/flow/_engine/graph-builder";
-import type { FlowExecutionRequest } from "@/types/flow";
 import {
   emitFlowComplete,
   emitFlowError,
   flowEventHandler,
-} from "./utils/flow-event";
+} from "@/app/api/flow/_controllers/utils/flow-event";
+import { buildGraphFromFlow } from "@/app/api/flow/_engine/graph-builder";
+import type { FlowExecutionRequest } from "@/types/flow";
 
 export async function handleFlowStream(request: NextRequest) {
   try {
