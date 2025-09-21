@@ -258,24 +258,43 @@ const DnDFlow = () => {
     clearEvents,
   ]);
 
-  // 이벤트를 기존 로그 형태로 변환 (기존 시스템과의 호환성을 위해)
+  // 이벤트를 기존 로그 형태로 변환
   useEffect(() => {
     events.forEach((event) => {
-      const timestamp = new Date(event.timestamp).toLocaleTimeString();
+      const timestamp = new Date().toLocaleTimeString();
 
-      switch (event.type) {
+      switch (event.event) {
+        case "flow_start": {
+          addLog(`[${timestamp}] � 플로우 시작`);
+          break;
+        }
         case "node_start": {
-          const nodeName = event.nodeName ?? "알 수 없는 노드";
-          addLog(`[${timestamp}] 🔄 ${nodeName} 시작`);
+          const nodeName = event.nodeId ?? "알 수 없는 노드";
+          const message = event.message ? `: ${event.message}` : "";
+          addLog(`[${timestamp}] 🔄 ${nodeName} 시작${message}`);
           break;
         }
         case "node_complete": {
-          const nodeName = event.nodeName ?? "알 수 없는 노드";
-          addLog(`[${timestamp}] ✅ ${nodeName} 완료`);
+          const nodeName = event.nodeId ?? "알 수 없는 노드";
+          const message = event.message ? `: ${event.message}` : "";
+          addLog(`[${timestamp}] ✅ ${nodeName} 완료${message}`);
+          break;
+        }
+        case "node_streaming": {
+          const nodeName = event.nodeId ?? "알 수 없는 노드";
+          if (
+            event.data &&
+            typeof event.data === "object" &&
+            "content" in event.data
+          ) {
+            addLog(
+              `[${timestamp}] 📡 ${nodeName} 스트리밍: ${event.data.content}`,
+            );
+          }
           break;
         }
         case "node_error": {
-          const nodeName = event.nodeName ?? "알 수 없는 노드";
+          const nodeName = event.nodeId ?? "알 수 없는 노드";
           const errorMsg = event.error ?? "알 수 없는 오류";
           addLog(`[${timestamp}] ❌ ${nodeName} 오류: ${errorMsg}`);
           break;
@@ -287,13 +306,8 @@ const DnDFlow = () => {
         }
         case "flow_error": {
           const errorMsg = event.error ?? "알 수 없는 오류";
-          addLog(`[${timestamp}] 💥 플로우 오류: ${errorMsg}`);
+          addLog(`[${timestamp}] � 플로우 오류: ${errorMsg}`);
           break;
-        }
-        default: {
-          // exhaustive 체크를 위한 타입 가드
-          const _exhaustiveCheck: never = event;
-          console.warn("처리되지 않은 이벤트 타입:", _exhaustiveCheck);
         }
       }
     });
@@ -352,7 +366,8 @@ const DnDFlow = () => {
                 error ||
                 events.some(
                   (event) =>
-                    event.type === "flow_error" || event.type === "node_error",
+                    event.event === "flow_error" ||
+                    event.event === "node_error",
                 )
                   ? 1
                   : 0

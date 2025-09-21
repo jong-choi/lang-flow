@@ -1,23 +1,27 @@
 "use client";
 
 import React from "react";
-import type { StreamingEvent } from "@/types/flow";
+import type { FlowEventBase } from "@/types/flow";
 
 interface RunLogsProps {
-  events: StreamingEvent[];
+  events: FlowEventBase[];
   onClear: () => void;
 }
 
-function formatTimestamp(timestamp: string) {
-  return new Date(timestamp).toLocaleTimeString();
+function formatTimestamp() {
+  return new Date().toLocaleTimeString();
 }
 
-function getEventIcon(eventType: StreamingEvent["type"]) {
+function getEventIcon(eventType: string) {
   switch (eventType) {
+    case "flow_start":
+      return "🚀";
     case "node_start":
       return "🔄";
     case "node_complete":
       return "✅";
+    case "node_streaming":
+      return "📡";
     case "node_error":
       return "❌";
     case "flow_complete":
@@ -29,12 +33,16 @@ function getEventIcon(eventType: StreamingEvent["type"]) {
   }
 }
 
-function getEventColor(eventType: StreamingEvent["type"]) {
+function getEventColor(eventType: string) {
   switch (eventType) {
+    case "flow_start":
+      return "text-blue-700 font-semibold";
     case "node_start":
       return "text-blue-600";
     case "node_complete":
       return "text-green-600";
+    case "node_streaming":
+      return "text-purple-600";
     case "node_error":
       return "text-red-600";
     case "flow_complete":
@@ -63,9 +71,9 @@ export function RunLogs({ events, onClear }: RunLogsProps) {
           <div className="text-slate-400">로그가 없습니다.</div>
         ) : (
           events.map((event, idx) => {
-            const icon = getEventIcon(event.type);
-            const colorClass = getEventColor(event.type);
-            const time = formatTimestamp(event.timestamp);
+            const icon = getEventIcon(event.event);
+            const colorClass = getEventColor(event.event);
+            const time = formatTimestamp();
 
             return (
               <div key={idx} className={`mb-1 ${colorClass}`}>
@@ -73,33 +81,40 @@ export function RunLogs({ events, onClear }: RunLogsProps) {
                   <span className="text-xs">{icon}</span>
                   <span className="text-xs text-slate-500">{time}</span>
                   <div className="flex-1">
-                    {event.type === "node_start" && (
-                      <span>노드 시작: {event.nodeName}</span>
+                    {event.event === "flow_start" && <span>플로우 시작</span>}
+                    {event.event === "node_start" && (
+                      <span>노드 시작: {event.nodeId}</span>
                     )}
-                    {event.type === "node_complete" && (
-                      <span>노드 완료: {event.nodeName}</span>
+                    {event.event === "node_complete" && (
+                      <span>노드 완료: {event.nodeId}</span>
                     )}
-                    {event.type === "node_error" && (
+                    {event.event === "node_streaming" && (
+                      <span>노드 스트리밍: {event.nodeId}</span>
+                    )}
+                    {event.event === "node_error" && (
                       <span>
-                        노드 오류: {event.nodeName} - {event.error}
+                        노드 오류: {event.nodeId} - {event.error}
                       </span>
                     )}
-                    {event.type === "flow_complete" && (
+                    {event.event === "flow_complete" && (
                       <span>플로우 완료!</span>
                     )}
-                    {event.type === "flow_error" && (
+                    {event.event === "flow_error" && (
                       <span>플로우 오류: {event.error}</span>
+                    )}
+                    {event.message && (
+                      <span className="text-slate-600"> - {event.message}</span>
                     )}
                   </div>
                 </div>
-                {event.type === "node_complete" && event.result != null && (
+                {event.event === "node_complete" && event.data != null && (
                   <div className="ml-4 text-xs text-slate-600 bg-slate-50 p-1 rounded mt-1">
-                    {typeof event.result === "string"
-                      ? event.result
-                      : typeof event.result === "object"
-                        ? JSON.stringify(event.result, null, 2).slice(0, 200) +
+                    {typeof event.data === "string"
+                      ? event.data
+                      : typeof event.data === "object"
+                        ? JSON.stringify(event.data, null, 2).slice(0, 200) +
                           "..."
-                        : String(event.result)}
+                        : String(event.data)}
                   </div>
                 )}
               </div>

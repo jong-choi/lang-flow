@@ -33,46 +33,14 @@ export interface ReactFlowEdge {
   sourceHandle?: string;
   targetHandle?: string;
 }
-interface BaseEvent {
-  type: string;
-  timestamp: Timestamp;
-}
 
-interface BaseNodeEvent extends BaseEvent {
-  nodeId: NodeId;
-  nodeName: string;
+export interface FlowEventBase {
+  nodeId: string;
+  event: string;
+  message?: string;
+  data?: unknown;
+  error?: string;
 }
-
-export interface NodeStartEvent extends BaseNodeEvent {
-  type: "node_start";
-}
-
-export interface NodeCompleteEvent extends BaseNodeEvent {
-  type: "node_complete";
-  result: unknown;
-}
-
-export interface NodeErrorEvent extends BaseNodeEvent {
-  type: "node_error";
-  error: string;
-}
-
-export interface FlowCompleteEvent extends BaseEvent {
-  type: "flow_complete";
-  result: unknown;
-}
-
-export interface FlowErrorEvent extends BaseEvent {
-  type: "flow_error";
-  error: string;
-}
-
-export type StreamingEvent =
-  | NodeStartEvent
-  | NodeCompleteEvent
-  | NodeErrorEvent
-  | FlowCompleteEvent
-  | FlowErrorEvent;
 export interface FlowState {
   messages: BaseMessage[];
   prompt: string;
@@ -101,7 +69,7 @@ interface BaseFlowExecutionResponse {
 
 interface FlowExecutionSuccessResponse extends BaseFlowExecutionResponse {
   success: true;
-  events: StreamingEvent[];
+  events: FlowEventBase[];
 }
 
 interface FlowExecutionErrorResponse extends BaseFlowExecutionResponse {

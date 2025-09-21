@@ -12,7 +12,7 @@ import {
   markRunning,
   markSuccess,
 } from "@/features/flow/utils/run-status";
-import type { FlowExecutionRequest, StreamingEvent } from "@/types/flow";
+import type { FlowEventBase, FlowExecutionRequest } from "@/types/flow";
 
 type SetNodes = React.Dispatch<React.SetStateAction<Node<NodeData>[]>>;
 type SetEdges = React.Dispatch<React.SetStateAction<Edge[]>>;
@@ -46,7 +46,7 @@ export function useFlowExecution({
   );
 
   // 로컬 스트리밍 상태
-  const [events, setEvents] = React.useState<StreamingEvent[]>([]);
+  const [events, setEvents] = React.useState<FlowEventBase[]>([]);
   const [error, setError] = React.useState<string | null>(null);
   const [sessionId, setSessionId] = React.useState<string | null>(null);
 
@@ -119,63 +119,99 @@ export function useFlowExecution({
 
   // 플로우 SSE 이벤트 처리
   const handleFlowEvent = React.useCallback(
-    (event: StreamingEvent) => {
-      setEvents((previousEvents) => [...previousEvents, event]);
+    (
+      event:
+        | FlowEventBase
+        | {
+            nodeId: string;
+            event: string;
+            message?: string;
+            data?: unknown;
+            error?: string;
+          },
+    ) => {
+      // 새로운 이벤트 형식을 처리
+      if ("event" in event && !("type" in event)) {
+        const nodeId = event.nodeId;
+        const eventType = event.event;
 
-      switch (event.type) {
-        case "flow_error": {
-          setError(event.error);
-          setIsRunning(false);
-          setEdgesDashed(false);
-          return;
-        }
-        case "flow_complete": {
-          const result = event.result as { sessionId?: string } | null;
-          if (result?.sessionId) {
-            setSessionId(result.sessionId);
+        switch (eventType) {
+          case "flow_start": {
+            addLog("[run] 플로우 실행 시작");
+            return;
           }
-          setIsRunning(false);
-          setEdgesDashed(false);
-          addLog("[run] 실행 완료");
-          return;
-        }
-        case "node_start": {
-          const nodeId = event.nodeId;
-          if (nodeId && !seenRunningRef.current.has(nodeId)) {
-            seenRunningRef.current.add(nodeId);
-            setNodes((nodes) => markRunning(nodes, new Set([nodeId])));
-            addLog(`[run] 노드 ${nodeId} 시작`);
-            updateCurrentLevelByNode(nodeId);
+          case "flow_complete": {
+            setIsRunning(false);
+            setEdgesDashed(false);
+            addLog("[run] 실행 완료");
+            if (
+              event.data &&
+              typeof event.data === "object" &&
+              "sessionId" in event.data
+            ) {
+              setSessionId(event.data.sessionId as string);
+            }
+            return;
           }
-          return;
-        }
-        case "node_complete": {
-          const nodeId = event.nodeId;
-          if (nodeId) {
-            if (!seenRunningRef.current.has(nodeId)) {
+          case "flow_error": {
+            setError(event.error || "플로우 실행 오류");
+            setIsRunning(false);
+            setEdgesDashed(false);
+            addLog(`[run] 오류: ${event.error || "알 수 없는 오류"}`);
+            return;
+          }
+          case "node_start": {
+            if (nodeId && !seenRunningRef.current.has(nodeId)) {
               seenRunningRef.current.add(nodeId);
               setNodes((nodes) => markRunning(nodes, new Set([nodeId])));
+              addLog(
+                `[run] 노드 ${nodeId} 시작${event.message ? `: ${event.message}` : ""}`,
+              );
+              updateCurrentLevelByNode(nodeId);
             }
-            setNodes((nodes) => markSuccess(nodes, new Set([nodeId])));
-            addLog(`[run] 노드 ${nodeId} 완료`);
-            updateCurrentLevelByNode(nodeId);
+            return;
           }
-          return;
-        }
-        case "node_error": {
-          const nodeId = event.nodeId;
-          if (nodeId) {
-            setNodes((nodes) => markFailed(nodes, new Set([nodeId])));
-            const updatedFailedNodeIds = new Set(failedNodeIds);
-            updatedFailedNodeIds.add(nodeId);
-            setFailedNodeIds(updatedFailedNodeIds);
-            setFailedCount(updatedFailedNodeIds.size);
-            addLog(`[run] 노드 ${nodeId} 실패`);
-            updateCurrentLevelByNode(nodeId);
-          } else {
-            setError(event.error ?? "노드 오류");
+          case "node_complete": {
+            if (nodeId) {
+              if (!seenRunningRef.current.has(nodeId)) {
+                seenRunningRef.current.add(nodeId);
+                setNodes((nodes) => markRunning(nodes, new Set([nodeId])));
+              }
+              setNodes((nodes) => markSuccess(nodes, new Set([nodeId])));
+              addLog(
+                `[run] 노드 ${nodeId} 완료${event.message ? `: ${event.message}` : ""}`,
+              );
+              updateCurrentLevelByNode(nodeId);
+            }
+            return;
           }
-          return;
+          case "node_streaming": {
+            if (
+              nodeId &&
+              event.data &&
+              typeof event.data === "object" &&
+              "content" in event.data
+            ) {
+              // TODO : 스트리밍된 결과물을 출력할 UI 필요
+            }
+            return;
+          }
+          case "node_error": {
+            if (nodeId) {
+              setNodes((nodes) => markFailed(nodes, new Set([nodeId])));
+              const updatedFailedNodeIds = new Set(failedNodeIds);
+              updatedFailedNodeIds.add(nodeId);
+              setFailedNodeIds(updatedFailedNodeIds);
+              setFailedCount(updatedFailedNodeIds.size);
+              addLog(
+                `[run] 노드 ${nodeId} 실패: ${event.error || "알 수 없는 오류"}`,
+              );
+              updateCurrentLevelByNode(nodeId);
+            } else {
+              setError(event.error || "노드 오류");
+            }
+            return;
+          }
         }
       }
     },
@@ -304,10 +340,18 @@ export function useFlowExecution({
             try {
               const data = JSON.parse(payload);
 
-              if (data && typeof data === "object" && "type" in data) {
-                handleFlowEvent(data as StreamingEvent);
-              } else if (data && typeof data === "object" && "name" in data) {
-                handleChatEvent(data);
+              if (data && typeof data === "object") {
+                // 새로운 이벤트 형식 또는 기존 형식 모두 처리
+                if ("event" in data && "nodeId" in data) {
+                  // 새로운 형식: { nodeId, event, message?, data?, error? }
+                  handleFlowEvent(data);
+                } else if ("type" in data) {
+                  // 기존 형식: { type, nodeId, ... }
+                  handleFlowEvent(data as FlowEventBase);
+                } else if ("name" in data) {
+                  // 채팅 API 형식 (하위 호환성)
+                  handleChatEvent(data);
+                }
               }
             } catch (parseError) {
               console.warn("이벤트 파싱 실패:", parseError);
