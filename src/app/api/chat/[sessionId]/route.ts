@@ -1,4 +1,4 @@
-import { NextRequest } from "next/server";
+import type { NextRequest } from "next/server";
 import { handleDelete } from "@/app/api/chat/_controllers/delete";
 import { handleSend } from "@/app/api/chat/_controllers/send";
 import { handleStream } from "@/app/api/chat/_controllers/stream";

@@ -1,6 +1,5 @@
 /**
  * 플로우 기능에서 공통으로 쓰이는 스타일과 노드 설정을 모아둔 상수 파일.
- * 노드 프리셋들
  */
 import type {
   ConnectionLimits,
@@ -52,6 +51,22 @@ export const nodeConfigs: Record<FlowNodeType, NodeConfig> = {
     hoverBg: "hover:bg-violet-100/50",
     emojiGradient: "from-violet-100 to-violet-200",
   },
+  chatNode: {
+    gradient: "from-green-50 to-emerald-50",
+    border: "border-green-300",
+    hoverBorder: "hover:border-green-400",
+    iconColor: "text-green-600",
+    hoverBg: "hover:bg-green-100/50",
+    emojiGradient: "from-green-100 to-green-200",
+  },
+  searchNode: {
+    gradient: "from-yellow-50 to-amber-50",
+    border: "border-yellow-300",
+    hoverBorder: "hover:border-yellow-400",
+    iconColor: "text-yellow-600",
+    hoverBg: "hover:bg-yellow-100/50",
+    emojiGradient: "from-yellow-100 to-yellow-200",
+  },
   singleInputMultiOutput: {
     gradient: "from-purple-50 to-pink-50",
     border: "border-purple-300",
@@ -82,6 +97,8 @@ export const nodeTypeConfigs: Record<FlowNodeType, NodeTypeConfig> = {
   inputNode: { emoji: "📥", job: "입력", label: "입력 노드" },
   outputNode: { emoji: "📤", job: "출력", label: "출력 노드" },
   custom: { emoji: "⚙️", job: "처리", label: "처리 노드" },
+  chatNode: { emoji: "💬", job: "채팅", label: "채팅 노드" },
+  searchNode: { emoji: "🔍", job: "검색", label: "검색 노드" },
   singleInputMultiOutput: { emoji: "🔀", job: "분기", label: "분기 노드" },
   multiInputSingleOutput: { emoji: "🔄", job: "합성", label: "합성 노드" },
   multiInputMultiOutput: { emoji: "🌐", job: "복합", label: "복합 노드" },
@@ -95,6 +112,14 @@ export const connectionLimits: Record<FlowNodeType, ConnectionLimits> = {
     inputs: [{ id: "left", max: 1 }],
   },
   custom: {
+    inputs: [{ id: "left", max: 1 }],
+    outputs: [{ id: "right", max: 1 }],
+  },
+  chatNode: {
+    inputs: [{ id: "left", max: 1 }],
+    outputs: [{ id: "right", max: 1 }],
+  },
+  searchNode: {
     inputs: [{ id: "left", max: 1 }],
     outputs: [{ id: "right", max: 1 }],
   },
@@ -135,6 +160,18 @@ export const sidebarItems: SidebarItemConfig[] = [
     name: "입력 노드",
     description: "시작점 (단일 출력)",
     iconBg: "from-blue-100 to-blue-200",
+  },
+  {
+    type: "chatNode",
+    name: "채팅 노드",
+    description: "AI 채팅 (1:1)",
+    iconBg: "from-green-100 to-green-200",
+  },
+  {
+    type: "searchNode",
+    name: "검색 노드",
+    description: "구글 검색 (1:1)",
+    iconBg: "from-yellow-100 to-yellow-200",
   },
   {
     type: "custom",

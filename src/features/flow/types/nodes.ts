@@ -1,32 +1,30 @@
 /**
- * 플로우 빌더에서 재사용하는 타입 모음.
+ * Flow feature 전용 타입 모음.
  */
 import type { CSSProperties, ComponentType } from "react";
 import type { Position } from "@xyflow/react";
+import type { BaseNodeData, NodeId } from "@/types/flow";
 
 export type FlowNodeType =
   | "inputNode"
   | "outputNode"
   | "custom"
+  | "chatNode"
+  | "searchNode"
   | "singleInputMultiOutput"
   | "multiInputSingleOutput"
   | "multiInputMultiOutput";
 
-export interface NodeData {
-  label: string;
-  emoji: string;
-  job: string;
-  nodeType?: FlowNodeType;
-  runStatus?: "idle" | "running" | "success" | "failed"; // 노드 실행 상태
-  level?: number; // 실행 위치
-  prompt?: string;
-  model?: string;
+export interface NodeData extends BaseNodeData {
+  nodeType?: FlowNodeType; // 오버라이딩
+  runStatus?: "idle" | "running" | "success" | "failed";
+  level?: number;
   [key: string]: string | number | undefined;
 }
 
 export interface NodeProps {
   data: NodeData;
-  id: string;
+  id: NodeId;
 }
 
 export interface NodeConfig {
@@ -55,8 +53,15 @@ export interface NodeTypeConfig {
   label: string;
 }
 
+export interface SidebarItemConfig {
+  type: FlowNodeType;
+  name: string;
+  description: string;
+  iconBg: string;
+}
+
 export interface ConnectionLimitEntry {
-  id: string;
+  id: NodeId;
   max: number;
 }
 
@@ -65,22 +70,18 @@ export interface ConnectionLimits {
   outputs?: ConnectionLimitEntry[];
 }
 
+interface ConnectionState {
+  current: number;
+  max: number;
+  isConnectable: boolean;
+}
+
+export type ConnectionStateMap = Record<NodeId, ConnectionState>;
+
 export interface HandleDefinition {
   type: "source" | "target";
   position: Position;
-  id: string;
+  id: NodeId;
   size?: "large" | "small";
   style?: CSSProperties;
 }
-
-export interface SidebarItemConfig {
-  type: FlowNodeType;
-  name: string;
-  description: string;
-  iconBg: string;
-}
-
-export type ConnectionStateMap = Record<
-  string,
-  { current: number; max: number; isConnectable: boolean }
->;

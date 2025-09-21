@@ -1,5 +1,6 @@
-import { NextRequest, NextResponse } from "next/server";
-import { MessageContent } from "@langchain/core/messages";
+import type { NextRequest } from "next/server";
+import { NextResponse } from "next/server";
+import type { MessageContent } from "@langchain/core/messages";
 import { ChatPromptTemplate } from "@langchain/core/prompts";
 import { llmModel } from "@/app/api/chat/_controllers/utils/model";
 
