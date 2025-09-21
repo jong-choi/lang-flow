@@ -9,7 +9,6 @@ import {
   type Edge,
   MiniMap,
   type Node,
-  Panel,
   ReactFlow,
   ReactFlowProvider,
   addEdge,
@@ -23,7 +22,7 @@ import { edgeTypes } from "@/features/flow/components/nodes/custom-edge";
 import { nodeTypes } from "@/features/flow/components/nodes/node-type-map";
 import { PromptInputModal } from "@/features/flow/components/prompt-input-modal";
 import { ResultsTab } from "@/features/flow/components/results-tab";
-import { RunLogs } from "@/features/flow/components/run-logs";
+// RunLogs 패널 제거
 import { Sidebar } from "@/features/flow/components/sidebar";
 import { SidebarNodePalette } from "@/features/flow/components/sidebar-node-palette";
 import { useDelayApi } from "@/features/flow/hooks/use-delay-api";
@@ -62,7 +61,6 @@ const DnDFlow = () => {
   const setIsRunning = useFlowGeneratorStore.use.run(
     (runState) => runState.setRunning,
   );
-  const addLog = useFlowGeneratorStore.use.run((runState) => runState.addLog);
   const { cancelAll: delayCancelAll } = useDelayApi();
   const setLevels = useFlowGeneratorStore.use.runMeta(
     (metaState) => metaState.setLevels,
@@ -76,6 +74,9 @@ const DnDFlow = () => {
   const setFailedCount = useFlowGeneratorStore.use.runMeta(
     (metaState) => metaState.setFailedCount,
   );
+  const failedNodeIds = useFlowGeneratorStore.use.runMeta(
+    (metaState) => metaState.failedNodeIds,
+  );
   const setRetryNode = useFlowGeneratorStore.use.nodeActions(
     (nodeActions) => nodeActions.setRetryNode,
   );
@@ -83,17 +84,13 @@ const DnDFlow = () => {
   const {
     runFlow: runFlowExec,
     cancelAll: sseCancelAll,
-    events,
     error,
     sessionId,
-    clearEvents,
     chatResults,
     flowCompleted,
   } = useFlowExecution({
-    nodes,
     setNodes,
     setEdges,
-    addLog,
     setIsRunning,
     setLevels,
     setFailedNodeIds,
@@ -107,7 +104,7 @@ const DnDFlow = () => {
   // 탭 상태: graph | results
   const [activeTab, setActiveTab] = useState<"graph" | "results">("graph");
 
-  // 엣지 연결 유효성 검사 (훅으로 분리)
+  // 엣지 연결 유효성 검사
   const isValidConnection = useIsValidConnection(nodes);
 
   // 엣지 추가
@@ -189,7 +186,6 @@ const DnDFlow = () => {
   // 실행 중단
   const cancelRun = useCallback(() => {
     if (!isRunning) return;
-    addLog("[run] 실행 중단 요청");
     delayCancelAll();
     sseCancelAll();
     // 실행 중이던 노드를 실패로 표시
@@ -200,7 +196,7 @@ const DnDFlow = () => {
           : node,
       ),
     );
-  }, [isRunning, addLog, delayCancelAll, sseCancelAll, setNodes]);
+  }, [isRunning, delayCancelAll, sseCancelAll, setNodes]);
 
   // 전체 실행 시작
   const runFlow = useCallback(
@@ -226,7 +222,6 @@ const DnDFlow = () => {
 
     try {
       setIsRunning(true);
-      clearEvents(); // 이전 이벤트 클리어
       await runFlowExec(lastPrompt, nodes, edges);
     } catch (error) {
       console.error("플로우 재시도 오류:", error);
@@ -241,7 +236,6 @@ const DnDFlow = () => {
     nodes,
     edges,
     setIsRunning,
-    clearEvents,
   ]);
 
   // 플로우 완료 시 결과물 탭으로 자동 전환
@@ -250,61 +244,6 @@ const DnDFlow = () => {
       setActiveTab("results");
     }
   }, [flowCompleted, activeTab]);
-
-  // 이벤트를 로그 형태로 변환
-  useEffect(() => {
-    events.forEach((event) => {
-      const timestamp = new Date().toLocaleTimeString();
-
-      switch (event.event) {
-        case "flow_start": {
-          addLog(`[${timestamp}] � 플로우 시작`);
-          break;
-        }
-        case "node_start": {
-          const nodeName = event.nodeId ?? "알 수 없는 노드";
-          const message = event.message ? `: ${event.message}` : "";
-          addLog(`[${timestamp}] 🔄 ${nodeName} 시작${message}`);
-          break;
-        }
-        case "node_complete": {
-          const nodeName = event.nodeId ?? "알 수 없는 노드";
-          const message = event.message ? `: ${event.message}` : "";
-          addLog(`[${timestamp}] ✅ ${nodeName} 완료${message}`);
-          break;
-        }
-        case "node_streaming": {
-          const nodeName = event.nodeId ?? "알 수 없는 노드";
-          if (
-            event.data &&
-            typeof event.data === "object" &&
-            "content" in event.data
-          ) {
-            addLog(
-              `[${timestamp}] 📡 ${nodeName} 스트리밍: ${event.data.content}`,
-            );
-          }
-          break;
-        }
-        case "node_error": {
-          const nodeName = event.nodeId ?? "알 수 없는 노드";
-          const errorMsg = event.error ?? "알 수 없는 오류";
-          addLog(`[${timestamp}] ❌ ${nodeName} 오류: ${errorMsg}`);
-          break;
-        }
-        case "flow_complete": {
-          const sessionDisplay = sessionId ?? "알 수 없음";
-          addLog(`[${timestamp}] 🎉 플로우 완료! (세션: ${sessionDisplay})`);
-          break;
-        }
-        case "flow_error": {
-          const errorMsg = event.error ?? "알 수 없는 오류";
-          addLog(`[${timestamp}] � 플로우 오류: ${errorMsg}`);
-          break;
-        }
-      }
-    });
-  }, [events, addLog, sessionId]);
 
   // 각 노드에서 사용할 수 있도록 재시도 함수 등록
   useEffect(() => {
@@ -315,13 +254,6 @@ const DnDFlow = () => {
     setRetryNode(retryFlowFromNode);
     return () => setRetryNode(undefined);
   }, [retryFlow, setRetryNode]);
-
-  // 에러 처리
-  useEffect(() => {
-    if (error) {
-      addLog(`[오류] ${error}`);
-    }
-  }, [error, addLog]);
 
   return (
     <div className="flex h-screen">
@@ -355,17 +287,12 @@ const DnDFlow = () => {
               <button
                 className="inline-flex items-center gap-1 px-3 h-9 rounded-md bg-slate-100 dark:bg-slate-800 text-slate-900 dark:text-slate-100 disabled:opacity-50"
                 onClick={retryFlow}
-                disabled={
-                  isRunning ||
-                  !(
-                    error ||
-                    events.some(
-                      (e) =>
-                        e.event === "flow_error" || e.event === "node_error",
-                    )
-                  )
+                disabled={isRunning || !(error || failedNodeIds.size > 0)}
+                title={
+                  error || failedNodeIds.size > 0
+                    ? undefined
+                    : "재시도할 항목 없음"
                 }
-                title={error ? undefined : "재시도할 항목 없음"}
               >
                 <RotateCw className="size-4" /> 재시도
               </button>
@@ -421,9 +348,7 @@ const DnDFlow = () => {
                 deletable: true,
               }}
             >
-              <Panel position="bottom-right">
-                <RunLogs events={events} onClear={clearEvents} />
-              </Panel>
+              {/* 로그 패널 제거됨 */}
               <Controls />
               <MiniMap />
               <Background />

@@ -18,10 +18,8 @@ type SetNodes = React.Dispatch<React.SetStateAction<Node<NodeData>[]>>;
 type SetEdges = React.Dispatch<React.SetStateAction<Edge[]>>;
 
 type UseFlowExecutionParams = {
-  nodes: Node<NodeData>[];
   setNodes: SetNodes;
   setEdges: SetEdges;
-  addLog: (msg: string) => void;
   setIsRunning: (isRunning: boolean) => void;
   setLevels: (levels: string[][]) => void;
   setFailedNodeIds: (failedNodeIds: Set<string>) => void;
@@ -30,10 +28,8 @@ type UseFlowExecutionParams = {
 };
 
 export function useFlowExecution({
-  nodes,
   setNodes,
   setEdges,
-  addLog,
   setIsRunning,
   setLevels,
   setFailedNodeIds,
@@ -45,8 +41,7 @@ export function useFlowExecution({
     (meta) => meta.failedNodeIds,
   );
 
-  // 로컬 스트리밍 상태
-  const [events, setEvents] = React.useState<FlowEventBase[]>([]);
+  // 로컬 스트리밍 상태 (이벤트 로그 제거)
   const [error, setError] = React.useState<string | null>(null);
   const [sessionId, setSessionId] = React.useState<string | null>(null);
 
@@ -80,38 +75,6 @@ export function useFlowExecution({
     [setEdges],
   );
 
-  // SSE "name" (채팅 API)을 현재 그래프의 대상 노드 ID로 매핑
-  const resolveNodeIdsByName = React.useCallback(
-    (name: string): string[] => {
-      const normalizedName = name.toLowerCase();
-      // 명시적 타입/이름으로 먼저 매칭 시도
-      const matchByType = nodes
-        .filter((node) =>
-          (node.type || "").toLowerCase().includes(normalizedName),
-        )
-        .map((node) => node.id);
-      if (matchByType.length) return matchByType;
-
-      // 노드 이름 매칭 시도
-      const jobMap: Record<string, string[]> = {
-        chatnode: ["chat", "채팅"],
-        googlenode: ["google_search", "search", "구글검색", "검색"],
-        googlesearchnode: ["google_search", "search", "구글검색", "검색"],
-        blogsearchnode: ["search", "구글검색", "검색"],
-        fetchsummarynode: ["summary", "요약"],
-      };
-      const keywords = jobMap[normalizedName] ?? [normalizedName];
-      return nodes
-        .filter((node) =>
-          keywords.some((keyword) =>
-            `${node.data?.job ?? ""}`.toLowerCase().includes(keyword),
-          ),
-        )
-        .map((node) => node.id);
-    },
-    [nodes],
-  );
-
   // 노드 ID 기준으로 현재 레벨 인덱스 업데이트하는 헬퍼
   const updateCurrentLevelByNode = React.useCallback(
     (nodeId: string) => {
@@ -125,116 +88,90 @@ export function useFlowExecution({
 
   // 플로우 SSE 이벤트 처리
   const handleFlowEvent = React.useCallback(
-    (
-      event:
-        | FlowEventBase
-        | {
-            nodeId: string;
-            event: string;
-            message?: string;
-            data?: unknown;
-            error?: string;
-          },
-    ) => {
-      // 새로운 이벤트 형식을 처리
-      if ("event" in event && !("type" in event)) {
-        const nodeId = event.nodeId;
-        const eventType = event.event;
+    (event: FlowEventBase) => {
+      const nodeId = event.nodeId;
+      const eventType = event.event;
 
-        switch (eventType) {
-          case "flow_start": {
-            addLog("[run] 플로우 실행 시작");
-            setFlowCompleted(false);
-            return;
+      switch (eventType) {
+        case "flow_start": {
+          setFlowCompleted(false);
+          return;
+        }
+        case "flow_complete": {
+          setIsRunning(false);
+          setEdgesDashed(false);
+          setFlowCompleted(true);
+          if (
+            event.data &&
+            typeof event.data === "object" &&
+            "sessionId" in event.data
+          ) {
+            setSessionId(event.data.sessionId as string);
           }
-          case "flow_complete": {
-            setIsRunning(false);
-            setEdgesDashed(false);
-            addLog("[run] 실행 완료");
-            setFlowCompleted(true);
-            if (
-              event.data &&
-              typeof event.data === "object" &&
-              "sessionId" in event.data
-            ) {
-              setSessionId(event.data.sessionId as string);
-            }
-            return;
+          return;
+        }
+        case "flow_error": {
+          setError(event.error || "플로우 실행 오류");
+          setIsRunning(false);
+          setEdgesDashed(false);
+          setFlowCompleted(false);
+          return;
+        }
+        case "node_start": {
+          if (nodeId && !seenRunningRef.current.has(nodeId)) {
+            seenRunningRef.current.add(nodeId);
+            setNodes((nodes) => markRunning(nodes, new Set([nodeId])));
+            updateCurrentLevelByNode(nodeId);
           }
-          case "flow_error": {
-            setError(event.error || "플로우 실행 오류");
-            setIsRunning(false);
-            setEdgesDashed(false);
-            addLog(`[run] 오류: ${event.error || "알 수 없는 오류"}`);
-            setFlowCompleted(false);
-            return;
-          }
-          case "node_start": {
-            if (nodeId && !seenRunningRef.current.has(nodeId)) {
+          return;
+        }
+        case "node_complete": {
+          if (nodeId) {
+            if (!seenRunningRef.current.has(nodeId)) {
               seenRunningRef.current.add(nodeId);
               setNodes((nodes) => markRunning(nodes, new Set([nodeId])));
-              addLog(
-                `[run] 노드 ${nodeId} 시작${event.message ? `: ${event.message}` : ""}`,
-              );
-              updateCurrentLevelByNode(nodeId);
             }
-            return;
+            setNodes((nodes) => markSuccess(nodes, new Set([nodeId])));
+            updateCurrentLevelByNode(nodeId);
           }
-          case "node_complete": {
-            if (nodeId) {
-              if (!seenRunningRef.current.has(nodeId)) {
-                seenRunningRef.current.add(nodeId);
-                setNodes((nodes) => markRunning(nodes, new Set([nodeId])));
-              }
-              setNodes((nodes) => markSuccess(nodes, new Set([nodeId])));
-              addLog(
-                `[run] 노드 ${nodeId} 완료${event.message ? `: ${event.message}` : ""}`,
-              );
-              updateCurrentLevelByNode(nodeId);
-            }
-            return;
+          return;
+        }
+        case "node_streaming": {
+          if (
+            nodeId &&
+            event.data &&
+            typeof event.data === "object" &&
+            "content" in event.data
+          ) {
+            // 노드별 스트리밍 텍스트 누적 (주로 채팅 노드)
+            const dataObj = event.data as unknown as { content?: unknown };
+            const content =
+              typeof dataObj.content === "string"
+                ? dataObj.content
+                : String(dataObj.content ?? "");
+            setChatResults((prev) => ({
+              ...prev,
+              [nodeId]: `${prev[nodeId] ?? ""}` + content,
+            }));
           }
-          case "node_streaming": {
-            if (
-              nodeId &&
-              event.data &&
-              typeof event.data === "object" &&
-              "content" in event.data
-            ) {
-              // 노드별 스트리밍 텍스트 누적 (주로 채팅 노드)
-              const dataObj = event.data as unknown as { content?: unknown };
-              const content =
-                typeof dataObj.content === "string"
-                  ? dataObj.content
-                  : String(dataObj.content ?? "");
-              setChatResults((prev) => ({
-                ...prev,
-                [nodeId]: `${prev[nodeId] ?? ""}` + content,
-              }));
-            }
-            return;
+          return;
+        }
+        case "node_error": {
+          if (nodeId) {
+            setNodes((nodes) => markFailed(nodes, new Set([nodeId])));
+            const updatedFailedNodeIds = new Set(failedNodeIds);
+            updatedFailedNodeIds.add(nodeId);
+            setFailedNodeIds(updatedFailedNodeIds);
+            setFailedCount(updatedFailedNodeIds.size);
+            updateCurrentLevelByNode(nodeId);
+          } else {
+            setError(event.error || "노드 오류");
           }
-          case "node_error": {
-            if (nodeId) {
-              setNodes((nodes) => markFailed(nodes, new Set([nodeId])));
-              const updatedFailedNodeIds = new Set(failedNodeIds);
-              updatedFailedNodeIds.add(nodeId);
-              setFailedNodeIds(updatedFailedNodeIds);
-              setFailedCount(updatedFailedNodeIds.size);
-              addLog(
-                `[run] 노드 ${nodeId} 실패: ${event.error || "알 수 없는 오류"}`,
-              );
-              updateCurrentLevelByNode(nodeId);
-            } else {
-              setError(event.error || "노드 오류");
-            }
-            return;
-          }
+          return;
         }
       }
     },
     [
-      addLog,
       failedNodeIds,
       setEdgesDashed,
       setFailedCount,
@@ -243,32 +180,6 @@ export function useFlowExecution({
       setNodes,
       updateCurrentLevelByNode,
     ],
-  );
-
-  // 채팅 SSE 처리
-  const handleChatEvent = React.useCallback(
-    (data: {
-      name: string;
-      event: string;
-      message?: string;
-      chunk?: { content: string };
-    }) => {
-      const { name, event, message } = data ?? {};
-      if (!name) return;
-
-      const targetNodeIds = resolveNodeIdsByName(String(name));
-      if (!targetNodeIds.length) return;
-
-      const nodeIdSet = new Set(targetNodeIds);
-      if (event === "on_chat_model_start" || event === "status") {
-        setNodes((nodes) => markRunning(nodes, nodeIdSet));
-        addLog(`[run] ${name} 시작${message ? `: ${message}` : ""}`);
-      } else if (event === "on_chat_model_end") {
-        setNodes((nodes) => markSuccess(nodes, nodeIdSet));
-        addLog(`[run] ${name} 완료`);
-      }
-    },
-    [addLog, resolveNodeIdsByName, setNodes],
   );
 
   const runFlow = React.useCallback(
@@ -288,7 +199,6 @@ export function useFlowExecution({
         setFailedNodeIds(new Set());
         setFailedCount(0);
         setNodes((nodes) => markAllNodesStatus(nodes, RUN_STATUS.IDLE));
-        setEvents([]);
         setError(null);
         setSessionId(null);
         setChatResults({});
@@ -360,18 +270,13 @@ export function useFlowExecution({
             try {
               const data = JSON.parse(payload);
 
-              if (data && typeof data === "object") {
-                // 새로운 이벤트 형식 또는 기존 형식 모두 처리
-                if ("event" in data && "nodeId" in data) {
-                  // 새로운 형식: { nodeId, event, message?, data?, error? }
-                  handleFlowEvent(data);
-                } else if ("type" in data) {
-                  // 기존 형식: { type, nodeId, ... }
-                  handleFlowEvent(data as FlowEventBase);
-                } else if ("name" in data) {
-                  // 채팅 API 형식 (하위 호환성)
-                  handleChatEvent(data);
-                }
+              if (
+                data &&
+                typeof data === "object" &&
+                "event" in data &&
+                "nodeId" in data
+              ) {
+                handleFlowEvent(data as FlowEventBase);
               }
             } catch (parseError) {
               console.warn("이벤트 파싱 실패:", parseError);
@@ -380,12 +285,10 @@ export function useFlowExecution({
         }
       } catch (error) {
         if (error instanceof Error && error.name === "AbortError") {
-          addLog("[run] 사용자가 실행을 중단했습니다");
         } else {
           const errorMessage =
             error instanceof Error ? error.message : String(error ?? "오류");
           setError(errorMessage);
-          addLog(`[run] 오류: ${errorMessage}`);
         }
       } finally {
         sseAbortRef.current = null;
@@ -394,14 +297,12 @@ export function useFlowExecution({
       }
     },
     [
-      addLog,
       setEdgesDashed,
       setFailedCount,
       setFailedNodeIds,
       setIsRunning,
       setLevels,
       setNodes,
-      handleChatEvent,
       handleFlowEvent,
     ],
   );
@@ -421,25 +322,19 @@ export function useFlowExecution({
   }, [setEdgesDashed, setIsRunning]);
 
   // 각 노드별 재실행 함수 - 전체 플로우 재실행으로 처리
-  const retryNode = React.useCallback(
-    async (nodeId: string) => {
-      if (isRunning) return;
-      const lastRequest = lastRequestRef.current;
-      if (!lastRequest) return;
-      addLog(`[run] 노드 ${nodeId} 재시도 (전체 플로우 재실행)`);
-      await runFlow(lastRequest.prompt, lastRequest.nodes, lastRequest.edges);
-    },
-    [addLog, isRunning, runFlow],
-  );
+  const retryNode = React.useCallback(async () => {
+    if (isRunning) return;
+    const lastRequest = lastRequestRef.current;
+    if (!lastRequest) return;
+    await runFlow(lastRequest.prompt, lastRequest.nodes, lastRequest.edges);
+  }, [isRunning, runFlow]);
 
   const retryLevel = React.useCallback(async () => {
     if (isRunning) return;
     const lastRequest = lastRequestRef.current;
     if (!lastRequest) return;
-    const failedCount = failedNodeIds.size;
-    addLog(`[run] 레벨 재시도 (${failedCount}개 실패) - 전체 플로우 재실행`);
     await runFlow(lastRequest.prompt, lastRequest.nodes, lastRequest.edges);
-  }, [addLog, failedNodeIds.size, isRunning, runFlow]);
+  }, [isRunning, runFlow]);
 
   return {
     // SSE + 실행 제어
@@ -448,11 +343,9 @@ export function useFlowExecution({
     retryNode,
     retryLevel,
     // 스트리밍/메타 상태
-    events,
     error,
     sessionId,
     chatResults,
     flowCompleted,
-    clearEvents: () => setEvents([]),
   } as const;
 }

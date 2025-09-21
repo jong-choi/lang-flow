@@ -20,7 +20,6 @@ export function useRunPipeline({
   nodes,
   setNodes,
   setEdges,
-  addLog,
   setIsRunning,
   setLevels,
   setFailedNodeIds,
@@ -31,7 +30,6 @@ export function useRunPipeline({
   nodes: Node<NodeData>[];
   setNodes: SetNodes;
   setEdges: SetEdges;
-  addLog: (msg: string) => void;
   setIsRunning: (isRunning: boolean) => void;
   setLevels: (levels: string[][]) => void;
   setFailedNodeIds: (failedNodeIds: Set<string>) => void;
@@ -68,8 +66,6 @@ export function useRunPipeline({
       if (isCancelledRef.current) return false;
       const level = levelsRef.current[levelIndex] ?? [];
       const levelNodeList = nodes.filter((node) => level.includes(node.id));
-      // 기존: custom 노드는 서버 처리, 그 외는 즉시 처리
-      // 변경: custom 제거에 따라 모든 노드를 즉시 처리로 간주
       const processingNodes: Node<NodeData>[] = [];
       const instantNodes = levelNodeList;
 
@@ -83,7 +79,6 @@ export function useRunPipeline({
         setNodes((nodes) => markRunning(nodes, ids));
         const results = await Promise.allSettled(
           processingNodes.map(async (node) => {
-            addLog(`[run] 노드 ${node.id} 실행`);
             const r = await callServer(node.id);
             return { id: node.id, ok: r.ok };
           }),
@@ -94,13 +89,9 @@ export function useRunPipeline({
           if (result.status === "fulfilled") {
             if (result.value.ok) {
               successIds.add(result.value.id);
-              addLog(`[run] 노드 ${result.value.id} 완료`);
             } else {
               failedIds.add(result.value.id);
-              addLog(`[run] 노드 ${result.value.id} 실패`);
             }
-          } else {
-            addLog("[run] 노드 실행 중 예외 발생");
           }
         }
         if (successIds.size)
@@ -109,15 +100,12 @@ export function useRunPipeline({
         if (failedIds.size > 0) {
           setFailedNodeIds(failedIds);
           setFailedCount(failedIds.size);
-          addLog(
-            `[run] 레벨 ${levelIndex + 1} 실패: ${failedIds.size}개 노드, 수동 재시도 필요`,
-          );
           return false;
         }
       }
       return true;
     },
-    [nodes, setNodes, addLog, callServer, setFailedNodeIds, setFailedCount],
+    [nodes, setNodes, callServer, setFailedNodeIds, setFailedCount],
   );
 
   const continueFrom = React.useCallback(
@@ -129,24 +117,20 @@ export function useRunPipeline({
       ) {
         if (isCancelledRef.current) break;
         setCurrentLevelIndex(levelIndex);
-        addLog(`[run] 레벨 ${levelIndex + 1} 시작`);
         const isLevelSuccess = await processLevel(levelIndex);
         if (!isLevelSuccess) {
           setIsRunning(false);
-          addLog("[run] 일시 중지: 재시도를 기다리는 중");
           return;
         }
       }
       setEdgesDashed(false);
       setIsRunning(false);
-      addLog("[run] 실행 완료");
     },
-    [processLevel, setCurrentLevelIndex, addLog, setIsRunning, setEdgesDashed],
+    [processLevel, setCurrentLevelIndex, setIsRunning, setEdgesDashed],
   );
 
   const runFlow = React.useCallback(
     async (nodesArg: Node<NodeData>[], edgesArg: Edge[]) => {
-      // 새 실행 시작 시 취소 플래그 리셋
       isCancelledRef.current = false;
       setIsRunning(true);
       setEdgesDashed(true);
@@ -179,7 +163,6 @@ export function useRunPipeline({
       if (!failedNodeIds.has(nodeId)) return;
       if (isRunning) return;
       setIsRunning(true);
-      addLog(`[run] 노드 ${nodeId} 개별 재시도 시작`);
       setNodes((nodes) =>
         nodes.map((node) =>
           node.id === nodeId
@@ -206,17 +189,12 @@ export function useRunPipeline({
         next.delete(nodeId);
         setFailedNodeIds(next);
         setFailedCount(next.size);
-        addLog(`[run] 노드 ${nodeId} 개별 재시도 성공`);
         if (next.size === 0) {
-          addLog(
-            `[run] 레벨 ${currentLevelIndex + 1} 재시도 완료, 다음 레벨 진행`,
-          );
           await continueFrom(currentLevelIndex + 1);
         } else {
           setIsRunning(false);
         }
       } else {
-        addLog(`[run] 노드 ${nodeId} 개별 재시도 실패`);
         setIsRunning(false);
       }
     },
@@ -224,7 +202,6 @@ export function useRunPipeline({
       failedNodeIds,
       isRunning,
       setIsRunning,
-      addLog,
       setNodes,
       callServer,
       setFailedNodeIds,
@@ -238,27 +215,20 @@ export function useRunPipeline({
     if (isRunning || failedNodeIds.size === 0) return;
     const failedIds = new Set(failedNodeIds);
     setIsRunning(true);
-    addLog(
-      `[run] 레벨 ${currentLevelIndex + 1} 재시도 시작 (${failedIds.size}개)`,
-    );
-    // 표시: 실패한 노드들을 running으로
     setNodes((nodes) => markRunning(nodes, failedIds));
-    // 현재 스냅샷에서 재시도 대상 노드 목록
     const retryNodes = nodes.filter((node) => failedIds.has(node.id));
     const results = await Promise.allSettled(
       retryNodes.map(async (node) => {
-        const r = await callServer(node.id);
-        return { id: node.id, ok: r.ok } as const;
+        const nodeResult = await callServer(node.id);
+        return { id: node.id, ok: nodeResult.ok } as const;
       }),
     );
     const successSet = new Set<string>();
     const failedSet = new Set<string>();
-    for (const r of results) {
-      if (r.status === "fulfilled") {
-        if (r.value.ok) successSet.add(r.value.id);
-        else failedSet.add(r.value.id);
-      } else {
-        addLog("[run] 재시도 중 예외 발생");
+    for (const result of results) {
+      if (result.status === "fulfilled") {
+        if (result.value.ok) successSet.add(result.value.id);
+        else failedSet.add(result.value.id);
       }
     }
     if (successSet.size) setNodes((nodes) => markSuccess(nodes, successSet));
@@ -267,21 +237,16 @@ export function useRunPipeline({
     if (failedSet.size > 0) {
       setFailedNodeIds(failedSet);
       setFailedCount(failedSet.size);
-      addLog(
-        `[run] 재시도 실패: ${failedSet.size}개 노드, 다시 재시도하거나 중단하세요`,
-      );
       setIsRunning(false);
       return;
     }
     setFailedNodeIds(new Set());
     setFailedCount(0);
-    addLog(`[run] 레벨 ${currentLevelIndex + 1} 재시도 성공`);
     await continueFrom(currentLevelIndex + 1);
   }, [
     isRunning,
     failedNodeIds,
     setIsRunning,
-    addLog,
     setNodes,
     nodes,
     callServer,
