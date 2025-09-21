@@ -19,6 +19,8 @@ export interface NodeData {
   nodeType?: FlowNodeType;
   runStatus?: "idle" | "running" | "success" | "failed"; // 노드 실행 상태
   level?: number; // 실행 위치
+  prompt?: string;
+  model?: string;
   [key: string]: string | number | undefined;
 }
 

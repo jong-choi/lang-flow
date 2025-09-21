@@ -5,12 +5,23 @@
  */
 import { useCallback, useState } from "react";
 import { type Edge, type Node, useReactFlow } from "@xyflow/react";
+import {
+  DEFAULT_MODEL,
+  type EditNodeFormValues,
+} from "@/features/flow/components/nodes/ui/edit-dialog";
 import type { NodeData } from "@/features/flow/types/nodes";
 import { createNodeData, getId } from "@/features/flow/utils/node-factory";
 
 export const useNodeMenu = (id: string) => {
   const { setNodes, setEdges, getNodes } = useReactFlow();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  const [editingNodeData, setEditingNodeData] = useState<NodeData | null>(null);
+
+  const closeEditDialog = useCallback(() => {
+    setIsEditDialogOpen(false);
+    setEditingNodeData(null);
+  }, []);
 
   const handleDelete = useCallback(() => {
     setNodes((nodes) => nodes.filter((node) => node.id !== id));
@@ -22,19 +33,58 @@ export const useNodeMenu = (id: string) => {
 
   const handleEdit = useCallback(
     (currentData: NodeData) => {
-      const newLabel = prompt("새 라벨을 입력하세요:", currentData.label);
-      if (newLabel) {
-        setNodes((nodes) =>
-          nodes.map((node) =>
-            node.id === id
-              ? { ...node, data: { ...node.data, label: newLabel } }
-              : node,
-          ),
-        );
-      }
+      setEditingNodeData(currentData);
+      setIsEditDialogOpen(true);
       setIsMenuOpen(false);
     },
-    [id, setNodes],
+    [setEditingNodeData, setIsEditDialogOpen, setIsMenuOpen],
+  );
+
+  const handleEditSubmit = useCallback(
+    (values: EditNodeFormValues) => {
+      setNodes((nodes) =>
+        nodes.map((node) => {
+          if (node.id !== id) {
+            return node;
+          }
+
+          const updatedData: Partial<NodeData> = {
+            ...node.data,
+            label: values.label,
+          };
+
+          const nodeType = node.data.nodeType ?? editingNodeData?.nodeType;
+
+          if (nodeType === "custom") {
+            updatedData.prompt = values.prompt ?? "";
+            updatedData.model =
+              values.model ??
+              (node.data as Partial<NodeData>).model ??
+              DEFAULT_MODEL;
+          }
+
+          return {
+            ...node,
+            data: updatedData,
+          };
+        }),
+      );
+
+      closeEditDialog();
+    },
+    [closeEditDialog, editingNodeData, id, setNodes],
+  );
+
+  const handleEditDialogOpenChange = useCallback(
+    (open: boolean) => {
+      if (open) {
+        setIsEditDialogOpen(true);
+        return;
+      }
+
+      closeEditDialog();
+    },
+    [closeEditDialog],
   );
 
   const handleDuplicate = useCallback(
@@ -98,5 +148,11 @@ export const useNodeMenu = (id: string) => {
     handleEdit,
     handleDuplicate,
     handleAddConnection,
+    editDialog: {
+      open: isEditDialogOpen,
+      nodeData: editingNodeData,
+      onSubmit: handleEditSubmit,
+      onOpenChange: handleEditDialogOpenChange,
+    },
   };
 };

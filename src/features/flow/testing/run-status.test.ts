@@ -28,7 +28,7 @@ describe("실행 상태 유틸리티", () => {
     for (const node of updated) {
       expect(node.data.runStatus).toBe(RUN_STATUS.RUNNING);
     }
-    // original nodes remain untouched
+
     expect(nodes[0]!.data.runStatus).toBe(RUN_STATUS.IDLE);
   });
 

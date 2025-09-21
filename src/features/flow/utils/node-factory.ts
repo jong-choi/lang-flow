@@ -11,7 +11,7 @@ export const getId = () => `dndnode_${sequence++}`;
 export const createNodeData = (type: FlowNodeType): NodeData => {
   const config = nodeTypeConfigs[type];
 
-  return {
+  const baseData: NodeData = {
     label: config.label,
     emoji: config.emoji,
     job: config.job,
@@ -19,4 +19,14 @@ export const createNodeData = (type: FlowNodeType): NodeData => {
     runStatus: "idle",
     level: undefined,
   };
+
+  if (type === "custom") {
+    return {
+      ...baseData,
+      prompt: "",
+      model: "gemma-1b-it",
+    };
+  }
+
+  return baseData;
 };
