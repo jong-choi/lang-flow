@@ -10,7 +10,7 @@ import {
   nodeTypeConfigs,
   sidebarItems,
 } from "@/features/flow/constants/node-config";
-import { useDnD } from "@/features/flow/context/dnd-context";
+import { useFlowGeneratorStore } from "@/features/flow/providers/flow-store-provider";
 import type {
   FlowNodeType,
   SidebarItemConfig,
@@ -51,7 +51,7 @@ const PaletteItem: FC<PaletteItemProps> = ({
 };
 
 export const SidebarNodePalette: FC = () => {
-  const [, setType] = useDnD();
+  const setType = useFlowGeneratorStore.use.dnd((d) => d.setDraggingType);
 
   const handleDragStart = useCallback(
     (event: DragEvent, nodeType: FlowNodeType) => {

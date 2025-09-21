@@ -2,8 +2,7 @@
 
 import React from "react";
 import type { Edge, Node } from "@xyflow/react";
-import { useRunContext } from "@/features/flow/context/run-context";
-import { useRunMetaContext } from "@/features/flow/context/run-meta-context";
+import { useFlowGeneratorStore } from "@/features/flow/providers/flow-store-provider";
 import type { NodeData } from "@/features/flow/types/nodes";
 import { computeLevels as computeLevelsGraph } from "@/features/flow/utils/graph";
 import {
@@ -40,8 +39,13 @@ export function useRunPipeline({
   setCurrentLevelIndex: (levelIndex: number) => void;
   callServer: (nodeId: string) => Promise<{ ok: boolean; error?: string }>;
 }) {
-  const { isRunning } = useRunContext();
-  const { failedNodeIds, currentLevelIndex } = useRunMetaContext();
+  const isRunning = useFlowGeneratorStore.use.run((s) => s.isRunning);
+  const failedNodeIds = useFlowGeneratorStore.use.runMeta(
+    (m) => m.failedNodeIds,
+  );
+  const currentLevelIndex = useFlowGeneratorStore.use.runMeta(
+    (m) => m.currentLevelIndex,
+  );
   const levelsRef = React.useRef<string[][]>([]);
   const isCancelledRef = React.useRef(false);
 

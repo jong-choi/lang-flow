@@ -3,9 +3,9 @@
 import React from "react";
 import { AlertCircle, RotateCw } from "lucide-react";
 import { nodeConfigs } from "@/features/flow/constants/node-config";
-import { useNodeActions } from "@/features/flow/context/node-actions-context";
 import { useConnectionLimits } from "@/features/flow/hooks/use-connection-limits";
 import { useNodeMenu } from "@/features/flow/hooks/use-node-menu";
+import { useFlowGeneratorStore } from "@/features/flow/providers/flow-store-provider";
 import type {
   FlowNodeType,
   HandleDefinition,
@@ -35,7 +35,7 @@ export const GenericNode: React.FC<GenericNodeProps> = ({
   menuType,
   handles,
 }) => {
-  const { retryNode } = useNodeActions();
+  const retryNode = useFlowGeneratorStore.use.nodeActions((a) => a.retryNode);
   const menu = useNodeMenu(id);
   const config = nodeConfigs[nodeType];
   const connectionStates = useConnectionLimits(nodeType, id);
@@ -62,11 +62,13 @@ export const GenericNode: React.FC<GenericNodeProps> = ({
           <CustomHandle
             key={definition.id}
             definition={definition}
-            isConnectable={connectionStates[definition.id]?.isConnectable ?? true}
+            isConnectable={
+              connectionStates[definition.id]?.isConnectable ?? true
+            }
           />
         ))}
         <NodeContent data={data} config={config} />
-        {data.runStatus === RUN_STATUS.FAILED && (
+        {data.runStatus === RUN_STATUS.FAILED && retryNode && (
           <div className="absolute -bottom-2 left-1/2 -translate-x-1/2 flex items-center gap-1">
             <AlertCircle className="h-4 w-4 text-red-600" />
             <button

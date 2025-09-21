@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useRef } from "react";
+import { useCallback, useEffect, useRef } from "react";
 import {
   Background,
   type Connection,
@@ -25,19 +25,10 @@ import { RunControls } from "@/features/flow/components/run-controls";
 import { RunLogs } from "@/features/flow/components/run-logs";
 import { Sidebar } from "@/features/flow/components/sidebar";
 import { SidebarNodePalette } from "@/features/flow/components/sidebar-node-palette";
-import { DnDProvider, useDnD } from "@/features/flow/context/dnd-context";
-import { NodeActionsProvider } from "@/features/flow/context/node-actions-context";
-import {
-  RunProvider,
-  useRunContext,
-} from "@/features/flow/context/run-context";
-import {
-  RunMetaProvider,
-  useRunMetaContext,
-} from "@/features/flow/context/run-meta-context";
 import { useDelayApi } from "@/features/flow/hooks/use-delay-api";
 import { useRunEligibility } from "@/features/flow/hooks/use-run-eligibility";
 import { useRunPipeline } from "@/features/flow/hooks/use-run-pipeline";
+import { useFlowGeneratorStore } from "@/features/flow/providers/flow-store-provider";
 import type { NodeData } from "@/features/flow/types/nodes";
 import { createNodeData, getId } from "@/features/flow/utils/node-factory";
 import { buildSnapshot } from "@/features/flow/utils/snapshot";
@@ -58,22 +49,30 @@ const DnDFlow = () => {
     useNodesState<Node<NodeData>>(initialNodes);
   const [edges, setEdges, onEdgesChange] = useEdgesState<Edge>([]);
   const { screenToFlowPosition } = useReactFlow();
-  const [type] = useDnD();
-  const {
-    isRunning,
-    setRunning: setIsRunning,
-    logs,
-    addLog,
-    clearLogs,
-  } = useRunContext();
+  const type = useFlowGeneratorStore.use.dnd((d) => d.draggingType);
+  const setDraggingType = useFlowGeneratorStore.use.dnd(
+    (d) => d.setDraggingType,
+  );
+  const isRunning = useFlowGeneratorStore.use.run((s) => s.isRunning);
+  const setIsRunning = useFlowGeneratorStore.use.run((s) => s.setRunning);
+  const logs = useFlowGeneratorStore.use.run((s) => s.logs);
+  const addLog = useFlowGeneratorStore.use.run((s) => s.addLog);
+  const clearLogs = useFlowGeneratorStore.use.run((s) => s.clearLogs);
   const { callServer, cancelAll: delayCancelAll } = useDelayApi();
-  const {
-    setLevels,
-    setCurrentLevelIndex,
-    setFailedNodeIds,
-    failedCount,
-    setFailedCount,
-  } = useRunMetaContext();
+  const setLevels = useFlowGeneratorStore.use.runMeta((m) => m.setLevels);
+  const setCurrentLevelIndex = useFlowGeneratorStore.use.runMeta(
+    (m) => m.setCurrentLevelIndex,
+  );
+  const setFailedNodeIds = useFlowGeneratorStore.use.runMeta(
+    (m) => m.setFailedNodeIds,
+  );
+  const failedCount = useFlowGeneratorStore.use.runMeta((m) => m.failedCount);
+  const setFailedCount = useFlowGeneratorStore.use.runMeta(
+    (m) => m.setFailedCount,
+  );
+  const setRetryNode = useFlowGeneratorStore.use.nodeActions(
+    (a) => a.setRetryNode,
+  );
 
   const {
     runFlow: pipelineRunFlow,
@@ -92,6 +91,12 @@ const DnDFlow = () => {
     setCurrentLevelIndex,
     callServer,
   });
+
+  // 노드 액션(retryNode) 콜백을 전역 스토어에 주입하여 개별 노드 컴포넌트에서 접근 가능하게 함
+  useEffect(() => {
+    setRetryNode(retryNode);
+    return () => setRetryNode(undefined);
+  }, [retryNode, setRetryNode]);
 
   // 엣지 연결 유효성 검사
   const isValidConnection = useCallback<IsValidConnection<Edge>>(
@@ -184,8 +189,10 @@ const DnDFlow = () => {
       };
 
       setNodes((nodes) => nodes.concat(newNode));
+      // 드롭 완료 후 드래깅 타입 초기화
+      setDraggingType(undefined);
     },
-    [screenToFlowPosition, type, setNodes],
+    [screenToFlowPosition, type, setNodes, setDraggingType],
   );
 
   // Delete/Backspace로 노드/엣지 삭제
@@ -271,49 +278,47 @@ const DnDFlow = () => {
         <SidebarNodePalette />
       </Sidebar>
       <div className="flex-1" ref={reactFlowWrapper}>
-        <NodeActionsProvider retryNode={retryNode}>
-          <ReactFlow<Node<NodeData>, Edge>
-            nodes={nodes}
-            edges={edges}
-            onNodesChange={onNodesChange}
-            onEdgesChange={onEdgesChange}
-            onConnect={onConnect}
-            isValidConnection={isValidConnection}
-            onDrop={onDrop}
-            onDragOver={onDragOver}
-            onReconnect={onReconnect}
-            onReconnectStart={onReconnectStart}
-            onReconnectEnd={onReconnectEnd}
-            nodeTypes={nodeTypes}
-            edgeTypes={edgeTypes}
-            fitView
-            onKeyDown={onKeyDown}
-            tabIndex={0}
-            className="bg-gradient-to-br from-slate-50 to-violet-50"
-            defaultEdgeOptions={{
-              type: "custom",
-              deletable: true,
-            }}
-          >
-            <Panel position="top-right">
-              <RunControls
-                canStart={runEligibility.ok}
-                isRunning={isRunning}
-                failedCount={failedCount}
-                tooltip={runEligibility.ok ? null : runEligibility.reason}
-                onStart={runFlow}
-                onCancel={cancelRun}
-                onRetry={pipelineRetryLevel}
-              />
-            </Panel>
-            <Panel position="bottom-right">
-              <RunLogs logs={logs} onClear={clearLogs} />
-            </Panel>
-            <Controls />
-            <MiniMap />
-            <Background />
-          </ReactFlow>
-        </NodeActionsProvider>
+        <ReactFlow<Node<NodeData>, Edge>
+          nodes={nodes}
+          edges={edges}
+          onNodesChange={onNodesChange}
+          onEdgesChange={onEdgesChange}
+          onConnect={onConnect}
+          isValidConnection={isValidConnection}
+          onDrop={onDrop}
+          onDragOver={onDragOver}
+          onReconnect={onReconnect}
+          onReconnectStart={onReconnectStart}
+          onReconnectEnd={onReconnectEnd}
+          nodeTypes={nodeTypes}
+          edgeTypes={edgeTypes}
+          fitView
+          onKeyDown={onKeyDown}
+          tabIndex={0}
+          className="bg-gradient-to-br from-slate-50 to-violet-50"
+          defaultEdgeOptions={{
+            type: "custom",
+            deletable: true,
+          }}
+        >
+          <Panel position="top-right">
+            <RunControls
+              canStart={runEligibility.ok}
+              isRunning={isRunning}
+              failedCount={failedCount}
+              tooltip={runEligibility.ok ? null : runEligibility.reason}
+              onStart={runFlow}
+              onCancel={cancelRun}
+              onRetry={pipelineRetryLevel}
+            />
+          </Panel>
+          <Panel position="bottom-right">
+            <RunLogs logs={logs} onClear={clearLogs} />
+          </Panel>
+          <Controls />
+          <MiniMap />
+          <Background />
+        </ReactFlow>
       </div>
     </div>
   );
@@ -322,13 +327,7 @@ const DnDFlow = () => {
 export const FlowBuilder = () => (
   <div className="h-screen">
     <ReactFlowProvider>
-      <RunProvider>
-        <RunMetaProvider>
-          <DnDProvider>
-            <DnDFlow />
-          </DnDProvider>
-        </RunMetaProvider>
-      </RunProvider>
+      <DnDFlow />
     </ReactFlowProvider>
   </div>
 );
