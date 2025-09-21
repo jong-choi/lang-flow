@@ -19,6 +19,7 @@ import {
 } from "./menu/node-menu-items";
 import { CustomHandle } from "./ui/custom-handle";
 import { EditDialog } from "./ui/edit-dialog";
+import { MessageEditDialog } from "./ui/message-edit-dialog";
 import { NodeContainer } from "./ui/node-container";
 import { NodeContent } from "./ui/node-content";
 
@@ -87,6 +88,12 @@ export const GenericNode: React.FC<GenericNodeProps> = ({
         nodeData={menu.editDialog.nodeData}
         onOpenChange={menu.editDialog.onOpenChange}
         onSubmit={menu.editDialog.onSubmit}
+      />
+      <MessageEditDialog
+        open={menu.messageEditDialog.open}
+        nodeData={menu.messageEditDialog.nodeData}
+        onOpenChange={menu.messageEditDialog.onOpenChange}
+        onSubmit={menu.messageEditDialog.onSubmit}
       />
     </>
   );

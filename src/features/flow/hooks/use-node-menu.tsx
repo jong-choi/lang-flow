@@ -9,6 +9,7 @@ import {
   DEFAULT_MODEL,
   type EditNodeFormValues,
 } from "@/features/flow/components/nodes/ui/edit-dialog";
+import type { MessageNodeFormValues } from "@/features/flow/components/nodes/ui/message-edit-dialog";
 import type { NodeData } from "@/features/flow/types/nodes";
 import { createNodeData, getId } from "@/features/flow/utils/node-factory";
 
@@ -17,9 +18,15 @@ export const useNodeMenu = (id: string) => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [editingNodeData, setEditingNodeData] = useState<NodeData | null>(null);
+  const [isMessageEditDialogOpen, setIsMessageEditDialogOpen] = useState(false);
 
   const closeEditDialog = useCallback(() => {
     setIsEditDialogOpen(false);
+    setEditingNodeData(null);
+  }, []);
+
+  const closeMessageEditDialog = useCallback(() => {
+    setIsMessageEditDialogOpen(false);
     setEditingNodeData(null);
   }, []);
 
@@ -34,10 +41,22 @@ export const useNodeMenu = (id: string) => {
   const handleEdit = useCallback(
     (currentData: NodeData) => {
       setEditingNodeData(currentData);
-      setIsEditDialogOpen(true);
+
+      // messageNode의 경우 MessageEditDialog 사용
+      if (currentData.nodeType === "messageNode") {
+        setIsMessageEditDialogOpen(true);
+      } else {
+        setIsEditDialogOpen(true);
+      }
+
       setIsMenuOpen(false);
     },
-    [setEditingNodeData, setIsEditDialogOpen, setIsMenuOpen],
+    [
+      setEditingNodeData,
+      setIsEditDialogOpen,
+      setIsMessageEditDialogOpen,
+      setIsMenuOpen,
+    ],
   );
 
   const handleEditSubmit = useCallback(
@@ -75,6 +94,32 @@ export const useNodeMenu = (id: string) => {
     [closeEditDialog, editingNodeData, id, setNodes],
   );
 
+  const handleMessageEditSubmit = useCallback(
+    (values: MessageNodeFormValues) => {
+      setNodes((nodes) =>
+        nodes.map((node) => {
+          if (node.id !== id) {
+            return node;
+          }
+
+          const updatedData: Partial<NodeData> = {
+            ...node.data,
+            label: values.label,
+            template: values.template,
+          };
+
+          return {
+            ...node,
+            data: updatedData,
+          };
+        }),
+      );
+
+      closeMessageEditDialog();
+    },
+    [closeMessageEditDialog, id, setNodes],
+  );
+
   const handleEditDialogOpenChange = useCallback(
     (open: boolean) => {
       if (open) {
@@ -85,6 +130,18 @@ export const useNodeMenu = (id: string) => {
       closeEditDialog();
     },
     [closeEditDialog],
+  );
+
+  const handleMessageEditDialogOpenChange = useCallback(
+    (open: boolean) => {
+      if (open) {
+        setIsMessageEditDialogOpen(true);
+        return;
+      }
+
+      closeMessageEditDialog();
+    },
+    [closeMessageEditDialog],
   );
 
   const handleDuplicate = useCallback(
@@ -153,6 +210,12 @@ export const useNodeMenu = (id: string) => {
       nodeData: editingNodeData,
       onSubmit: handleEditSubmit,
       onOpenChange: handleEditDialogOpenChange,
+    },
+    messageEditDialog: {
+      open: isMessageEditDialogOpen,
+      nodeData: editingNodeData,
+      onSubmit: handleMessageEditSubmit,
+      onOpenChange: handleMessageEditDialogOpenChange,
     },
   };
 };

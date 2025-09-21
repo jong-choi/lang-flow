@@ -8,7 +8,14 @@ export interface Position {
   x: number;
   y: number;
 }
-export type LangGraphNodeType = "chat" | "google_search" | "input" | "output";
+export type LangGraphNodeType =
+  | "chat"
+  | "google_search"
+  | "input"
+  | "output"
+  | "message"
+  | "branch"
+  | "merge";
 
 export interface BaseNodeData {
   label: string;
@@ -41,13 +48,29 @@ export interface FlowEventBase {
   data?: unknown;
   error?: string;
 }
+
+export interface NodeOutput {
+  type?: string;
+  content?: string;
+  rendered?: string;
+  template?: string;
+  input?: string;
+  mergedContent?: string;
+  inputNodeIds?: string[];
+  inputOutputs?: string[];
+  sourceNodeCount?: number;
+  error?: string;
+  timestamp: string;
+  [key: string]: unknown;
+}
+
 export interface FlowState {
   messages: BaseMessage[];
   prompt: string;
   currentNodeId?: NodeId;
   searchResults?: unknown[];
   finalResult?: unknown;
-  nodeOutputs: Record<NodeId, unknown>;
+  nodeOutputs: Record<NodeId, NodeOutput>;
 }
 
 export interface NodeExecutionContext {

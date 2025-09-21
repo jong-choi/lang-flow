@@ -13,9 +13,12 @@ import type {
   ReactFlowEdge,
   ReactFlowNode,
 } from "@/types/flow";
+import { branchNode } from "./nodes/branch-node";
 import { chatNode } from "./nodes/chat-node";
 import { googleSearchNode } from "./nodes/google-search-node";
 import { inputNode } from "./nodes/input-node";
+import { mergeNode } from "./nodes/merge-node";
+import { messageNode } from "./nodes/message-node";
 import { outputNode } from "./nodes/output-node";
 
 // 이 파일은 중앙의 FlowState 타입을 재사용합니다.
@@ -66,11 +69,38 @@ function determineNodeType(node: ReactFlowNode): LangGraphNodeType {
   ) {
     return "google_search";
   }
+  if (node.data.job === "메시지") {
+    return "message";
+  }
+  if (node.data.job === "분기") {
+    return "branch";
+  }
+  if (node.data.job === "합성") {
+    return "merge";
+  }
 
   return "chat";
 }
 
 // React Flow를 LangGraph로 변환
+/**
+ * 분기 노드의 대상 노드들을 찾는 헬퍼 함수
+ */
+function findBranchTargets(nodeId: string, edges: ReactFlowEdge[]): string[] {
+  return edges
+    .filter((edge) => edge.source === nodeId)
+    .map((edge) => edge.target);
+}
+
+/**
+ * 병합 노드의 입력 노드들을 찾는 헬퍼 함수
+ */
+function findMergeInputs(nodeId: string, edges: ReactFlowEdge[]): string[] {
+  return edges
+    .filter((edge) => edge.target === nodeId)
+    .map((edge) => edge.source);
+}
+
 export function buildGraphFromFlow(
   reactFlowNodes: ReactFlowNode[],
   reactFlowEdges: ReactFlowEdge[],
@@ -94,6 +124,31 @@ export function buildGraphFromFlow(
         break;
       case "google_search":
         graph.addNode(nodeId, googleSearchNode);
+        break;
+      case "message":
+        // messageNode는 템플릿 파라미터가 필요하므로 wrapper 함수 생성
+        graph.addNode(nodeId, async (state) => {
+          const templateData = reactNode.data.template;
+          const template =
+            typeof templateData === "string" && templateData.length > 0
+              ? templateData
+              : undefined;
+          return messageNode(state, nodeId, template);
+        });
+        break;
+      case "branch":
+        // 분기 노드의 대상들을 찾아서 전달
+        const branchTargets = findBranchTargets(nodeId, reactFlowEdges);
+        graph.addNode(nodeId, async (state) => {
+          return branchNode(state, nodeId, branchTargets);
+        });
+        break;
+      case "merge":
+        // 병합 노드의 입력들을 찾아서 전달
+        const mergeInputs = findMergeInputs(nodeId, reactFlowEdges);
+        graph.addNode(nodeId, async (state) => {
+          return mergeNode(state, nodeId, mergeInputs);
+        });
         break;
     }
   }

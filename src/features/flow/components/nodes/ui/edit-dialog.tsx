@@ -39,6 +39,7 @@ const editNodeSchema = z.object({
   label: z.string().min(1, "노드 이름을 입력해주세요."),
   prompt: z.string().optional(),
   model: z.string().optional(),
+  template: z.string().optional(),
 });
 
 export type EditNodeFormValues = z.infer<typeof editNodeSchema>;
@@ -56,12 +57,15 @@ export const EditDialog: React.FC<EditDialogProps> = ({
   nodeData,
   onSubmit,
 }) => {
+  const template =
+    typeof nodeData?.template === "string" ? nodeData.template : undefined;
   const form = useForm<EditNodeFormValues>({
     resolver: zodResolver(editNodeSchema),
     defaultValues: {
       label: nodeData?.label ?? "",
       prompt: nodeData?.prompt ?? "",
       model: nodeData?.model ?? DEFAULT_MODEL,
+      template,
     },
   });
 
@@ -74,16 +78,18 @@ export const EditDialog: React.FC<EditDialogProps> = ({
       label: nodeData?.label ?? "",
       prompt: nodeData?.prompt ?? "",
       model: nodeData?.model ?? DEFAULT_MODEL,
+      template,
     });
-  }, [form, nodeData, open]);
+  }, [form, nodeData, open, template]);
 
   const isProcessingNode = nodeData?.nodeType === "custom";
 
   const handleSubmit = form.handleSubmit((values) => {
     onSubmit({
-      ...values,
+      label: values.label,
       prompt: isProcessingNode ? values.prompt : undefined,
       model: isProcessingNode ? values.model : undefined,
+      template: values.template,
     });
   });
 
