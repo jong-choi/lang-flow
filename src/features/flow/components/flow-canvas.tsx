@@ -80,6 +80,8 @@ const DnDFlow = () => {
   const setRetryNode = useFlowGeneratorStore.use.nodeActions(
     (nodeActions) => nodeActions.setRetryNode,
   );
+  // 탭 상태: graph | results
+  const [activeTab, setActiveTab] = useState<"graph" | "results">("graph");
 
   const {
     runFlow: runFlowExec,
@@ -87,7 +89,6 @@ const DnDFlow = () => {
     error,
     sessionId,
     chatResults,
-    flowCompleted,
   } = useFlowExecution({
     setNodes,
     setEdges,
@@ -96,13 +97,12 @@ const DnDFlow = () => {
     setFailedNodeIds,
     setFailedCount,
     setCurrentLevelIndex,
+    onComplete: () => setActiveTab("results"),
   });
 
   // 마지막 사용된 프롬프트 저장 및 프롬프트 모달
   const [lastPrompt, setLastPrompt] = useState<string>("");
   const [showPromptModal, setShowPromptModal] = useState(false);
-  // 탭 상태: graph | results
-  const [activeTab, setActiveTab] = useState<"graph" | "results">("graph");
 
   // 엣지 연결 유효성 검사
   const isValidConnection = useIsValidConnection(nodes);
@@ -237,13 +237,6 @@ const DnDFlow = () => {
     edges,
     setIsRunning,
   ]);
-
-  // 플로우 완료 시 결과물 탭으로 자동 전환
-  useEffect(() => {
-    if (flowCompleted && activeTab !== "results") {
-      setActiveTab("results");
-    }
-  }, [flowCompleted, activeTab]);
 
   // 각 노드에서 사용할 수 있도록 재시도 함수 등록
   useEffect(() => {

@@ -25,6 +25,7 @@ type UseFlowExecutionParams = {
   setFailedNodeIds: (failedNodeIds: Set<string>) => void;
   setFailedCount: (failedCount: number) => void;
   setCurrentLevelIndex: (levelIndex: number) => void;
+  onComplete?: () => void;
 };
 
 export function useFlowExecution({
@@ -35,6 +36,7 @@ export function useFlowExecution({
   setFailedNodeIds,
   setFailedCount,
   setCurrentLevelIndex,
+  onComplete,
 }: UseFlowExecutionParams) {
   const isRunning = useFlowGeneratorStore.use.run((state) => state.isRunning);
   const failedNodeIds = useFlowGeneratorStore.use.runMeta(
@@ -101,6 +103,13 @@ export function useFlowExecution({
           setIsRunning(false);
           setEdgesDashed(false);
           setFlowCompleted(true);
+          // 완료 콜백 실행
+          try {
+            onComplete?.();
+          } catch (e) {
+            // 콜백 오류는 전체 흐름을 방해하지 않도록 무시
+            console.warn("onComplete callback error:", e);
+          }
           if (
             event.data &&
             typeof event.data === "object" &&
@@ -179,6 +188,7 @@ export function useFlowExecution({
       setIsRunning,
       setNodes,
       updateCurrentLevelByNode,
+      onComplete,
     ],
   );
 
