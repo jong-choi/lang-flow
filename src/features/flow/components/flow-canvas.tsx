@@ -355,7 +355,6 @@ const DnDFlow = () => {
           open={showPromptModal}
           onOpenChange={setShowPromptModal}
           onSubmit={runFlow}
-          isSubmitting={isRunning}
         />
       </div>
     </div>

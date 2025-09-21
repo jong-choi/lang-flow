@@ -15,22 +15,19 @@ interface PromptInputModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onSubmit: (prompt: string) => Promise<void>;
-  isSubmitting?: boolean;
 }
 
 export function PromptInputModal({
   open,
   onOpenChange,
   onSubmit,
-  isSubmitting = false,
 }: PromptInputModalProps) {
   const [prompt, setPrompt] = useState("");
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!prompt.trim()) return;
-
-    await onSubmit(prompt.trim());
+    void onSubmit(prompt.trim());
     setPrompt("");
     onOpenChange(false);
   };
@@ -55,21 +52,13 @@ export function PromptInputModal({
               value={prompt}
               onChange={(e) => setPrompt(e.target.value)}
               className="min-h-[100px] resize-none"
-              disabled={isSubmitting}
             />
           </div>
           <div className="flex justify-end space-x-2">
-            <Button
-              type="button"
-              variant="outline"
-              onClick={handleClose}
-              disabled={isSubmitting}
-            >
+            <Button type="button" variant="outline" onClick={handleClose}>
               취소
             </Button>
-            <Button type="submit" disabled={!prompt.trim() || isSubmitting}>
-              {isSubmitting ? "실행 중..." : "실행하기"}
-            </Button>
+            <Button type="submit">실행하기</Button>
           </div>
         </form>
       </DialogContent>
