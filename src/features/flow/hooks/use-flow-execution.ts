@@ -50,6 +50,12 @@ export function useFlowExecution({
   const [error, setError] = React.useState<string | null>(null);
   const [sessionId, setSessionId] = React.useState<string | null>(null);
 
+  // 결과물 및 완료 상태
+  const [chatResults, setChatResults] = React.useState<Record<string, string>>(
+    {},
+  );
+  const [flowCompleted, setFlowCompleted] = React.useState(false);
+
   const levelsRef = React.useRef<string[][]>([]);
   const isCancelledRef = React.useRef(false);
   const sseAbortRef = React.useRef<AbortController | null>(null);
@@ -138,12 +144,14 @@ export function useFlowExecution({
         switch (eventType) {
           case "flow_start": {
             addLog("[run] 플로우 실행 시작");
+            setFlowCompleted(false);
             return;
           }
           case "flow_complete": {
             setIsRunning(false);
             setEdgesDashed(false);
             addLog("[run] 실행 완료");
+            setFlowCompleted(true);
             if (
               event.data &&
               typeof event.data === "object" &&
@@ -158,6 +166,7 @@ export function useFlowExecution({
             setIsRunning(false);
             setEdgesDashed(false);
             addLog(`[run] 오류: ${event.error || "알 수 없는 오류"}`);
+            setFlowCompleted(false);
             return;
           }
           case "node_start": {
@@ -192,7 +201,16 @@ export function useFlowExecution({
               typeof event.data === "object" &&
               "content" in event.data
             ) {
-              // TODO : 스트리밍된 결과물을 출력할 UI 필요
+              // 노드별 스트리밍 텍스트 누적 (주로 채팅 노드)
+              const dataObj = event.data as unknown as { content?: unknown };
+              const content =
+                typeof dataObj.content === "string"
+                  ? dataObj.content
+                  : String(dataObj.content ?? "");
+              setChatResults((prev) => ({
+                ...prev,
+                [nodeId]: `${prev[nodeId] ?? ""}` + content,
+              }));
             }
             return;
           }
@@ -273,6 +291,8 @@ export function useFlowExecution({
         setEvents([]);
         setError(null);
         setSessionId(null);
+        setChatResults({});
+        setFlowCompleted(false);
 
         lastRequestRef.current = {
           prompt,
@@ -431,6 +451,8 @@ export function useFlowExecution({
     events,
     error,
     sessionId,
+    chatResults,
+    flowCompleted,
     clearEvents: () => setEvents([]),
   } as const;
 }

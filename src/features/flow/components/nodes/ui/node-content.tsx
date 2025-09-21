@@ -5,7 +5,10 @@ import { CheckCircle2, Loader2 } from "lucide-react";
 import { SHARED_STYLES } from "@/features/flow/constants/node-config";
 import type { NodeConfig, NodeData } from "@/features/flow/types/nodes";
 
-export const NodeContent: React.FC<{ data: NodeData; config: NodeConfig }> = ({ data, config }) => (
+export const NodeContent: React.FC<{ data: NodeData; config: NodeConfig }> = ({
+  data,
+  config,
+}) => (
   <div className={SHARED_STYLES.nodeContent}>
     <div className={`${SHARED_STYLES.emojiCircle} ${config.emojiGradient}`}>
       {data.emoji}

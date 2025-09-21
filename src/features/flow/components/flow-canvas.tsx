@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
+import { GitBranch, MessageSquare, Play, RotateCw, Square } from "lucide-react";
 import {
   Background,
   type Connection,
@@ -20,7 +21,8 @@ import {
 import "@xyflow/react/dist/style.css";
 import { edgeTypes } from "@/features/flow/components/nodes/custom-edge";
 import { nodeTypes } from "@/features/flow/components/nodes/node-type-map";
-import { RunControls } from "@/features/flow/components/run-controls";
+import { PromptInputModal } from "@/features/flow/components/prompt-input-modal";
+import { ResultsTab } from "@/features/flow/components/results-tab";
 import { RunLogs } from "@/features/flow/components/run-logs";
 import { Sidebar } from "@/features/flow/components/sidebar";
 import { SidebarNodePalette } from "@/features/flow/components/sidebar-node-palette";
@@ -85,6 +87,8 @@ const DnDFlow = () => {
     error,
     sessionId,
     clearEvents,
+    chatResults,
+    flowCompleted,
   } = useFlowExecution({
     nodes,
     setNodes,
@@ -97,8 +101,11 @@ const DnDFlow = () => {
     setCurrentLevelIndex,
   });
 
-  // 마지막 사용된 프롬프트 저장
+  // 마지막 사용된 프롬프트 저장 및 프롬프트 모달
   const [lastPrompt, setLastPrompt] = useState<string>("");
+  const [showPromptModal, setShowPromptModal] = useState(false);
+  // 탭 상태: graph | results
+  const [activeTab, setActiveTab] = useState<"graph" | "results">("graph");
 
   // 엣지 연결 유효성 검사 (훅으로 분리)
   const isValidConnection = useIsValidConnection(nodes);
@@ -237,7 +244,14 @@ const DnDFlow = () => {
     clearEvents,
   ]);
 
-  // 이벤트를 기존 로그 형태로 변환
+  // 플로우 완료 시 결과물 탭으로 자동 전환
+  useEffect(() => {
+    if (flowCompleted && activeTab !== "results") {
+      setActiveTab("results");
+    }
+  }, [flowCompleted, activeTab]);
+
+  // 이벤트를 로그 형태로 변환
   useEffect(() => {
     events.forEach((event) => {
       const timestamp = new Date().toLocaleTimeString();
@@ -314,56 +328,117 @@ const DnDFlow = () => {
       <Sidebar>
         <SidebarNodePalette />
       </Sidebar>
-      <div className="flex-1" ref={reactFlowWrapper}>
-        <ReactFlow<Node<NodeData>, Edge>
-          nodes={nodes}
-          edges={edges}
-          onNodesChange={onNodesChange}
-          onEdgesChange={onEdgesChange}
-          onConnect={onConnect}
-          isValidConnection={isValidConnection}
-          onDrop={onDrop}
-          onDragOver={onDragOver}
-          onReconnect={onReconnect}
-          onReconnectStart={onReconnectStart}
-          onReconnectEnd={onReconnectEnd}
-          nodeTypes={nodeTypes}
-          edgeTypes={edgeTypes}
-          fitView
-          tabIndex={0}
-          className="bg-gradient-to-br from-slate-50 to-violet-50"
-          defaultEdgeOptions={{
-            type: "custom",
-            deletable: true,
-          }}
-        >
-          <Panel position="top-right">
-            <RunControls
-              canStart={runEligibility.ok}
-              isRunning={isRunning}
-              failedCount={
-                error ||
-                events.some(
-                  (event) =>
-                    event.event === "flow_error" ||
-                    event.event === "node_error",
-                )
-                  ? 1
-                  : 0
-              }
-              tooltip={runEligibility.ok ? null : runEligibility.reason}
-              onStart={runFlow}
-              onCancel={cancelRun}
-              onRetry={retryFlow}
-            />
-          </Panel>
-          <Panel position="bottom-right">
-            <RunLogs events={events} onClear={clearEvents} />
-          </Panel>
-          <Controls />
-          <MiniMap />
-          <Background />
-        </ReactFlow>
+      <div className="flex-1 flex flex-col" ref={reactFlowWrapper}>
+        {/* 메인 헤더 + 탭 */}
+        <div className="shrink-0 border-b bg-white/60 dark:bg-slate-900/60 backdrop-blur supports-[backdrop-filter]:bg-white/40 border-slate-200 dark:border-slate-800 px-4 py-2 flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className="flex items-center gap-2">
+              <button
+                className="inline-flex items-center gap-1 px-3 h-9 rounded-md bg-slate-900 text-slate-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                onClick={() => setShowPromptModal(true)}
+                disabled={!runEligibility.ok || isRunning}
+                title={
+                  runEligibility.ok
+                    ? undefined
+                    : runEligibility.reason || undefined
+                }
+              >
+                <Play className="size-4" /> 시작
+              </button>
+              <button
+                className="inline-flex items-center gap-1 px-3 h-9 rounded-md border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 text-slate-900 dark:text-slate-100 disabled:opacity-50"
+                onClick={cancelRun}
+                disabled={!isRunning}
+              >
+                <Square className="size-4" /> 중단
+              </button>
+              <button
+                className="inline-flex items-center gap-1 px-3 h-9 rounded-md bg-slate-100 dark:bg-slate-800 text-slate-900 dark:text-slate-100 disabled:opacity-50"
+                onClick={retryFlow}
+                disabled={
+                  isRunning ||
+                  !(
+                    error ||
+                    events.some(
+                      (e) =>
+                        e.event === "flow_error" || e.event === "node_error",
+                    )
+                  )
+                }
+                title={error ? undefined : "재시도할 항목 없음"}
+              >
+                <RotateCw className="size-4" /> 재시도
+              </button>
+            </div>
+            <div className="h-6 w-px bg-slate-300 dark:bg-slate-700" />
+            <nav className="flex items-center gap-1">
+              <button
+                className={`inline-flex items-center gap-1 px-3 h-8 rounded-md border ${
+                  activeTab === "graph"
+                    ? "bg-slate-900 text-white border-slate-900"
+                    : "bg-white dark:bg-slate-950 text-slate-700 dark:text-slate-300 border-slate-300 dark:border-slate-700"
+                }`}
+                onClick={() => setActiveTab("graph")}
+              >
+                <GitBranch className="size-4" /> 그래프
+              </button>
+              <button
+                className={`inline-flex items-center gap-1 px-3 h-8 rounded-md border ${
+                  activeTab === "results"
+                    ? "bg-slate-900 text-white border-slate-900"
+                    : "bg-white dark:bg-slate-950 text-slate-700 dark:text-slate-300 border-slate-300 dark:border-slate-700"
+                }`}
+                onClick={() => setActiveTab("results")}
+              >
+                <MessageSquare className="size-4" /> 결과물
+              </button>
+            </nav>
+          </div>
+        </div>
+
+        {/* 콘텐츠 영역 */}
+        <div className="min-h-0 flex-1 relative">
+          {activeTab === "graph" ? (
+            <ReactFlow<Node<NodeData>, Edge>
+              nodes={nodes}
+              edges={edges}
+              onNodesChange={onNodesChange}
+              onEdgesChange={onEdgesChange}
+              onConnect={onConnect}
+              isValidConnection={isValidConnection}
+              onDrop={onDrop}
+              onDragOver={onDragOver}
+              onReconnect={onReconnect}
+              onReconnectStart={onReconnectStart}
+              onReconnectEnd={onReconnectEnd}
+              nodeTypes={nodeTypes}
+              edgeTypes={edgeTypes}
+              fitView
+              tabIndex={0}
+              className="bg-gradient-to-br from-slate-50 to-violet-50"
+              defaultEdgeOptions={{
+                type: "custom",
+                deletable: true,
+              }}
+            >
+              <Panel position="bottom-right">
+                <RunLogs events={events} onClear={clearEvents} />
+              </Panel>
+              <Controls />
+              <MiniMap />
+              <Background />
+            </ReactFlow>
+          ) : (
+            <ResultsTab chatResults={chatResults} sessionId={sessionId} />
+          )}
+        </div>
+        {/* 프롬프트 입력 모달 */}
+        <PromptInputModal
+          open={showPromptModal}
+          onOpenChange={setShowPromptModal}
+          onSubmit={runFlow}
+          isSubmitting={isRunning}
+        />
       </div>
     </div>
   );
