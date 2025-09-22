@@ -1,30 +1,30 @@
 /**
- * 플로우 빌더에서 재사용하는 타입 모음.
+ * Flow feature 전용 타입 모음.
  */
 import type { CSSProperties, ComponentType } from "react";
 import type { Position } from "@xyflow/react";
+import type { BaseNodeData, NodeId } from "@/types/flow";
 
 export type FlowNodeType =
   | "inputNode"
   | "outputNode"
-  | "custom"
+  | "chatNode"
+  | "searchNode"
+  | "messageNode"
   | "singleInputMultiOutput"
-  | "multiInputSingleOutput"
-  | "multiInputMultiOutput";
+  | "multiInputSingleOutput";
 
-export interface NodeData {
-  label: string;
-  emoji: string;
-  job: string;
-  nodeType?: FlowNodeType;
-  runStatus?: "idle" | "running" | "success" | "failed"; // 노드 실행 상태
-  level?: number; // 실행 위치
-  [key: string]: string | number | undefined;
+export interface NodeData extends BaseNodeData {
+  nodeType?: FlowNodeType; // 오버라이딩
+  runStatus?: "idle" | "running" | "success" | "failed";
+  level?: number;
+  showInResults?: boolean; // 결과창에 표시할지 여부
+  [key: string]: string | number | boolean | undefined;
 }
 
 export interface NodeProps {
   data: NodeData;
-  id: string;
+  id: NodeId;
 }
 
 export interface NodeConfig {
@@ -51,24 +51,7 @@ export interface NodeTypeConfig {
   emoji: string;
   job: string;
   label: string;
-}
-
-export interface ConnectionLimitEntry {
-  id: string;
-  max: number;
-}
-
-export interface ConnectionLimits {
-  inputs?: ConnectionLimitEntry[];
-  outputs?: ConnectionLimitEntry[];
-}
-
-export interface HandleDefinition {
-  type: "source" | "target";
-  position: Position;
-  id: string;
-  size?: "large" | "small";
-  style?: CSSProperties;
+  showInResults?: boolean;
 }
 
 export interface SidebarItemConfig {
@@ -78,7 +61,28 @@ export interface SidebarItemConfig {
   iconBg: string;
 }
 
-export type ConnectionStateMap = Record<
-  string,
-  { current: number; max: number; isConnectable: boolean }
->;
+export interface ConnectionLimitEntry {
+  id: NodeId;
+  max: number;
+}
+
+export interface ConnectionLimits {
+  inputs?: ConnectionLimitEntry[];
+  outputs?: ConnectionLimitEntry[];
+}
+
+interface ConnectionState {
+  current: number;
+  max: number;
+  isConnectable: boolean;
+}
+
+export type ConnectionStateMap = Record<NodeId, ConnectionState>;
+
+export interface HandleDefinition {
+  type: "source" | "target";
+  position: Position;
+  id: NodeId;
+  size?: "large" | "small";
+  style?: CSSProperties;
+}

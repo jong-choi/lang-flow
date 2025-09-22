@@ -11,12 +11,15 @@ export const getId = () => `dndnode_${sequence++}`;
 export const createNodeData = (type: FlowNodeType): NodeData => {
   const config = nodeTypeConfigs[type];
 
-  return {
+  const baseData: NodeData = {
     label: config.label,
     emoji: config.emoji,
     job: config.job,
     nodeType: type,
     runStatus: "idle",
     level: undefined,
+    showInResults: config.showInResults,
   };
+
+  return baseData;
 };

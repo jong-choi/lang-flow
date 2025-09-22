@@ -1,7 +1,12 @@
 "use client";
 
-import { FlowBuilder } from "@/features/flow/components/flow-canvas";
+import { FlowSection } from "@/features/flow/components/flow-section";
+import { FlowGeneratorStoreProvider } from "@/features/flow/providers/flow-store-provider";
 
 export default function FlowGeneratePage() {
-  return <FlowBuilder />;
+  return (
+    <FlowGeneratorStoreProvider>
+      <FlowSection />
+    </FlowGeneratorStoreProvider>
+  );
 }

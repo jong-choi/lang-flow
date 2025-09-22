@@ -1,17 +1,15 @@
 "use client";
 
-import { useCallback, useRef } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { useShallow } from "zustand/react/shallow";
 import {
   Background,
   type Connection,
   Controls,
   type Edge,
-  type IsValidConnection,
   MiniMap,
   type Node,
-  Panel,
   ReactFlow,
-  ReactFlowProvider,
   addEdge,
   reconnectEdge,
   useEdgesState,
@@ -21,26 +19,14 @@ import {
 import "@xyflow/react/dist/style.css";
 import { edgeTypes } from "@/features/flow/components/nodes/custom-edge";
 import { nodeTypes } from "@/features/flow/components/nodes/node-type-map";
-import { RunControls } from "@/features/flow/components/run-controls";
-import { RunLogs } from "@/features/flow/components/run-logs";
-import { Sidebar } from "@/features/flow/components/sidebar";
-import { SidebarNodePalette } from "@/features/flow/components/sidebar-node-palette";
-import { DnDProvider, useDnD } from "@/features/flow/context/dnd-context";
-import { NodeActionsProvider } from "@/features/flow/context/node-actions-context";
-import {
-  RunProvider,
-  useRunContext,
-} from "@/features/flow/context/run-context";
-import {
-  RunMetaProvider,
-  useRunMetaContext,
-} from "@/features/flow/context/run-meta-context";
+import { ResultsTab } from "@/features/flow/components/results-tab";
 import { useDelayApi } from "@/features/flow/hooks/use-delay-api";
+import { useFlowExecution } from "@/features/flow/hooks/use-flow-execution";
+import { useIsValidConnection } from "@/features/flow/hooks/use-is-valid-connection";
 import { useRunEligibility } from "@/features/flow/hooks/use-run-eligibility";
-import { useRunPipeline } from "@/features/flow/hooks/use-run-pipeline";
+import { useFlowGeneratorStore } from "@/features/flow/providers/flow-store-provider";
 import type { NodeData } from "@/features/flow/types/nodes";
 import { createNodeData, getId } from "@/features/flow/utils/node-factory";
-import { buildSnapshot } from "@/features/flow/utils/snapshot";
 
 const initialNodes: Node<NodeData>[] = [
   {
@@ -51,82 +37,70 @@ const initialNodes: Node<NodeData>[] = [
   },
 ];
 
-const DnDFlow = () => {
+type FlowCanvasProps = {
+  activeTab: "graph" | "results";
+  onRunComplete?: () => void;
+};
+
+export const FlowCanvas = ({ activeTab, onRunComplete }: FlowCanvasProps) => {
   const reactFlowWrapper = useRef<HTMLDivElement>(null);
   const edgeReconnectSuccessful = useRef(true);
   const [nodes, setNodes, onNodesChange] =
     useNodesState<Node<NodeData>>(initialNodes);
   const [edges, setEdges, onEdgesChange] = useEdgesState<Edge>([]);
   const { screenToFlowPosition } = useReactFlow();
-  const [type] = useDnD();
-  const {
-    isRunning,
-    setRunning: setIsRunning,
-    logs,
-    addLog,
-    clearLogs,
-  } = useRunContext();
-  const { callServer, cancelAll: delayCancelAll } = useDelayApi();
-  const {
-    setLevels,
-    setCurrentLevelIndex,
-    setFailedNodeIds,
-    failedCount,
-    setFailedCount,
-  } = useRunMetaContext();
+  const type = useFlowGeneratorStore.use.draggingType();
+  const setDraggingType = useFlowGeneratorStore.use.setDraggingType();
+  const isRunning = useFlowGeneratorStore.use.isRunning();
+  const setIsRunning = useFlowGeneratorStore.use.setRunning();
+  const { cancelAll: delayCancelAll } = useDelayApi();
+  const setLevels = useFlowGeneratorStore.use.setLevels();
+  const setCurrentLevelIndex = useFlowGeneratorStore.use.setCurrentLevelIndex();
+  const setFailedNodeIds = useFlowGeneratorStore.use.setFailedNodeIds();
+  const setFailedCount = useFlowGeneratorStore.use.setFailedCount();
+  const failedNodeIds = useFlowGeneratorStore.use.failedNodeIds(
+    useShallow((ids) => ids),
+  );
+  const setRunGate = useFlowGeneratorStore.use.setRunGate();
+  // 이벤트 기반 요청 상태/액션
+  const runRequest = useFlowGeneratorStore.use.runRequest();
+  const cancelRequestId = useFlowGeneratorStore.use.cancelRequestId();
+  const retryRequestId = useFlowGeneratorStore.use.retryRequestId();
+  const nodeRetryRequest = useFlowGeneratorStore.use.nodeRetryRequest();
+  const consumeRunRequest = useFlowGeneratorStore.use.consumeRunRequest();
+  const consumeCancelRequest = useFlowGeneratorStore.use.consumeCancelRequest();
+  const consumeRetryRequest = useFlowGeneratorStore.use.consumeRetryRequest();
+  const consumeNodeRetryRequest =
+    useFlowGeneratorStore.use.consumeNodeRetryRequest();
 
   const {
-    runFlow: pipelineRunFlow,
-    cancelAll: pipelineCancelAll,
-    retryNode,
-    retryLevel: pipelineRetryLevel,
-  } = useRunPipeline({
-    nodes: nodes,
+    runFlow: runFlowExec,
+    cancelAll: sseCancelAll,
+    error,
+    sessionId,
+    results,
+  } = useFlowExecution({
     setNodes,
-    setEdges: setEdges,
-    addLog,
+    setEdges,
     setIsRunning,
     setLevels,
     setFailedNodeIds,
     setFailedCount,
     setCurrentLevelIndex,
-    callServer,
+    onComplete: () => onRunComplete?.(),
   });
 
+  // 마지막 사용된 프롬프트 저장 및 프롬프트 모달
+  const [lastPrompt, setLastPrompt] = useState<string>("");
+
   // 엣지 연결 유효성 검사
-  const isValidConnection = useCallback<IsValidConnection<Edge>>(
-    (item) => {
-      const source = item.source;
-      const target = item.target;
-
-      if (!source || !target) return false;
-
-      const sourceHandle = item.sourceHandle ?? null;
-      const targetHandle = item.targetHandle ?? null;
-
-      if (source === target && sourceHandle === targetHandle && sourceHandle)
-        return false;
-
-      const sourceNode = nodes.find((node) => node.id === source);
-      const targetNode = nodes.find((node) => node.id === target);
-
-      if (!sourceNode || !targetNode) return false;
-
-      if (sourceNode.type === "inputNode" && targetNode.type === "inputNode")
-        return false;
-
-      if (sourceNode.type === "outputNode") return false;
-
-      return true;
-    },
-    [nodes],
-  );
+  const isValidConnection = useIsValidConnection(nodes);
 
   // 엣지 추가
   const onConnect = useCallback(
-    (params: Connection) => {
-      if (isValidConnection(params)) {
-        setEdges((eds) => addEdge(params, eds));
+    (connectionParams: Connection) => {
+      if (isValidConnection(connectionParams)) {
+        setEdges((existingEdges) => addEdge(connectionParams, existingEdges));
       }
     },
     [setEdges, isValidConnection],
@@ -136,17 +110,22 @@ const DnDFlow = () => {
     edgeReconnectSuccessful.current = false;
   }, []);
 
-  // 기존 엣지를 새로운 연결로 갱신.
+  // 기존 엣지를 새로운 연결로 갱신
   const onReconnect = useCallback(
     (oldEdge: Edge, newConnection: Connection) => {
+      // 재연결 시에도 동일한 유효성 검사를 적용해 우회 방지
+      if (!isValidConnection(newConnection)) {
+        edgeReconnectSuccessful.current = false;
+        return;
+      }
       edgeReconnectSuccessful.current = true;
       setEdges((edges) => reconnectEdge(oldEdge, newConnection, edges));
     },
-    [setEdges],
+    [setEdges, isValidConnection],
   );
 
   const onReconnectEnd = useCallback(
-    (_: MouseEvent | TouchEvent, edge: Edge) => {
+    (reconnectEvent: MouseEvent | TouchEvent, edge: Edge) => {
       if (!edgeReconnectSuccessful.current) {
         setEdges((edges) =>
           edges.filter((candidate) => candidate.id !== edge.id),
@@ -164,16 +143,16 @@ const DnDFlow = () => {
 
   // 팔레트에서 노드 드롭
   const onDrop = useCallback(
-    (event: React.DragEvent) => {
-      event.preventDefault();
+    (dropEvent: React.DragEvent) => {
+      dropEvent.preventDefault();
 
       if (!type) {
         return;
       }
 
       const position = screenToFlowPosition({
-        x: event.clientX,
-        y: event.clientY,
+        x: dropEvent.clientX,
+        y: dropEvent.clientY,
       });
 
       const newNode: Node<NodeData> = {
@@ -183,62 +162,21 @@ const DnDFlow = () => {
         data: createNodeData(type),
       };
 
-      setNodes((nodes) => nodes.concat(newNode));
+      setNodes((existingNodes) => existingNodes.concat(newNode));
+      // 드랍 후 초기화
+      setDraggingType(undefined);
     },
-    [screenToFlowPosition, type, setNodes],
+    [screenToFlowPosition, type, setNodes, setDraggingType],
   );
 
-  // Delete/Backspace로 노드/엣지 삭제
-  const onKeyDown = useCallback(
-    (event: React.KeyboardEvent) => {
-      if (event.key === "Delete" || event.key === "Backspace") {
-        const selectedNodes = nodes.filter((node) => node.selected);
-        const selectedEdges = edges.filter((edge) => edge.selected);
-
-        if (selectedNodes.length > 0) {
-          setNodes((nodes) => nodes.filter((node) => !node.selected));
-        }
-
-        if (selectedEdges.length > 0) {
-          setEdges((eds) => eds.filter((edge) => !edge.selected));
-        }
-      }
-    },
-    [nodes, edges, setEdges, setNodes],
-  );
-
-  // 실행 가능 조건 검사 - 공용 훅 사용으로 중복 제거
+  // 실행 가능 조건 검사
   const runEligibility = useRunEligibility(nodes, edges);
-
-  // 현재 플로우 스냅샷을 서버로 전달
-  const sendSnapshot = useCallback(async () => {
-    try {
-      const payload = buildSnapshot(nodes, edges);
-      const res = await fetch("/api/send", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
-      });
-      if (!res.ok) {
-        addLog(`[send] 스냅샷 전송 실패: ${res.status}`);
-        return false;
-      }
-      addLog("[send] 스냅샷 전송 성공");
-      return true;
-    } catch {
-      addLog("[send] 스냅샷 전송 중 오류");
-      return false;
-    }
-  }, [nodes, edges, addLog]);
-
-  // 노드 실행은 훅 내부에서 처리 (callServer)
 
   // 실행 중단
   const cancelRun = useCallback(() => {
     if (!isRunning) return;
-    addLog("[run] 실행 중단 요청");
     delayCancelAll();
-    pipelineCancelAll();
+    sseCancelAll();
     // 실행 중이던 노드를 실패로 표시
     setNodes((nodes) =>
       nodes.map((node) =>
@@ -247,88 +185,121 @@ const DnDFlow = () => {
           : node,
       ),
     );
-  }, [isRunning, addLog, delayCancelAll, pipelineCancelAll, setNodes]);
+  }, [isRunning, delayCancelAll, sseCancelAll, setNodes]);
 
   // 전체 실행 시작
-  const runFlow = useCallback(async () => {
-    if (!runEligibility.ok || isRunning) return;
-    addLog("[run] 실행 시작");
-    await sendSnapshot();
-    await pipelineRunFlow(nodes, edges);
+  const runFlow = useCallback(
+    async (prompt: string) => {
+      if (!runEligibility.ok || isRunning) return;
+
+      try {
+        setIsRunning(true);
+        setLastPrompt(prompt); // (1) 프롬프트 저장
+        await runFlowExec(prompt, nodes, edges);
+      } catch (error) {
+        console.error("플로우 실행 오류:", error);
+      } finally {
+        setIsRunning(false);
+      }
+    },
+    [runEligibility.ok, isRunning, runFlowExec, nodes, edges, setIsRunning],
+  );
+
+  // 플로우 재시작 (2) 저장된 프롬프트 재사용
+  const retryFlow = useCallback(async () => {
+    if (!lastPrompt || !runEligibility.ok || isRunning) return;
+
+    try {
+      setIsRunning(true);
+      await runFlowExec(lastPrompt, nodes, edges);
+    } catch (error) {
+      console.error("플로우 재시도 오류:", error);
+    } finally {
+      setIsRunning(false);
+    }
   }, [
+    lastPrompt,
     runEligibility.ok,
     isRunning,
-    addLog,
-    sendSnapshot,
-    pipelineRunFlow,
+    runFlowExec,
     nodes,
     edges,
+    setIsRunning,
+  ]);
+
+  useEffect(() => {
+    if (!nodeRetryRequest) return;
+    retryFlow();
+    consumeNodeRetryRequest();
+  }, [consumeNodeRetryRequest, nodeRetryRequest, retryFlow]);
+
+  useEffect(() => {
+    if (!retryRequestId) return;
+    retryFlow();
+    consumeRetryRequest();
+  }, [consumeRetryRequest, retryFlow, retryRequestId]);
+
+  useEffect(() => {
+    if (!runRequest) return;
+    runFlow(runRequest.prompt);
+    consumeRunRequest();
+  }, [consumeRunRequest, runFlow, runRequest]);
+
+  useEffect(() => {
+    if (!cancelRequestId) return;
+    cancelRun();
+    consumeCancelRequest();
+  }, [cancelRequestId, cancelRun, consumeCancelRequest]);
+
+  useEffect(() => {
+    setRunGate({
+      canRun: runEligibility.ok && !isRunning,
+      runDisabledReason: runEligibility.ok
+        ? null
+        : (runEligibility.reason ?? null),
+      canRetry: !!error || failedNodeIds.size > 0,
+    });
+  }, [
+    isRunning,
+    runEligibility.ok,
+    runEligibility.reason,
+    error,
+    failedNodeIds,
+    setRunGate,
   ]);
 
   return (
-    <div className="flex h-screen">
-      <Sidebar>
-        <SidebarNodePalette />
-      </Sidebar>
-      <div className="flex-1" ref={reactFlowWrapper}>
-        <NodeActionsProvider retryNode={retryNode}>
-          <ReactFlow<Node<NodeData>, Edge>
-            nodes={nodes}
-            edges={edges}
-            onNodesChange={onNodesChange}
-            onEdgesChange={onEdgesChange}
-            onConnect={onConnect}
-            isValidConnection={isValidConnection}
-            onDrop={onDrop}
-            onDragOver={onDragOver}
-            onReconnect={onReconnect}
-            onReconnectStart={onReconnectStart}
-            onReconnectEnd={onReconnectEnd}
-            nodeTypes={nodeTypes}
-            edgeTypes={edgeTypes}
-            fitView
-            onKeyDown={onKeyDown}
-            tabIndex={0}
-            className="bg-gradient-to-br from-slate-50 to-violet-50"
-            defaultEdgeOptions={{
-              type: "custom",
-              deletable: true,
-            }}
-          >
-            <Panel position="top-right">
-              <RunControls
-                canStart={runEligibility.ok}
-                isRunning={isRunning}
-                failedCount={failedCount}
-                tooltip={runEligibility.ok ? null : runEligibility.reason}
-                onStart={runFlow}
-                onCancel={cancelRun}
-                onRetry={pipelineRetryLevel}
-              />
-            </Panel>
-            <Panel position="bottom-right">
-              <RunLogs logs={logs} onClear={clearLogs} />
-            </Panel>
-            <Controls />
-            <MiniMap />
-            <Background />
-          </ReactFlow>
-        </NodeActionsProvider>
-      </div>
+    <div className="min-h-0 flex-1 relative" ref={reactFlowWrapper}>
+      {activeTab === "graph" ? (
+        <ReactFlow<Node<NodeData>, Edge>
+          nodes={nodes}
+          edges={edges}
+          onNodesChange={onNodesChange}
+          onEdgesChange={onEdgesChange}
+          onConnect={onConnect}
+          isValidConnection={isValidConnection}
+          onDrop={onDrop}
+          onDragOver={onDragOver}
+          onReconnect={onReconnect}
+          onReconnectStart={onReconnectStart}
+          onReconnectEnd={onReconnectEnd}
+          nodeTypes={nodeTypes}
+          edgeTypes={edgeTypes}
+          fitView
+          tabIndex={0}
+          className="bg-gradient-to-br from-slate-50 to-violet-50"
+          defaultEdgeOptions={{
+            type: "custom",
+            deletable: true,
+          }}
+        >
+          <Controls />
+          <MiniMap />
+          <Background />
+        </ReactFlow>
+      ) : (
+        <ResultsTab results={results} sessionId={sessionId} />
+      )}
     </div>
   );
 };
-
-export const FlowBuilder = () => (
-  <div className="h-screen">
-    <ReactFlowProvider>
-      <RunProvider>
-        <RunMetaProvider>
-          <DnDProvider>
-            <DnDFlow />
-          </DnDProvider>
-        </RunMetaProvider>
-      </RunProvider>
-    </ReactFlowProvider>
-  </div>
-);

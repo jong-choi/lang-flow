@@ -5,12 +5,27 @@
  */
 import { useCallback, useState } from "react";
 import { type Edge, type Node, useReactFlow } from "@xyflow/react";
+import { type EditNodeFormValues } from "@/features/flow/components/nodes/ui/edit-dialog";
+import type { MessageNodeFormValues } from "@/features/flow/components/nodes/ui/message-edit-dialog";
 import type { NodeData } from "@/features/flow/types/nodes";
 import { createNodeData, getId } from "@/features/flow/utils/node-factory";
 
 export const useNodeMenu = (id: string) => {
   const { setNodes, setEdges, getNodes } = useReactFlow();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  const [editingNodeData, setEditingNodeData] = useState<NodeData | null>(null);
+  const [isMessageEditDialogOpen, setIsMessageEditDialogOpen] = useState(false);
+
+  const closeEditDialog = useCallback(() => {
+    setIsEditDialogOpen(false);
+    setEditingNodeData(null);
+  }, []);
+
+  const closeMessageEditDialog = useCallback(() => {
+    setIsMessageEditDialogOpen(false);
+    setEditingNodeData(null);
+  }, []);
 
   const handleDelete = useCallback(() => {
     setNodes((nodes) => nodes.filter((node) => node.id !== id));
@@ -22,19 +37,100 @@ export const useNodeMenu = (id: string) => {
 
   const handleEdit = useCallback(
     (currentData: NodeData) => {
-      const newLabel = prompt("새 라벨을 입력하세요:", currentData.label);
-      if (newLabel) {
-        setNodes((nodes) =>
-          nodes.map((node) =>
-            node.id === id
-              ? { ...node, data: { ...node.data, label: newLabel } }
-              : node,
-          ),
-        );
+      setEditingNodeData(currentData);
+
+      // messageNode의 경우 MessageEditDialog 사용
+      if (currentData.nodeType === "messageNode") {
+        setIsMessageEditDialogOpen(true);
+      } else {
+        setIsEditDialogOpen(true);
       }
+
       setIsMenuOpen(false);
     },
-    [id, setNodes],
+    [
+      setEditingNodeData,
+      setIsEditDialogOpen,
+      setIsMessageEditDialogOpen,
+      setIsMenuOpen,
+    ],
+  );
+
+  const handleEditSubmit = useCallback(
+    (values: EditNodeFormValues) => {
+      setNodes((nodes) =>
+        nodes.map((node) => {
+          if (node.id !== id) {
+            return node;
+          }
+
+          const updatedData: Partial<NodeData> = {
+            ...node.data,
+            label: values.label,
+          };
+
+          // custom 제거됨: 편집 항목은 공용(label)만 처리
+
+          return {
+            ...node,
+            data: updatedData,
+          };
+        }),
+      );
+
+      closeEditDialog();
+    },
+    [closeEditDialog, id, setNodes],
+  );
+
+  const handleMessageEditSubmit = useCallback(
+    (values: MessageNodeFormValues) => {
+      setNodes((nodes) =>
+        nodes.map((node) => {
+          if (node.id !== id) {
+            return node;
+          }
+
+          const updatedData: Partial<NodeData> = {
+            ...node.data,
+            label: values.label,
+            template: values.template,
+          };
+
+          return {
+            ...node,
+            data: updatedData,
+          };
+        }),
+      );
+
+      closeMessageEditDialog();
+    },
+    [closeMessageEditDialog, id, setNodes],
+  );
+
+  const handleEditDialogOpenChange = useCallback(
+    (open: boolean) => {
+      if (open) {
+        setIsEditDialogOpen(true);
+        return;
+      }
+
+      closeEditDialog();
+    },
+    [closeEditDialog],
+  );
+
+  const handleMessageEditDialogOpenChange = useCallback(
+    (open: boolean) => {
+      if (open) {
+        setIsMessageEditDialogOpen(true);
+        return;
+      }
+
+      closeMessageEditDialog();
+    },
+    [closeMessageEditDialog],
   );
 
   const handleDuplicate = useCallback(
@@ -45,7 +141,7 @@ export const useNodeMenu = (id: string) => {
       if (currentNode) {
         const newNode: Node<NodeData> = {
           id: getId(),
-          type: currentData.nodeType ?? "custom",
+          type: currentData.nodeType ?? "messageNode",
           position: {
             x: currentNode.position.x + 50,
             y: currentNode.position.y + 50,
@@ -71,12 +167,12 @@ export const useNodeMenu = (id: string) => {
       const newNodeId = getId();
       const newNode: Node<NodeData> = {
         id: newNodeId,
-        type: "custom",
+        type: "messageNode",
         position: {
           x: currentNode.position.x + 200,
           y: currentNode.position.y,
         },
-        data: createNodeData("custom"),
+        data: createNodeData("messageNode"),
       };
 
       const newEdge: Edge = {
@@ -98,5 +194,17 @@ export const useNodeMenu = (id: string) => {
     handleEdit,
     handleDuplicate,
     handleAddConnection,
+    editDialog: {
+      open: isEditDialogOpen,
+      nodeData: editingNodeData,
+      onSubmit: handleEditSubmit,
+      onOpenChange: handleEditDialogOpenChange,
+    },
+    messageEditDialog: {
+      open: isMessageEditDialogOpen,
+      nodeData: editingNodeData,
+      onSubmit: handleMessageEditSubmit,
+      onOpenChange: handleMessageEditDialogOpenChange,
+    },
   };
 };
