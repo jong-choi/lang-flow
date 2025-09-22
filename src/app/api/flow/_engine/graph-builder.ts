@@ -19,7 +19,7 @@ import type {
   LangGraphNodeType,
   ReactFlowEdge,
   ReactFlowNode,
-} from "@/types/flow";
+} from "@/features/flow/types/nodes";
 
 // LangGraph 상태 어노테이션 정의
 export const FlowStateAnnotation = Annotation.Root({

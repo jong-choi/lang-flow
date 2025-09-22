@@ -1,5 +1,4 @@
-import type { Edge, Node } from "@xyflow/react";
-import type { NodeData } from "@/features/flow/types/nodes";
+import type { SchemaEdge, SchemaNode } from "@/features/flow/types/nodes";
 
 export type Adjacency = {
   outMap: Record<string, string[]>;
@@ -8,8 +7,8 @@ export type Adjacency = {
 };
 
 export const buildAdjacency = (
-  nodes: Node<NodeData>[],
-  edges: Edge[],
+  nodes: SchemaNode[],
+  edges: SchemaEdge[],
 ): Adjacency => {
   const nodeIdSet = new Set(nodes.map((n) => n.id));
   const outgoing: Record<string, string[]> = {};
@@ -55,8 +54,8 @@ export const hasCycle = (adj: Adjacency): boolean => {
 };
 
 export const computeLevels = (
-  nodes: Node<NodeData>[],
-  edges: Edge[],
+  nodes: SchemaNode[],
+  edges: SchemaEdge[],
 ): string[][] => {
   const { outMap, indegree } = buildAdjacency(nodes, edges);
   const indegreeCopy: Record<string, number> = { ...indegree };

@@ -6,7 +6,7 @@ import {
   flowEventHandler,
 } from "@/app/api/flow/_controllers/utils/flow-event";
 import { buildGraphFromFlow } from "@/app/api/flow/_engine/graph-builder";
-import type { FlowExecutionRequest } from "@/types/flow";
+import type { FlowExecutionRequest } from "@/features/flow/types/nodes";
 
 export async function handleFlowStream(request: NextRequest) {
   try {

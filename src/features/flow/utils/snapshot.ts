@@ -1,7 +1,6 @@
-import type { Edge, Node } from "@xyflow/react";
-import type { NodeData } from "@/features/flow/types/nodes";
+import type { SchemaEdge, SchemaNode } from "@/features/flow/types/nodes";
 
-export function buildSnapshot(nodes: Node<NodeData>[], edges: Edge[]) {
+export function buildSnapshot(nodes: SchemaNode[], edges: SchemaEdge[]) {
   const nodePayload = nodes.map((node) => ({
     id: node.id,
     type: node.type,

@@ -1,6 +1,5 @@
 import { describe, expect, it } from "vitest";
-import type { Node } from "@xyflow/react";
-import type { NodeData } from "@/features/flow/types/nodes";
+import type { SchemaNode } from "@/features/flow/types/nodes";
 import { createNodeData } from "@/features/flow/utils/node-factory";
 import {
   RUN_STATUS,
@@ -11,7 +10,7 @@ import {
   markSuccess,
 } from "@/features/flow/utils/run-status";
 
-const makeNode = (id: string): Node<NodeData> => ({
+const makeNode = (id: string): SchemaNode => ({
   id,
   type: "messageNode",
   position: { x: 0, y: 0 },

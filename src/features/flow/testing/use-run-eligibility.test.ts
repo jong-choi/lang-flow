@@ -1,18 +1,21 @@
 import { describe, expect, it } from "vitest";
 import { renderHook } from "@testing-library/react";
-import type { Edge, Node } from "@xyflow/react";
 import { useRunEligibility } from "@/features/flow/hooks/use-run-eligibility";
-import type { FlowNodeType, NodeData } from "@/features/flow/types/nodes";
+import type {
+  FlowNodeType,
+  SchemaEdge,
+  SchemaNode,
+} from "@/features/flow/types/nodes";
 import { createNodeData } from "@/features/flow/utils/node-factory";
 
-const makeNode = (id: string, type: FlowNodeType): Node<NodeData> => ({
+const makeNode = (id: string, type: FlowNodeType): SchemaNode => ({
   id,
   type,
   position: { x: 0, y: 0 },
   data: createNodeData(type),
 });
 
-const makeEdge = (id: string, source: string, target: string): Edge => ({
+const makeEdge = (id: string, source: string, target: string): SchemaEdge => ({
   id,
   source,
   target,
