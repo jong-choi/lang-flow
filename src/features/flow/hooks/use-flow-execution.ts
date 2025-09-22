@@ -46,9 +46,8 @@ export function useFlowExecution({
   const [sessionId, setSessionId] = React.useState<string | null>(null);
 
   // 결과물 및 완료 상태
-  const [chatResults, setChatResults] = React.useState<Record<string, string>>(
-    {},
-  );
+  type ResultEntry = { nodeId: string; nodeType: string; text: string };
+  const [results, setResults] = React.useState<ResultEntry[]>([]);
   const [flowCompleted, setFlowCompleted] = React.useState(false);
 
   const levelsRef = React.useRef<string[][]>([]);
@@ -137,10 +136,29 @@ export function useFlowExecution({
           if (nodeId) {
             const streamingData = event.data;
             if (streamingData && streamingData.content) {
-              setChatResults((prev) => ({
-                ...prev,
-                [nodeId]: `${prev[nodeId] ?? ""}${streamingData.content}`,
-              }));
+              const nodeType = event.nodeType ?? "unknown";
+              setResults((previousResults) => {
+                const existingNodeIndex = previousResults.findIndex(
+                  (result) => result.nodeId === nodeId,
+                );
+
+                if (existingNodeIndex === -1) {
+                  return [
+                    ...previousResults,
+                    { nodeId, nodeType, text: streamingData.content },
+                  ];
+                }
+
+                const updatedResults = [...previousResults];
+                const existingResult = updatedResults[existingNodeIndex];
+
+                updatedResults[existingNodeIndex] = {
+                  ...existingResult,
+                  nodeType: existingResult.nodeType || nodeType,
+                  text: existingResult.text + streamingData.content,
+                };
+                return updatedResults;
+              });
             }
           }
           return;
@@ -191,7 +209,7 @@ export function useFlowExecution({
         setNodes((nodes) => markAllNodesStatus(nodes, RUN_STATUS.IDLE));
         setError(null);
         setSessionId(null);
-        setChatResults({});
+        setResults([]);
         setFlowCompleted(false);
 
         lastRequestRef.current = {
@@ -333,7 +351,7 @@ export function useFlowExecution({
     retryLevel,
     error,
     sessionId,
-    chatResults,
+    results,
     flowCompleted,
   } as const;
 }

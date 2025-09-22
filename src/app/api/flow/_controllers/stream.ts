@@ -17,7 +17,7 @@ export async function handleFlowStream(request: NextRequest) {
     const sessionId = randomUUID();
 
     // React Flow를 LangGraph로 변환
-    const compiledGraph = buildGraphFromFlow(nodes, edges);
+    const { graph: compiledGraph, typeMap } = buildGraphFromFlow(nodes, edges);
 
     // 스트리밍 응답 설정
     const stream = new ReadableStream({
@@ -32,6 +32,7 @@ export async function handleFlowStream(request: NextRequest) {
                 nodeId: "flow",
                 event: "flow_start",
                 message: "플로우 실행 시작",
+                nodeType: "flow",
                 data: { sessionId },
               })}\n\n`,
             ),
@@ -45,7 +46,7 @@ export async function handleFlowStream(request: NextRequest) {
               configurable: { thread_id: sessionId },
             },
           )) {
-            flowEventHandler({ controller, chunk });
+            flowEventHandler({ controller, chunk, typeMap });
           }
 
           // 플로우 완료 이벤트 전송

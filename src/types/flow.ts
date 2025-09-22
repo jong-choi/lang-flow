@@ -66,6 +66,7 @@ export interface FlowEvent<T extends FlowEventType = FlowEventType> {
   message?: string;
   data?: EventData[T];
   error?: string;
+  nodeType?: string;
 }
 
 export type FlowEventUnion =
@@ -83,6 +84,7 @@ export type FlowEventBase =
       event: "flow_start";
       message?: string;
       error?: string;
+      nodeType?: string;
     } & {
       data: EventData["flow_start"];
     })
@@ -91,6 +93,7 @@ export type FlowEventBase =
       event: "flow_complete";
       message?: string;
       error?: string;
+      nodeType?: string;
     } & {
       data: EventData["flow_complete"];
     })
@@ -99,13 +102,38 @@ export type FlowEventBase =
       event: "node_streaming";
       message?: string;
       error?: string;
+      nodeType?: string;
     } & {
       data: EventData["node_streaming"];
     })
-  | { nodeId: string; event: "flow_error"; message?: string; error?: string }
-  | { nodeId: string; event: "node_start"; message?: string; error?: string }
-  | { nodeId: string; event: "node_complete"; message?: string; error?: string }
-  | { nodeId: string; event: "node_error"; message?: string; error?: string };
+  | {
+      nodeId: string;
+      event: "flow_error";
+      message?: string;
+      error?: string;
+      nodeType?: string;
+    }
+  | {
+      nodeId: string;
+      event: "node_start";
+      message?: string;
+      error?: string;
+      nodeType?: string;
+    }
+  | {
+      nodeId: string;
+      event: "node_complete";
+      message?: string;
+      error?: string;
+      nodeType?: string;
+    }
+  | {
+      nodeId: string;
+      event: "node_error";
+      message?: string;
+      error?: string;
+      nodeType?: string;
+    };
 
 export interface NodeOutput {
   type?: string;

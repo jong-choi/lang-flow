@@ -7,6 +7,7 @@ type EmitEventParams = {
   message?: string;
   data?: unknown;
   error?: string;
+  nodeType?: string;
 };
 
 const encoder = new TextEncoder();
@@ -19,19 +20,24 @@ const emitEvent = (params: EmitEventParams) => {
 export const flowEventHandler = ({
   controller,
   chunk,
+  typeMap,
 }: {
   controller: ReadableStreamDefaultController;
   chunk: StreamEvent;
+  typeMap: Record<string, string>;
 }) => {
   if (chunk.tags?.includes("langsmith:hidden")) return; // 랭스미스 디버깅 상태 제거
   const event = chunk.event;
   const nodeId = chunk.metadata.langgraph_node;
+
+  const nodeTypeFromMap = nodeId ? typeMap[nodeId] : "unknown";
 
   if (event === "on_chain_start") {
     emitEvent({
       controller,
       nodeId: nodeId || "unknown",
       event: "node_start",
+      nodeType: nodeTypeFromMap,
       message: `${nodeId} 시작`,
     });
   } else if (event === "on_chain_end") {
@@ -44,6 +50,7 @@ export const flowEventHandler = ({
           controller,
           nodeId: nodeId || "unknown",
           event: "node_streaming",
+          nodeType: nodeTypeFromMap,
           data: { content: displayContent },
         });
       }
@@ -53,6 +60,7 @@ export const flowEventHandler = ({
       controller,
       nodeId: nodeId || "unknown",
       event: "node_complete",
+      nodeType: nodeTypeFromMap,
       message: `${nodeId} 완료`,
       data: chunk.data.output,
     });
@@ -61,6 +69,7 @@ export const flowEventHandler = ({
       controller,
       nodeId: nodeId || "chatNode",
       event: "node_start",
+      nodeType: nodeTypeFromMap,
       message: "채팅 모델 시작",
     });
   } else if (event === "on_chat_model_stream") {
@@ -68,6 +77,7 @@ export const flowEventHandler = ({
       controller,
       nodeId: nodeId || "chatNode",
       event: "node_streaming",
+      nodeType: nodeTypeFromMap,
       data: { content: chunk.data.chunk.content },
     });
   } else if (event === "on_chat_model_end") {
@@ -75,6 +85,7 @@ export const flowEventHandler = ({
       controller,
       nodeId: nodeId || "chatNode",
       event: "node_complete",
+      nodeType: nodeTypeFromMap,
       message: "채팅 모델 완료",
     });
   } else if (event === "on_tool_start") {
@@ -82,6 +93,7 @@ export const flowEventHandler = ({
       controller,
       nodeId: nodeId || "toolNode",
       event: "node_start",
+      nodeType: nodeTypeFromMap,
       message: "도구 실행 시작",
       data: chunk.data.input,
     });
@@ -90,6 +102,7 @@ export const flowEventHandler = ({
       controller,
       nodeId: nodeId || "toolNode",
       event: "node_complete",
+      nodeType: nodeTypeFromMap,
       message: "도구 실행 완료",
       data: chunk.data.output,
     });
@@ -98,6 +111,7 @@ export const flowEventHandler = ({
       controller,
       nodeId: nodeId || "unknown",
       event: "node_error",
+      nodeType: nodeTypeFromMap,
       error: "실행 중 오류가 발생했습니다",
     });
   }
@@ -116,6 +130,7 @@ export const emitFlowError = ({
     controller,
     nodeId,
     event: "flow_error",
+    nodeType: "flow",
     error,
   });
 };
@@ -131,6 +146,7 @@ export const emitFlowComplete = ({
     controller,
     nodeId: "flow",
     event: "flow_complete",
+    nodeType: "flow",
     message: "플로우 실행 완료",
     data: { sessionId },
   });

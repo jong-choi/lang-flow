@@ -4,16 +4,14 @@ import React from "react";
 import { Bot, MessageSquare, SquareTerminal } from "lucide-react";
 
 interface ResultsTabProps {
-  chatResults: Record<string, string>;
+  results: Array<{ nodeId: string; nodeType: string; text: string }>;
   sessionId?: string | null;
 }
 
 /**
  * 채팅 노드의 결과물을 표시하는 탭
  */
-export function ResultsTab({ chatResults, sessionId }: ResultsTabProps) {
-  const entries = Object.entries(chatResults);
-
+export function ResultsTab({ results, sessionId }: ResultsTabProps) {
   return (
     <div className="h-full w-full flex flex-col">
       <div className="shrink-0 border-b bg-white/60 dark:bg-slate-900/60 backdrop-blur supports-[backdrop-filter]:bg-white/40 border-slate-200 dark:border-slate-800 px-4 py-2 flex items-center justify-between">
@@ -29,18 +27,18 @@ export function ResultsTab({ chatResults, sessionId }: ResultsTabProps) {
       </div>
 
       <div className="min-h-0 flex-1 overflow-auto p-4 space-y-4">
-        {entries.length === 0 ? (
+        {results.length === 0 ? (
           <div className="text-slate-500 dark:text-slate-400 text-sm">
             표시할 채팅 노드 결과가 없습니다.
           </div>
         ) : (
-          entries.map(([nodeId, text]) => (
+          results.map(({ nodeId, nodeType, text }) => (
             <div
               key={nodeId}
               className="rounded-xl border bg-white dark:bg-slate-950 border-slate-200 dark:border-slate-800"
             >
               <div className="px-4 py-2 border-b border-slate-100 dark:border-slate-800 flex items-center gap-2 text-sm text-slate-700 dark:text-slate-300">
-                <Bot className="size-4" /> chatNode • {nodeId}
+                <Bot className="size-4" /> {nodeType} • {nodeId}
               </div>
               <div className="p-4">
                 <div className="prose prose-slate dark:prose-invert max-w-none">

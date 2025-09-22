@@ -102,11 +102,13 @@ export function buildGraphFromFlow(
   reactFlowEdges: ReactFlowEdge[],
 ) {
   const graph = new StateGraph(FlowStateAnnotation);
+  const typeMap: Record<string, LangGraphNodeType> = {};
 
   // 노드들을 추가
   for (const reactNode of reactFlowNodes) {
     const nodeType = determineNodeType(reactNode);
     const nodeId = reactNode.id;
+    typeMap[nodeId] = nodeType;
 
     switch (nodeType) {
       case "input":
@@ -183,7 +185,8 @@ export function buildGraphFromFlow(
     graph.addEdge(endNode.id as any, END);
   }
 
-  return graph.compile({ checkpointer });
+  const compiled = graph.compile({ checkpointer });
+  return { graph: compiled, typeMap };
 }
 
 // 그래프 실행 및 스트리밍

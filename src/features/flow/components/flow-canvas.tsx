@@ -78,7 +78,7 @@ export const FlowCanvas = ({ activeTab, onRunComplete }: FlowCanvasProps) => {
     cancelAll: sseCancelAll,
     error,
     sessionId,
-    chatResults,
+    results,
   } = useFlowExecution({
     setNodes,
     setEdges,
@@ -298,7 +298,7 @@ export const FlowCanvas = ({ activeTab, onRunComplete }: FlowCanvasProps) => {
           <Background />
         </ReactFlow>
       ) : (
-        <ResultsTab chatResults={chatResults} sessionId={sessionId} />
+        <ResultsTab results={results} sessionId={sessionId} />
       )}
     </div>
   );
