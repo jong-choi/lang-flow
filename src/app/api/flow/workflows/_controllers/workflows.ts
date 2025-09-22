@@ -1,4 +1,4 @@
-import { and, desc, eq, inArray, isNull, sql } from "drizzle-orm";
+import { and, desc, eq, inArray, isNull, or, sql } from "drizzle-orm";
 import { flowEdges, flowNodes, workflows } from "@/features/flow/db/schema";
 import { db } from "@/lib/db";
 
@@ -35,38 +35,17 @@ const edgeSelection = {
   updatedAt: flowEdges.updatedAt,
 };
 
-const workflowColumns = {
-  id: true,
-  name: true,
-  description: true,
-  ownerId: true,
-  createdAt: true,
-  updatedAt: true,
-};
+const workflowColumns = Object.fromEntries(
+  Object.keys(workflowSelection).map((key) => [key, true]),
+) as Record<keyof typeof workflowSelection, true>;
 
-const nodeColumns = {
-  id: true,
-  workflowId: true,
-  type: true,
-  posX: true,
-  posY: true,
-  data: true,
-  createdAt: true,
-  updatedAt: true,
-};
+const nodeColumns = Object.fromEntries(
+  Object.keys(nodeSelection).map((key) => [key, true]),
+) as Record<keyof typeof nodeSelection, true>;
 
-const edgeColumns = {
-  id: true,
-  workflowId: true,
-  sourceId: true,
-  targetId: true,
-  sourceHandle: true,
-  targetHandle: true,
-  label: true,
-  order: true,
-  createdAt: true,
-  updatedAt: true,
-};
+const edgeColumns = Object.fromEntries(
+  Object.keys(edgeSelection).map((key) => [key, true]),
+) as Record<keyof typeof edgeSelection, true>;
 
 function withUndefinedToNull<T>(value: T | undefined): T | null | undefined {
   if (value === undefined) return undefined;
@@ -269,13 +248,19 @@ export async function updateWorkflow(
         (node) => !inputNodeIds.has(node.id),
       );
       if (nodesToDelete.length > 0) {
+        const nodesToDeleteIds = nodesToDelete.map((node) => node.id);
         await transaction
           .update(flowNodes)
           .set({ deletedAt: new Date(), updatedAt: sql`now()` })
+          .where(inArray(flowNodes.id, nodesToDeleteIds));
+
+        await transaction
+          .update(flowEdges)
+          .set({ deletedAt: new Date(), updatedAt: sql`now()` })
           .where(
-            inArray(
-              flowNodes.id,
-              nodesToDelete.map((node) => node.id),
+            or(
+              inArray(flowEdges.sourceId, nodesToDeleteIds),
+              inArray(flowEdges.targetId, nodesToDeleteIds),
             ),
           );
       }

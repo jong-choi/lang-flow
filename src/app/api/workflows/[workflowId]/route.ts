@@ -93,13 +93,7 @@ export async function PATCH(request: Request, { params }: Params) {
 
     const { workflowId } = params;
     const data: UpdateWorkflowPayload = parsed.data;
-    const updated = await updateWorkflow(workflowId, {
-      ...data,
-      description: data.description ?? null,
-      ownerId: data.ownerId ?? null,
-      nodes: data.nodes,
-      edges: data.edges,
-    });
+    const updated = await updateWorkflow(workflowId, data);
 
     if (!updated) {
       return NextResponse.json(
