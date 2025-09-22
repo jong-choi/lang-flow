@@ -313,12 +313,12 @@ export async function updateWorkflow(
         .where(eq(workflows.id, id));
     }
 
-    if (input.edges !== undefined) {
-      await syncEdges(input.edges);
-    }
-
     if (input.nodes !== undefined) {
       await syncNodes(input.nodes);
+    }
+
+    if (input.edges !== undefined) {
+      await syncEdges(input.edges);
     }
 
     const updated = await transaction.query.workflows.findFirst({
