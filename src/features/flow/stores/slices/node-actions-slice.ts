@@ -1,13 +1,10 @@
 import type { StateCreator } from "zustand";
 import type { FlowGeneratorState } from "../flow-store";
 
-export interface NodeActionsState {
-  retryNode?: (nodeId: string) => void | Promise<void>;
-  setRetryNode: (fn: NodeActionsState["retryNode"]) => void;
-}
-
 export interface NodeActionsSlice {
-  nodeActions: NodeActionsState;
+  nodeRetryRequest: { id: string; nodeId: string } | null;
+  requestNodeRetry: (nodeId: string) => void;
+  consumeNodeRetryRequest: () => void;
 }
 
 export const createNodeActionsSlice: StateCreator<
@@ -16,11 +13,18 @@ export const createNodeActionsSlice: StateCreator<
   [],
   NodeActionsSlice
 > = (set) => ({
-  nodeActions: {
-    retryNode: undefined,
-    setRetryNode: (retryFn) =>
-      set((prevState) => ({
-        nodeActions: { ...prevState.nodeActions, retryNode: retryFn },
-      })),
-  },
+  nodeRetryRequest: null,
+  requestNodeRetry: (nodeId) =>
+    set((prevState) => ({
+      ...prevState,
+      nodeRetryRequest: {
+        id: `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+        nodeId,
+      },
+    })),
+  consumeNodeRetryRequest: () =>
+    set((prevState) => ({
+      ...prevState,
+      nodeRetryRequest: null,
+    })),
 });

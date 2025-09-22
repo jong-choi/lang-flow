@@ -1,13 +1,9 @@
 import type { StateCreator } from "zustand";
 import type { FlowGeneratorState } from "../flow-store";
 
-export interface RunState {
+export interface RunSlice {
   isRunning: boolean;
   setRunning: (running: boolean) => void;
-}
-
-export interface RunSlice {
-  run: RunState;
 }
 
 export const createRunSlice: StateCreator<
@@ -16,9 +12,7 @@ export const createRunSlice: StateCreator<
   [],
   RunSlice
 > = (set) => ({
-  run: {
-    isRunning: false,
-    setRunning: (running: boolean) =>
-      set((prevState) => ({ run: { ...prevState.run, isRunning: running } })),
-  },
+  isRunning: false,
+  setRunning: (running: boolean) =>
+    set((prevState) => ({ ...prevState, isRunning: running })),
 });

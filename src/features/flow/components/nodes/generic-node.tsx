@@ -2,6 +2,15 @@
 
 import React from "react";
 import { AlertCircle, RotateCw } from "lucide-react";
+import {
+  createBasicMenuItems,
+  createFullMenuItems,
+} from "@/features/flow/components/nodes/menu/node-menu-items";
+import { CustomHandle } from "@/features/flow/components/nodes/ui/custom-handle";
+import { EditDialog } from "@/features/flow/components/nodes/ui/edit-dialog";
+import { MessageEditDialog } from "@/features/flow/components/nodes/ui/message-edit-dialog";
+import { NodeContainer } from "@/features/flow/components/nodes/ui/node-container";
+import { NodeContent } from "@/features/flow/components/nodes/ui/node-content";
 import { nodeConfigs } from "@/features/flow/constants/node-config";
 import { useConnectionLimits } from "@/features/flow/hooks/use-connection-limits";
 import { useNodeMenu } from "@/features/flow/hooks/use-node-menu";
@@ -13,15 +22,6 @@ import type {
   NodeProps,
 } from "@/features/flow/types/nodes";
 import { RUN_STATUS } from "@/features/flow/utils/run-status";
-import {
-  createBasicMenuItems,
-  createFullMenuItems,
-} from "./menu/node-menu-items";
-import { CustomHandle } from "./ui/custom-handle";
-import { EditDialog } from "./ui/edit-dialog";
-import { MessageEditDialog } from "./ui/message-edit-dialog";
-import { NodeContainer } from "./ui/node-container";
-import { NodeContent } from "./ui/node-content";
 
 interface GenericNodeProps extends NodeProps {
   nodeType: FlowNodeType;
@@ -36,7 +36,7 @@ export const GenericNode: React.FC<GenericNodeProps> = ({
   menuType,
   handles,
 }) => {
-  const retryNode = useFlowGeneratorStore.use.nodeActions((a) => a.retryNode);
+  const requestNodeRetry = useFlowGeneratorStore.use.requestNodeRetry();
   const menu = useNodeMenu(id);
   const config = nodeConfigs[nodeType];
   const connectionStates = useConnectionLimits(nodeType, id);
@@ -69,12 +69,12 @@ export const GenericNode: React.FC<GenericNodeProps> = ({
           />
         ))}
         <NodeContent data={data} config={config} />
-        {data.runStatus === RUN_STATUS.FAILED && retryNode && (
+        {data.runStatus === RUN_STATUS.FAILED && (
           <div className="absolute -bottom-2 left-1/2 -translate-x-1/2 flex items-center gap-1">
             <AlertCircle className="h-4 w-4 text-red-600" />
             <button
               className="px-2 h-6 text-xs rounded-md bg-red-50 border border-red-200 text-red-700 hover:bg-red-100"
-              onClick={() => retryNode(id)}
+              onClick={() => requestNodeRetry(id)}
             >
               <span className="inline-flex items-center gap-1">
                 <RotateCw className="h-3 w-3" /> 재시도

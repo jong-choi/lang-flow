@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import { GitBranch, MessageSquare, Play, RotateCw, Square } from "lucide-react";
+import { useShallow } from "zustand/react/shallow";
 import {
   Background,
   type Connection,
@@ -10,7 +10,6 @@ import {
   MiniMap,
   type Node,
   ReactFlow,
-  ReactFlowProvider,
   addEdge,
   reconnectEdge,
   useEdgesState,
@@ -20,11 +19,7 @@ import {
 import "@xyflow/react/dist/style.css";
 import { edgeTypes } from "@/features/flow/components/nodes/custom-edge";
 import { nodeTypes } from "@/features/flow/components/nodes/node-type-map";
-import { PromptInputModal } from "@/features/flow/components/prompt-input-modal";
 import { ResultsTab } from "@/features/flow/components/results-tab";
-// RunLogs 패널 제거
-import { Sidebar } from "@/features/flow/components/sidebar";
-import { SidebarNodePalette } from "@/features/flow/components/sidebar-node-palette";
 import { useDelayApi } from "@/features/flow/hooks/use-delay-api";
 import { useFlowExecution } from "@/features/flow/hooks/use-flow-execution";
 import { useIsValidConnection } from "@/features/flow/hooks/use-is-valid-connection";
@@ -42,46 +37,41 @@ const initialNodes: Node<NodeData>[] = [
   },
 ];
 
-const DnDFlow = () => {
+type FlowCanvasProps = {
+  activeTab: "graph" | "results";
+  onRunComplete?: () => void;
+};
+
+export const FlowCanvas = ({ activeTab, onRunComplete }: FlowCanvasProps) => {
   const reactFlowWrapper = useRef<HTMLDivElement>(null);
   const edgeReconnectSuccessful = useRef(true);
   const [nodes, setNodes, onNodesChange] =
     useNodesState<Node<NodeData>>(initialNodes);
   const [edges, setEdges, onEdgesChange] = useEdgesState<Edge>([]);
   const { screenToFlowPosition } = useReactFlow();
-  const type = useFlowGeneratorStore.use.dnd(
-    (dragState) => dragState.draggingType,
-  );
-  const setDraggingType = useFlowGeneratorStore.use.dnd(
-    (dragState) => dragState.setDraggingType,
-  );
-  const isRunning = useFlowGeneratorStore.use.run(
-    (runState) => runState.isRunning,
-  );
-  const setIsRunning = useFlowGeneratorStore.use.run(
-    (runState) => runState.setRunning,
-  );
+  const type = useFlowGeneratorStore.use.draggingType();
+  const setDraggingType = useFlowGeneratorStore.use.setDraggingType();
+  const isRunning = useFlowGeneratorStore.use.isRunning();
+  const setIsRunning = useFlowGeneratorStore.use.setRunning();
   const { cancelAll: delayCancelAll } = useDelayApi();
-  const setLevels = useFlowGeneratorStore.use.runMeta(
-    (metaState) => metaState.setLevels,
+  const setLevels = useFlowGeneratorStore.use.setLevels();
+  const setCurrentLevelIndex = useFlowGeneratorStore.use.setCurrentLevelIndex();
+  const setFailedNodeIds = useFlowGeneratorStore.use.setFailedNodeIds();
+  const setFailedCount = useFlowGeneratorStore.use.setFailedCount();
+  const failedNodeIds = useFlowGeneratorStore.use.failedNodeIds(
+    useShallow((ids) => ids),
   );
-  const setCurrentLevelIndex = useFlowGeneratorStore.use.runMeta(
-    (metaState) => metaState.setCurrentLevelIndex,
-  );
-  const setFailedNodeIds = useFlowGeneratorStore.use.runMeta(
-    (metaState) => metaState.setFailedNodeIds,
-  );
-  const setFailedCount = useFlowGeneratorStore.use.runMeta(
-    (metaState) => metaState.setFailedCount,
-  );
-  const failedNodeIds = useFlowGeneratorStore.use.runMeta(
-    (metaState) => metaState.failedNodeIds,
-  );
-  const setRetryNode = useFlowGeneratorStore.use.nodeActions(
-    (nodeActions) => nodeActions.setRetryNode,
-  );
-  // 탭 상태: graph | results
-  const [activeTab, setActiveTab] = useState<"graph" | "results">("graph");
+  const setRunGate = useFlowGeneratorStore.use.setRunGate();
+  // 이벤트 기반 요청 상태/액션
+  const runRequest = useFlowGeneratorStore.use.runRequest();
+  const cancelRequestId = useFlowGeneratorStore.use.cancelRequestId();
+  const retryRequestId = useFlowGeneratorStore.use.retryRequestId();
+  const nodeRetryRequest = useFlowGeneratorStore.use.nodeRetryRequest();
+  const consumeRunRequest = useFlowGeneratorStore.use.consumeRunRequest();
+  const consumeCancelRequest = useFlowGeneratorStore.use.consumeCancelRequest();
+  const consumeRetryRequest = useFlowGeneratorStore.use.consumeRetryRequest();
+  const consumeNodeRetryRequest =
+    useFlowGeneratorStore.use.consumeNodeRetryRequest();
 
   const {
     runFlow: runFlowExec,
@@ -97,12 +87,11 @@ const DnDFlow = () => {
     setFailedNodeIds,
     setFailedCount,
     setCurrentLevelIndex,
-    onComplete: () => setActiveTab("results"),
+    onComplete: () => onRunComplete?.(),
   });
 
   // 마지막 사용된 프롬프트 저장 및 프롬프트 모달
   const [lastPrompt, setLastPrompt] = useState<string>("");
-  const [showPromptModal, setShowPromptModal] = useState(false);
 
   // 엣지 연결 유효성 검사
   const isValidConnection = useIsValidConnection(nodes);
@@ -238,133 +227,79 @@ const DnDFlow = () => {
     setIsRunning,
   ]);
 
-  // 각 노드에서 사용할 수 있도록 재시도 함수 등록
   useEffect(() => {
-    const retryFlowFromNode = () => {
-      retryFlow(); // 전체 플로우 재시작
-    };
+    if (!nodeRetryRequest) return;
+    retryFlow();
+    consumeNodeRetryRequest();
+  }, [consumeNodeRetryRequest, nodeRetryRequest, retryFlow]);
 
-    setRetryNode(retryFlowFromNode);
-    return () => setRetryNode(undefined);
-  }, [retryFlow, setRetryNode]);
+  useEffect(() => {
+    if (!retryRequestId) return;
+    retryFlow();
+    consumeRetryRequest();
+  }, [consumeRetryRequest, retryFlow, retryRequestId]);
+
+  useEffect(() => {
+    if (!runRequest) return;
+    runFlow(runRequest.prompt);
+    consumeRunRequest();
+  }, [consumeRunRequest, runFlow, runRequest]);
+
+  useEffect(() => {
+    if (!cancelRequestId) return;
+    cancelRun();
+    consumeCancelRequest();
+  }, [cancelRequestId, cancelRun, consumeCancelRequest]);
+
+  useEffect(() => {
+    setRunGate({
+      canRun: runEligibility.ok && !isRunning,
+      runDisabledReason: runEligibility.ok
+        ? null
+        : (runEligibility.reason ?? null),
+      canRetry: !!error || failedNodeIds.size > 0,
+    });
+  }, [
+    isRunning,
+    runEligibility.ok,
+    runEligibility.reason,
+    error,
+    failedNodeIds,
+    setRunGate,
+  ]);
 
   return (
-    <div className="flex h-screen">
-      <Sidebar>
-        <SidebarNodePalette />
-      </Sidebar>
-      <div className="flex-1 flex flex-col" ref={reactFlowWrapper}>
-        {/* 메인 헤더 + 탭 */}
-        <div className="shrink-0 border-b bg-white/60 dark:bg-slate-900/60 backdrop-blur supports-[backdrop-filter]:bg-white/40 border-slate-200 dark:border-slate-800 px-4 py-2 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="flex items-center gap-2">
-              <button
-                className="inline-flex items-center gap-1 px-3 h-9 rounded-md bg-slate-900 text-slate-50 disabled:opacity-50 disabled:cursor-not-allowed"
-                onClick={() => setShowPromptModal(true)}
-                disabled={!runEligibility.ok || isRunning}
-                title={
-                  runEligibility.ok
-                    ? undefined
-                    : runEligibility.reason || undefined
-                }
-              >
-                <Play className="size-4" /> 시작
-              </button>
-              <button
-                className="inline-flex items-center gap-1 px-3 h-9 rounded-md border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 text-slate-900 dark:text-slate-100 disabled:opacity-50"
-                onClick={cancelRun}
-                disabled={!isRunning}
-              >
-                <Square className="size-4" /> 중단
-              </button>
-              <button
-                className="inline-flex items-center gap-1 px-3 h-9 rounded-md bg-slate-100 dark:bg-slate-800 text-slate-900 dark:text-slate-100 disabled:opacity-50"
-                onClick={retryFlow}
-                disabled={isRunning || !(error || failedNodeIds.size > 0)}
-                title={
-                  error || failedNodeIds.size > 0
-                    ? undefined
-                    : "재시도할 항목 없음"
-                }
-              >
-                <RotateCw className="size-4" /> 재시도
-              </button>
-            </div>
-            <div className="h-6 w-px bg-slate-300 dark:bg-slate-700" />
-            <nav className="flex items-center gap-1">
-              <button
-                className={`inline-flex items-center gap-1 px-3 h-8 rounded-md border ${
-                  activeTab === "graph"
-                    ? "bg-slate-900 text-white border-slate-900"
-                    : "bg-white dark:bg-slate-950 text-slate-700 dark:text-slate-300 border-slate-300 dark:border-slate-700"
-                }`}
-                onClick={() => setActiveTab("graph")}
-              >
-                <GitBranch className="size-4" /> 그래프
-              </button>
-              <button
-                className={`inline-flex items-center gap-1 px-3 h-8 rounded-md border ${
-                  activeTab === "results"
-                    ? "bg-slate-900 text-white border-slate-900"
-                    : "bg-white dark:bg-slate-950 text-slate-700 dark:text-slate-300 border-slate-300 dark:border-slate-700"
-                }`}
-                onClick={() => setActiveTab("results")}
-              >
-                <MessageSquare className="size-4" /> 결과물
-              </button>
-            </nav>
-          </div>
-        </div>
-
-        {/* 콘텐츠 영역 */}
-        <div className="min-h-0 flex-1 relative">
-          {activeTab === "graph" ? (
-            <ReactFlow<Node<NodeData>, Edge>
-              nodes={nodes}
-              edges={edges}
-              onNodesChange={onNodesChange}
-              onEdgesChange={onEdgesChange}
-              onConnect={onConnect}
-              isValidConnection={isValidConnection}
-              onDrop={onDrop}
-              onDragOver={onDragOver}
-              onReconnect={onReconnect}
-              onReconnectStart={onReconnectStart}
-              onReconnectEnd={onReconnectEnd}
-              nodeTypes={nodeTypes}
-              edgeTypes={edgeTypes}
-              fitView
-              tabIndex={0}
-              className="bg-gradient-to-br from-slate-50 to-violet-50"
-              defaultEdgeOptions={{
-                type: "custom",
-                deletable: true,
-              }}
-            >
-              {/* 로그 패널 제거됨 */}
-              <Controls />
-              <MiniMap />
-              <Background />
-            </ReactFlow>
-          ) : (
-            <ResultsTab chatResults={chatResults} sessionId={sessionId} />
-          )}
-        </div>
-        {/* 프롬프트 입력 모달 */}
-        <PromptInputModal
-          open={showPromptModal}
-          onOpenChange={setShowPromptModal}
-          onSubmit={runFlow}
-        />
-      </div>
+    <div className="min-h-0 flex-1 relative" ref={reactFlowWrapper}>
+      {activeTab === "graph" ? (
+        <ReactFlow<Node<NodeData>, Edge>
+          nodes={nodes}
+          edges={edges}
+          onNodesChange={onNodesChange}
+          onEdgesChange={onEdgesChange}
+          onConnect={onConnect}
+          isValidConnection={isValidConnection}
+          onDrop={onDrop}
+          onDragOver={onDragOver}
+          onReconnect={onReconnect}
+          onReconnectStart={onReconnectStart}
+          onReconnectEnd={onReconnectEnd}
+          nodeTypes={nodeTypes}
+          edgeTypes={edgeTypes}
+          fitView
+          tabIndex={0}
+          className="bg-gradient-to-br from-slate-50 to-violet-50"
+          defaultEdgeOptions={{
+            type: "custom",
+            deletable: true,
+          }}
+        >
+          <Controls />
+          <MiniMap />
+          <Background />
+        </ReactFlow>
+      ) : (
+        <ResultsTab chatResults={chatResults} sessionId={sessionId} />
+      )}
     </div>
   );
 };
-
-export const FlowBuilder = () => (
-  <div className="h-screen">
-    <ReactFlowProvider>
-      <DnDFlow />
-    </ReactFlowProvider>
-  </div>
-);

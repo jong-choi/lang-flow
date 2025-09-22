@@ -38,10 +38,8 @@ export function useFlowExecution({
   setCurrentLevelIndex,
   onComplete,
 }: UseFlowExecutionParams) {
-  const isRunning = useFlowGeneratorStore.use.run((state) => state.isRunning);
-  const failedNodeIds = useFlowGeneratorStore.use.runMeta(
-    (meta) => meta.failedNodeIds,
-  );
+  const isRunning = useFlowGeneratorStore.use.isRunning();
+  const failedNodeIds = useFlowGeneratorStore.use.failedNodeIds();
 
   // 로컬 스트리밍 상태 (이벤트 로그 제거)
   const [error, setError] = React.useState<string | null>(null);
@@ -152,7 +150,7 @@ export function useFlowExecution({
             typeof event.data === "object" &&
             "content" in event.data
           ) {
-            // 노드별 스트리밍 텍스트 누적 (주로 채팅 노드)
+            // 노드별 스트리밍 텍스트 누적
             const dataObj = event.data as unknown as { content?: unknown };
             const content =
               typeof dataObj.content === "string"
@@ -331,7 +329,6 @@ export function useFlowExecution({
     setIsRunning(false);
   }, [setEdgesDashed, setIsRunning]);
 
-  // 각 노드별 재실행 함수 - 전체 플로우 재실행으로 처리
   const retryNode = React.useCallback(async () => {
     if (isRunning) return;
     const lastRequest = lastRequestRef.current;
@@ -347,12 +344,10 @@ export function useFlowExecution({
   }, [isRunning, runFlow]);
 
   return {
-    // SSE + 실행 제어
     runFlow,
     cancelAll,
     retryNode,
     retryLevel,
-    // 스트리밍/메타 상태
     error,
     sessionId,
     chatResults,

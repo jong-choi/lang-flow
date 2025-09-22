@@ -51,7 +51,7 @@ const PaletteItem: FC<PaletteItemProps> = ({
 };
 
 export const SidebarNodePalette: FC = () => {
-  const setType = useFlowGeneratorStore.use.dnd((d) => d.setDraggingType);
+  const setType = useFlowGeneratorStore.use.setDraggingType();
 
   const handleDragStart = useCallback(
     (event: DragEvent, nodeType: FlowNodeType) => {

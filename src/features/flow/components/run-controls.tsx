@@ -62,7 +62,6 @@ export function RunControls({
         open={showPromptModal}
         onOpenChange={setShowPromptModal}
         onSubmit={handlePromptSubmit}
-        isSubmitting={isRunning}
       />
     </>
   );
