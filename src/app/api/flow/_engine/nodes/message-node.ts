@@ -11,10 +11,6 @@ export async function messageNode(
   template?: string,
 ): Promise<Partial<typeof state>> {
   const resolvedTemplate = template || "기본 메시지: {input}";
-  console.log("=== Executing message node ===");
-  console.log("Node ID:", nodeId);
-  console.log("Template:", resolvedTemplate);
-  console.log("Current state:", JSON.stringify(state, null, 2));
 
   try {
     // 마지막 메시지의 내용을 가져오기
@@ -23,15 +19,11 @@ export async function messageNode(
         ? (state.messages[state.messages.length - 1].content as string)
         : state.prompt || "";
 
-    console.log("Last message content:", lastMessageContent);
-
     // {input} 템플릿을 실제 값으로 치환
     const renderedMessage = resolvedTemplate.replace(
       /{input}/g,
       lastMessageContent,
     );
-
-    console.log("Rendered message:", renderedMessage);
 
     // HumanMessage로 변환
     const messageToAdd = new HumanMessage(renderedMessage);
@@ -45,12 +37,12 @@ export async function messageNode(
           template: resolvedTemplate,
           rendered: renderedMessage,
           input: lastMessageContent,
+          displayContent: renderedMessage,
           timestamp: new Date().toISOString(),
         },
       },
     };
 
-    console.log("=== Message node result ===", JSON.stringify(result, null, 2));
     return result;
   } catch (error) {
     console.error("Message node error:", error);
@@ -66,6 +58,7 @@ export async function messageNode(
         [nodeId]: {
           type: "message",
           error: error instanceof Error ? error.message : "Unknown error",
+          displayContent: "메시지 노드에서 오류가 발생했습니다.",
           timestamp: new Date().toISOString(),
         },
       },

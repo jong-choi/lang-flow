@@ -23,10 +23,10 @@ export const flowEventHandler = ({
   controller: ReadableStreamDefaultController;
   chunk: StreamEvent;
 }) => {
+  if (chunk.tags?.includes("langsmith:hidden")) return; // 랭스미스 디버깅 상태 제거
   const event = chunk.event;
   const nodeId = chunk.metadata.langgraph_node;
 
-  // 노드가 시작될 때
   if (event === "on_chain_start") {
     emitEvent({
       controller,
@@ -34,9 +34,21 @@ export const flowEventHandler = ({
       event: "node_start",
       message: `${nodeId} 시작`,
     });
-  }
-  // 노드가 완료될 때
-  else if (event === "on_chain_end") {
+  } else if (event === "on_chain_end") {
+    if (chunk.data?.output?.nodeOutputs?.[nodeId]) {
+      const nodeOutput = chunk.data.output.nodeOutputs[nodeId];
+      const displayContent = nodeOutput.displayContent;
+
+      if (displayContent && typeof displayContent === "string") {
+        emitEvent({
+          controller,
+          nodeId: nodeId || "unknown",
+          event: "node_streaming",
+          data: { content: displayContent },
+        });
+      }
+    }
+
     emitEvent({
       controller,
       nodeId: nodeId || "unknown",
@@ -44,9 +56,7 @@ export const flowEventHandler = ({
       message: `${nodeId} 완료`,
       data: chunk.data.output,
     });
-  }
-  // 채팅 모델 이벤트들
-  else if (event === "on_chat_model_start") {
+  } else if (event === "on_chat_model_start") {
     emitEvent({
       controller,
       nodeId: nodeId || "chatNode",
@@ -67,9 +77,7 @@ export const flowEventHandler = ({
       event: "node_complete",
       message: "채팅 모델 완료",
     });
-  }
-  // 도구 실행 이벤트들
-  else if (event === "on_tool_start") {
+  } else if (event === "on_tool_start") {
     emitEvent({
       controller,
       nodeId: nodeId || "toolNode",
@@ -85,9 +93,7 @@ export const flowEventHandler = ({
       message: "도구 실행 완료",
       data: chunk.data.output,
     });
-  }
-  // 에러 처리
-  else if (event.includes("error")) {
+  } else if (event.includes("error")) {
     emitEvent({
       controller,
       nodeId: nodeId || "unknown",

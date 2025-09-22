@@ -90,9 +90,19 @@ export const nodeTypeConfigs: Record<FlowNodeType, NodeTypeConfig> = {
   outputNode: { emoji: "📤", job: "출력", label: "출력 노드" },
   chatNode: { emoji: "💬", job: "채팅", label: "채팅 노드" },
   searchNode: { emoji: "🔍", job: "검색", label: "검색 노드" },
-  messageNode: { emoji: "💭", job: "메시지", label: "메시지 노드" },
+  messageNode: {
+    emoji: "💭",
+    job: "메시지",
+    label: "메시지 노드",
+    showInResults: true,
+  },
   singleInputMultiOutput: { emoji: "🔀", job: "분기", label: "분기 노드" },
-  multiInputSingleOutput: { emoji: "🔄", job: "합성", label: "합성 노드" },
+  multiInputSingleOutput: {
+    emoji: "🔄",
+    job: "합성",
+    label: "합성 노드",
+    showInResults: true,
+  },
 };
 
 export const connectionLimits: Record<FlowNodeType, ConnectionLimits> = {

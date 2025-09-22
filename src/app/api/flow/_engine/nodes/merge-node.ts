@@ -10,15 +10,9 @@ export async function mergeNode(
   nodeId: string,
   inputNodeIds: string[] = [],
 ): Promise<Partial<typeof state>> {
-  console.log("=== Executing merge node ===");
-  console.log("Node ID:", nodeId);
-  console.log("Input node IDs:", inputNodeIds);
-  console.log("Current state:", JSON.stringify(state, null, 2));
-
   try {
     // 연결된 입력 노드들이 없는 경우
     if (inputNodeIds.length === 0) {
-      console.log("No input nodes connected to merge node");
       return {
         messages: [new AIMessage("병합할 입력 노드가 연결되지 않았습니다.")],
         nodeOutputs: {
@@ -26,6 +20,7 @@ export async function mergeNode(
           [nodeId]: {
             type: "merge",
             error: "No input nodes connected",
+            displayContent: "병합할 입력 노드가 연결되지 않았습니다.",
             timestamp: new Date().toISOString(),
           },
         },
@@ -56,8 +51,6 @@ export async function mergeNode(
         if (outputContent && outputContent.trim().length > 0) {
           inputOutputs.push(outputContent.trim());
         }
-      } else {
-        console.warn(`No output found for input node: ${inputNodeId}`);
       }
     }
 
@@ -80,8 +73,6 @@ export async function mergeNode(
       }
     }
 
-    console.log("Merged content:", mergedContent);
-
     // 병합된 메시지 생성
     const mergedMessage = new AIMessage(mergedContent);
 
@@ -95,12 +86,12 @@ export async function mergeNode(
           inputNodeIds: inputNodeIds,
           inputOutputs: inputOutputs,
           sourceNodeCount: inputOutputs.length,
+          displayContent: mergedContent,
           timestamp: new Date().toISOString(),
         },
       },
     };
 
-    console.log("=== Merge node result ===", JSON.stringify(result, null, 2));
     return result;
   } catch (error) {
     console.error("Merge node error:", error);
@@ -116,6 +107,7 @@ export async function mergeNode(
         [nodeId]: {
           type: "merge",
           error: error instanceof Error ? error.message : "Unknown error",
+          displayContent: "병합 노드에서 오류가 발생했습니다.",
           timestamp: new Date().toISOString(),
         },
       },

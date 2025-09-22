@@ -136,7 +136,7 @@ export function useFlowExecution({
         case "node_streaming": {
           if (nodeId) {
             const streamingData = event.data;
-            if (streamingData.content) {
+            if (streamingData && streamingData.content) {
               setChatResults((prev) => ({
                 ...prev,
                 [nodeId]: `${prev[nodeId] ?? ""}${streamingData.content}`,
@@ -212,6 +212,7 @@ export function useFlowExecution({
               label: String(node.data?.label ?? ""),
               emoji: String(node.data?.emoji ?? ""),
               job: String(node.data?.job ?? ""),
+              showInResults: node.data?.showInResults,
             },
           })),
           edges: inputEdges.map((edge) => ({

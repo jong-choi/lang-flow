@@ -18,6 +18,7 @@ export const createNodeData = (type: FlowNodeType): NodeData => {
     nodeType: type,
     runStatus: "idle",
     level: undefined,
+    showInResults: config.showInResults,
   };
 
   return baseData;

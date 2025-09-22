@@ -45,7 +45,6 @@ export async function handleFlowStream(request: NextRequest) {
               configurable: { thread_id: sessionId },
             },
           )) {
-            console.log("=== Flow event ===", JSON.stringify(chunk, null, 2));
             flowEventHandler({ controller, chunk });
           }
 

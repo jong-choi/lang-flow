@@ -3,8 +3,6 @@ import type { FlowStateAnnotation } from "@/app/api/flow/_engine/graph-builder";
 export async function outputNode(
   state: typeof FlowStateAnnotation.State,
 ): Promise<Partial<typeof state>> {
-  console.log("Executing output node");
-
   // 최종 결과를 정리
   const finalResult = {
     messages: state.messages,

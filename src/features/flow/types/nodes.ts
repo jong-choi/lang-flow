@@ -18,7 +18,8 @@ export interface NodeData extends BaseNodeData {
   nodeType?: FlowNodeType; // 오버라이딩
   runStatus?: "idle" | "running" | "success" | "failed";
   level?: number;
-  [key: string]: string | number | undefined;
+  showInResults?: boolean; // 결과창에 표시할지 여부
+  [key: string]: string | number | boolean | undefined;
 }
 
 export interface NodeProps {
@@ -50,6 +51,7 @@ export interface NodeTypeConfig {
   emoji: string;
   job: string;
   label: string;
+  showInResults?: boolean;
 }
 
 export interface SidebarItemConfig {

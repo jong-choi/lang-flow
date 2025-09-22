@@ -23,6 +23,7 @@ export interface BaseNodeData {
   job: string;
   prompt?: string;
   model?: string;
+  showInResults?: boolean;
   [key: string]: unknown;
 }
 
