@@ -153,5 +153,3 @@ export const WorkflowPalette = ({
     </div>
   );
 };
-
-export default WorkflowPalette;

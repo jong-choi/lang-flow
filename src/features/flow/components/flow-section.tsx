@@ -4,7 +4,6 @@ import { useCallback, useState } from "react";
 import { GitBranch, MessageSquare, Play, RotateCw, Square } from "lucide-react";
 import { ReactFlowProvider } from "@xyflow/react";
 import { FlowCanvas } from "@/features/flow/components/flow-canvas";
-import { SidebarNodePalette } from "@/features/flow/components/panel/sidebar-node-palette";
 import { PromptInputModal } from "@/features/flow/components/prompt-input-modal";
 import { Sidebar } from "@/features/flow/components/sidebar";
 import { useFlowGeneratorStore } from "@/features/flow/providers/flow-store-provider";
@@ -44,9 +43,7 @@ export const FlowSection = () => {
 
   return (
     <div className="flex h-screen">
-      <Sidebar>
-        <SidebarNodePalette />
-      </Sidebar>
+      <Sidebar />
       <div className="flex-1 flex flex-col">
         {/* 헤더 */}
         <div className="shrink-0 border-b bg-white/60 dark:bg-slate-900/60 backdrop-blur supports-[backdrop-filter]:bg-white/40 border-slate-200 dark:border-slate-800 px-4 py-2 flex items-center justify-between">
