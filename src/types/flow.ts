@@ -41,13 +41,70 @@ export interface ReactFlowEdge {
   targetHandle?: string;
 }
 
-export interface FlowEventBase {
+export interface EventData {
+  flow_start: {
+    sessionId: SessionId;
+  };
+  flow_complete: {
+    sessionId: SessionId;
+  };
+  flow_error: never;
+  node_start: never;
+  node_complete: never;
+  node_streaming: {
+    content: string;
+  };
+  node_error: never;
+}
+
+export type FlowEventType = keyof EventData;
+
+export interface FlowEvent<T extends FlowEventType = FlowEventType> {
   nodeId: string;
-  event: string;
+  event: T;
   message?: string;
-  data?: unknown;
+  data?: EventData[T];
   error?: string;
 }
+
+export type FlowEventUnion =
+  | FlowEvent<"flow_start">
+  | FlowEvent<"flow_complete">
+  | FlowEvent<"flow_error">
+  | FlowEvent<"node_start">
+  | FlowEvent<"node_complete">
+  | FlowEvent<"node_streaming">
+  | FlowEvent<"node_error">;
+
+export type FlowEventBase =
+  | ({
+      nodeId: string;
+      event: "flow_start";
+      message?: string;
+      error?: string;
+    } & {
+      data: EventData["flow_start"];
+    })
+  | ({
+      nodeId: string;
+      event: "flow_complete";
+      message?: string;
+      error?: string;
+    } & {
+      data: EventData["flow_complete"];
+    })
+  | ({
+      nodeId: string;
+      event: "node_streaming";
+      message?: string;
+      error?: string;
+    } & {
+      data: EventData["node_streaming"];
+    })
+  | { nodeId: string; event: "flow_error"; message?: string; error?: string }
+  | { nodeId: string; event: "node_start"; message?: string; error?: string }
+  | { nodeId: string; event: "node_complete"; message?: string; error?: string }
+  | { nodeId: string; event: "node_error"; message?: string; error?: string };
 
 export interface NodeOutput {
   type?: string;

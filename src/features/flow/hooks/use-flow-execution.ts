@@ -101,20 +101,10 @@ export function useFlowExecution({
           setIsRunning(false);
           setEdgesDashed(false);
           setFlowCompleted(true);
-          // 완료 콜백 실행
-          try {
-            onComplete?.();
-          } catch (e) {
-            // 콜백 오류는 전체 흐름을 방해하지 않도록 무시
-            console.warn("onComplete callback error:", e);
-          }
-          if (
-            event.data &&
-            typeof event.data === "object" &&
-            "sessionId" in event.data
-          ) {
-            setSessionId(event.data.sessionId as string);
-          }
+          onComplete?.();
+
+          setSessionId(event.data.sessionId);
+
           return;
         }
         case "flow_error": {
@@ -144,22 +134,14 @@ export function useFlowExecution({
           return;
         }
         case "node_streaming": {
-          if (
-            nodeId &&
-            event.data &&
-            typeof event.data === "object" &&
-            "content" in event.data
-          ) {
-            // 노드별 스트리밍 텍스트 누적
-            const dataObj = event.data as unknown as { content?: unknown };
-            const content =
-              typeof dataObj.content === "string"
-                ? dataObj.content
-                : String(dataObj.content ?? "");
-            setChatResults((prev) => ({
-              ...prev,
-              [nodeId]: `${prev[nodeId] ?? ""}` + content,
-            }));
+          if (nodeId) {
+            const streamingData = event.data;
+            if (streamingData.content) {
+              setChatResults((prev) => ({
+                ...prev,
+                [nodeId]: `${prev[nodeId] ?? ""}${streamingData.content}`,
+              }));
+            }
           }
           return;
         }
