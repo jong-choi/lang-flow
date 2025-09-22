@@ -33,7 +33,9 @@ export const workflows = pgTable("workflows", {
   createdAt: timestamp("created_at", { mode: "date" }).notNull().defaultNow(),
   updatedAt: timestamp("updated_at", { mode: "date" })
     .notNull()
+    .defaultNow()
     .$onUpdate(() => new Date()),
+  deletedAt: timestamp("deleted_at", { mode: "date" }),
 });
 
 export const flowNodes = pgTable("flow_nodes", {
@@ -53,7 +55,9 @@ export const flowNodes = pgTable("flow_nodes", {
   createdAt: timestamp("created_at", { mode: "date" }).notNull().defaultNow(),
   updatedAt: timestamp("updated_at", { mode: "date" })
     .notNull()
+    .defaultNow()
     .$onUpdate(() => new Date()),
+  deletedAt: timestamp("deleted_at", { mode: "date" }),
 });
 
 export const flowEdges = pgTable("flow_edges", {
@@ -76,7 +80,9 @@ export const flowEdges = pgTable("flow_edges", {
   createdAt: timestamp("created_at", { mode: "date" }).notNull().defaultNow(),
   updatedAt: timestamp("updated_at", { mode: "date" })
     .notNull()
+    .defaultNow()
     .$onUpdate(() => new Date()),
+  deletedAt: timestamp("deleted_at", { mode: "date" }),
 });
 
 // 릴레이션
@@ -90,8 +96,8 @@ export const flowNodesRelations = relations(flowNodes, ({ one, many }) => ({
     fields: [flowNodes.workflowId],
     references: [workflows.id],
   }),
-  sourceForEdges: many(flowEdges),
-  targetForEdges: many(flowEdges),
+  sourceForEdges: many(flowEdges, { relationName: "sourceNode" }),
+  targetForEdges: many(flowEdges, { relationName: "targetNode" }),
 }));
 
 export const flowEdgesRelations = relations(flowEdges, ({ one }) => ({
@@ -102,9 +108,11 @@ export const flowEdgesRelations = relations(flowEdges, ({ one }) => ({
   source: one(flowNodes, {
     fields: [flowEdges.sourceId],
     references: [flowNodes.id],
+    relationName: "sourceNode",
   }),
   target: one(flowNodes, {
     fields: [flowEdges.targetId],
     references: [flowNodes.id],
+    relationName: "targetNode",
   }),
 }));
