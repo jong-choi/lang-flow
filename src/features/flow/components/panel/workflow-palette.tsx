@@ -1,7 +1,6 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { randomUUID } from "crypto";
 import { FileText, Folder, MoreHorizontal, Plus, Search } from "lucide-react";
 
 export type Workflow = {
@@ -53,7 +52,7 @@ export const WorkflowPalette = ({
   const handleCreate = () => {
     if (onCreate) return onCreate();
     const nw: Workflow = {
-      id: randomUUID(),
+      id: crypto.randomUUID(),
       title: "Untitled workflow",
       description: "",
       updatedAt: new Date().toISOString(),
