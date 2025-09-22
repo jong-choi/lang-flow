@@ -6,9 +6,7 @@ import {
   Background,
   type Connection,
   Controls,
-  type Edge,
   MiniMap,
-  type Node,
   ReactFlow,
   addEdge,
   reconnectEdge,
@@ -25,10 +23,10 @@ import { useFlowExecution } from "@/features/flow/hooks/use-flow-execution";
 import { useIsValidConnection } from "@/features/flow/hooks/use-is-valid-connection";
 import { useRunEligibility } from "@/features/flow/hooks/use-run-eligibility";
 import { useFlowGeneratorStore } from "@/features/flow/providers/flow-store-provider";
-import type { NodeData } from "@/features/flow/types/nodes";
+import type { SchemaEdge, SchemaNode } from "@/features/flow/types/nodes";
 import { createNodeData, getId } from "@/features/flow/utils/node-factory";
 
-const initialNodes: Node<NodeData>[] = [
+const initialNodes: SchemaNode[] = [
   {
     id: "1",
     type: "inputNode",
@@ -46,8 +44,8 @@ export const FlowCanvas = ({ activeTab, onRunComplete }: FlowCanvasProps) => {
   const reactFlowWrapper = useRef<HTMLDivElement>(null);
   const edgeReconnectSuccessful = useRef(true);
   const [nodes, setNodes, onNodesChange] =
-    useNodesState<Node<NodeData>>(initialNodes);
-  const [edges, setEdges, onEdgesChange] = useEdgesState<Edge>([]);
+    useNodesState<SchemaNode>(initialNodes);
+  const [edges, setEdges, onEdgesChange] = useEdgesState<SchemaEdge>([]);
   const { screenToFlowPosition } = useReactFlow();
   const type = useFlowGeneratorStore.use.draggingType();
   const setDraggingType = useFlowGeneratorStore.use.setDraggingType();
@@ -112,7 +110,7 @@ export const FlowCanvas = ({ activeTab, onRunComplete }: FlowCanvasProps) => {
 
   // 기존 엣지를 새로운 연결로 갱신
   const onReconnect = useCallback(
-    (oldEdge: Edge, newConnection: Connection) => {
+    (oldEdge: SchemaEdge, newConnection: Connection) => {
       // 재연결 시에도 동일한 유효성 검사를 적용해 우회 방지
       if (!isValidConnection(newConnection)) {
         edgeReconnectSuccessful.current = false;
@@ -125,7 +123,7 @@ export const FlowCanvas = ({ activeTab, onRunComplete }: FlowCanvasProps) => {
   );
 
   const onReconnectEnd = useCallback(
-    (reconnectEvent: MouseEvent | TouchEvent, edge: Edge) => {
+    (reconnectEvent: MouseEvent | TouchEvent, edge: SchemaEdge) => {
       if (!edgeReconnectSuccessful.current) {
         setEdges((edges) =>
           edges.filter((candidate) => candidate.id !== edge.id),
@@ -155,7 +153,7 @@ export const FlowCanvas = ({ activeTab, onRunComplete }: FlowCanvasProps) => {
         y: dropEvent.clientY,
       });
 
-      const newNode: Node<NodeData> = {
+      const newNode: SchemaNode = {
         id: getId(),
         type,
         position,
@@ -271,7 +269,7 @@ export const FlowCanvas = ({ activeTab, onRunComplete }: FlowCanvasProps) => {
   return (
     <div className="min-h-0 flex-1 relative" ref={reactFlowWrapper}>
       {activeTab === "graph" ? (
-        <ReactFlow<Node<NodeData>, Edge>
+        <ReactFlow<SchemaNode, SchemaEdge>
           nodes={nodes}
           edges={edges}
           onNodesChange={onNodesChange}

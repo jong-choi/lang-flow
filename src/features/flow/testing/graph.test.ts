@@ -1,6 +1,9 @@
 import { describe, expect, it } from "vitest";
-import type { Edge, Node } from "@xyflow/react";
-import type { FlowNodeType, NodeData } from "@/features/flow/types/nodes";
+import type {
+  FlowNodeType,
+  SchemaEdge,
+  SchemaNode,
+} from "@/features/flow/types/nodes";
 import {
   buildAdjacency,
   computeLevels,
@@ -10,28 +13,28 @@ import {
 } from "@/features/flow/utils/graph";
 import { createNodeData } from "@/features/flow/utils/node-factory";
 
-const makeNode = (id: string, type: FlowNodeType): Node<NodeData> => ({
+const makeNode = (id: string, type: FlowNodeType): SchemaNode => ({
   id,
   type,
   position: { x: 0, y: 0 },
   data: createNodeData(type),
 });
 
-const makeEdge = (id: string, source: string, target: string): Edge => ({
+const makeEdge = (id: string, source: string, target: string): SchemaEdge => ({
   id,
   source,
   target,
 });
 
 describe("그래프 유틸리티", () => {
-  const nodes: Node<NodeData>[] = [
+  const nodes: SchemaNode[] = [
     makeNode("input", "inputNode"),
     makeNode("branch-a", "messageNode"),
     makeNode("branch-b", "messageNode"),
     makeNode("output", "outputNode"),
   ];
 
-  const edges: Edge[] = [
+  const edges: SchemaEdge[] = [
     makeEdge("e1", "input", "branch-a"),
     makeEdge("e2", "input", "branch-b"),
     makeEdge("e3", "branch-a", "output"),

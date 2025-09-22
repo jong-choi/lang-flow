@@ -1,9 +1,13 @@
 "use client";
 
 import React from "react";
-import type { Edge, Node } from "@xyflow/react";
 import { useFlowGeneratorStore } from "@/features/flow/providers/flow-store-provider";
-import type { NodeData } from "@/features/flow/types/nodes";
+import type {
+  FlowEvent,
+  FlowExecutionRequest,
+  SchemaEdge,
+  SchemaNode,
+} from "@/features/flow/types/nodes";
 import { computeLevels as computeLevelsGraph } from "@/features/flow/utils/graph";
 import {
   RUN_STATUS,
@@ -12,10 +16,9 @@ import {
   markRunning,
   markSuccess,
 } from "@/features/flow/utils/run-status";
-import type { FlowEventBase, FlowExecutionRequest } from "@/types/flow";
 
-type SetNodes = React.Dispatch<React.SetStateAction<Node<NodeData>[]>>;
-type SetEdges = React.Dispatch<React.SetStateAction<Edge[]>>;
+type SetNodes = React.Dispatch<React.SetStateAction<SchemaNode[]>>;
+type SetEdges = React.Dispatch<React.SetStateAction<SchemaEdge[]>>;
 
 type UseFlowExecutionParams = {
   setNodes: SetNodes;
@@ -55,8 +58,8 @@ export function useFlowExecution({
   const sseAbortRef = React.useRef<AbortController | null>(null);
   const lastRequestRef = React.useRef<{
     prompt: string;
-    nodes: Node<NodeData>[];
-    edges: Edge[];
+    nodes: SchemaNode[];
+    edges: SchemaEdge[];
   } | null>(null);
   const seenRunningRef = React.useRef<Set<string>>(new Set());
 
@@ -87,7 +90,7 @@ export function useFlowExecution({
 
   // 플로우 SSE 이벤트 처리
   const handleFlowEvent = React.useCallback(
-    (event: FlowEventBase) => {
+    (event: FlowEvent) => {
       const nodeId = event.nodeId;
       const eventType = event.event;
 
@@ -101,9 +104,7 @@ export function useFlowExecution({
           setEdgesDashed(false);
           setFlowCompleted(true);
           onComplete?.();
-
-          setSessionId(event.data.sessionId);
-
+          setSessionId(event.data?.sessionId || "");
           return;
         }
         case "flow_error": {
@@ -193,8 +194,8 @@ export function useFlowExecution({
   const runFlow = React.useCallback(
     async (
       prompt: string,
-      inputNodes: Node<NodeData>[],
-      inputEdges: Edge[],
+      inputNodes: SchemaNode[],
+      inputEdges: SchemaEdge[],
     ) => {
       try {
         // 시작하기 시 상태 초기화
@@ -223,7 +224,7 @@ export function useFlowExecution({
           prompt,
           nodes: inputNodes.map((node) => ({
             id: node.id,
-            type: node.type || "messageNode",
+            type: node.type,
             position: node.position,
             data: {
               ...node.data,
@@ -285,7 +286,7 @@ export function useFlowExecution({
                 "event" in data &&
                 "nodeId" in data
               ) {
-                handleFlowEvent(data as FlowEventBase);
+                handleFlowEvent(data as FlowEvent);
               }
             } catch (parseError) {
               console.warn("이벤트 파싱 실패:", parseError);

@@ -1,12 +1,12 @@
 import { NextResponse } from "next/server";
 import bcrypt from "bcryptjs";
 import { eq } from "drizzle-orm";
-import { users } from "@/features/auth/db/schema";
-import { db } from "@/lib/db";
 import {
-  signUpSchema,
   type SignUpFormValues,
+  signUpSchema,
 } from "@/features/auth/types/forms";
+import { db } from "@/lib/db";
+import { users } from "@/lib/db/schema";
 
 export async function POST(request: Request) {
   try {
@@ -16,10 +16,10 @@ export async function POST(request: Request) {
     if (!parsed.success) {
       const { formErrors, fieldErrors } = parsed.error.flatten();
       const fieldMessage = Object.values(fieldErrors).find(
-        (messages): messages is string[] => Array.isArray(messages) && messages.length > 0,
+        (messages): messages is string[] =>
+          Array.isArray(messages) && messages.length > 0,
       )?.[0];
-      const message =
-        formErrors[0] ?? fieldMessage ?? "입력값을 확인해주세요.";
+      const message = formErrors[0] ?? fieldMessage ?? "입력값을 확인해주세요.";
       return NextResponse.json({ message }, { status: 400 });
     }
 

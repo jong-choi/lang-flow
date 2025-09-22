@@ -1,8 +1,7 @@
 "use client";
 
 import { useMemo } from "react";
-import type { Edge, Node } from "@xyflow/react";
-import type { NodeData } from "@/features/flow/types/nodes";
+import type { SchemaEdge, SchemaNode } from "@/features/flow/types/nodes";
 import {
   buildAdjacency,
   forwardReachable,
@@ -11,8 +10,8 @@ import {
 } from "@/features/flow/utils/graph";
 
 export function useRunEligibility(
-  nodes: Node<NodeData>[],
-  edges: Edge[],
+  nodes: SchemaNode[],
+  edges: SchemaEdge[],
 ): { ok: boolean; reason: string | null } {
   return useMemo(() => {
     if (!nodes || nodes.length === 0) {

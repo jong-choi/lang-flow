@@ -5,11 +5,11 @@ import { DrizzleAdapter } from "@auth/drizzle-adapter";
 import {
   accounts,
   sessions,
-  users,
   verificationTokens,
 } from "@/features/auth/db/schema";
 import { verifyUserPassword } from "@/features/auth/lib/password-auth";
 import { db } from "@/lib/db";
+import { users } from "@/lib/db/schema";
 
 export const authConfig: AuthConfig = {
   adapter: DrizzleAdapter(db, {

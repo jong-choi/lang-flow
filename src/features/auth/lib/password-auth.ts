@@ -1,8 +1,8 @@
 import bcrypt from "bcryptjs";
 import { eq } from "drizzle-orm";
 import type { AuthConfig } from "@auth/core";
-import { users } from "@/features/auth/db/schema";
 import { db } from "@/lib/db";
+import { users } from "@/lib/db/schema";
 
 type UserRecord = typeof users.$inferSelect;
 
