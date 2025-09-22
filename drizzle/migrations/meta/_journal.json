@@ -15,6 +15,13 @@
       "when": 1758084372682,
       "tag": "0001_daffy_komodo",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1758541468679,
+      "tag": "0002_confused_zuras",
+      "breakpoints": true
     }
   ]
 }

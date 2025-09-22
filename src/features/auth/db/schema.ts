@@ -6,7 +6,7 @@ import {
   text,
   timestamp,
 } from "drizzle-orm/pg-core";
-import { type AdapterAccountType } from "next-auth/adapters";
+import { type AdapterAccountType } from "@auth/core/adapters";
 import { users } from "@/lib/db/schema";
 
 export const accounts = pgTable(
