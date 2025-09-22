@@ -7,17 +7,7 @@ import {
   timestamp,
 } from "drizzle-orm/pg-core";
 import { type AdapterAccountType } from "next-auth/adapters";
-
-export const users = pgTable("user", {
-  id: text("id")
-    .primaryKey()
-    .$defaultFn(() => crypto.randomUUID()),
-  name: text("name"),
-  email: text("email").unique().notNull(),
-  emailVerified: timestamp("emailVerified", { mode: "date" }),
-  image: text("image"),
-  hashedPassword: text("hashedPassword"),
-});
+import { users } from "@/lib/db/schema";
 
 export const accounts = pgTable(
   "account",
