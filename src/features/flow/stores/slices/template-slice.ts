@@ -22,7 +22,7 @@ export interface TemplateSlice {
   templates: WorkflowTemplateSummary[];
   templateDetails: Record<string, WorkflowTemplateDetail>;
   isLoadingTemplates: boolean;
-  draggingTemplateId: string;
+  draggingTemplateId: string | undefined;
   fetchTemplates: () => Promise<void>;
   ensureTemplateDetail: (id: string) => Promise<WorkflowTemplateDetail | null>;
   setDraggingTemplateId: (id: string | undefined) => void;
@@ -40,7 +40,7 @@ export const createTemplateSlice: StateCreator<
   templates: [],
   templateDetails: {},
   isLoadingTemplates: false,
-  draggingTemplateId: "",
+  draggingTemplateId: undefined,
   fetchTemplates: async () => {
     set((prev) => ({ ...prev, isLoadingTemplates: true }));
     try {

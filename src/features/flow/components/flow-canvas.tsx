@@ -189,20 +189,33 @@ export const FlowCanvas = ({
     setCanvasState(nodes, edges);
   }, [edges, nodes, setCanvasState]);
 
+  const hasHydratedNodesFromProps = useRef(false);
+  const hasHydratedEdgesFromProps = useRef(false);
+
   useEffect(() => {
     if (initialNodesProp) {
+      hasHydratedNodesFromProps.current = true;
       setNodes(duplicateNodes(initialNodesProp));
       return;
     }
-    setNodes(createDefaultNodes(createNodeData));
+
+    if (hasHydratedNodesFromProps.current) {
+      hasHydratedNodesFromProps.current = false;
+      setNodes(createDefaultNodes(createNodeData));
+    }
   }, [initialNodesProp, setNodes]);
 
   useEffect(() => {
     if (initialEdgesProp) {
+      hasHydratedEdgesFromProps.current = true;
       setEdges(duplicateEdges(initialEdgesProp));
       return;
     }
-    setEdges([]);
+
+    if (hasHydratedEdgesFromProps.current) {
+      hasHydratedEdgesFromProps.current = false;
+      setEdges([]);
+    }
   }, [initialEdgesProp, setEdges]);
 
   useEffect(() => {

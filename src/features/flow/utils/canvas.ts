@@ -27,15 +27,20 @@ export interface TemplateInsertionResult {
   group: TemplateGroup;
 }
 
-export const createRandomEdgeId = () =>
-  typeof crypto !== "undefined" && "randomUUID" in crypto
-    ? crypto.randomUUID()
-    : `edge_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
+const RANDOM_UUID_SUPPORTED =
+  typeof crypto !== "undefined" && "randomUUID" in crypto;
 
-export const createRandomGroupId = () =>
-  typeof crypto !== "undefined" && "randomUUID" in crypto
-    ? crypto.randomUUID()
-    : `group_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
+const createRandomId = (prefix: string) => {
+  if (RANDOM_UUID_SUPPORTED) {
+    return crypto.randomUUID();
+  }
+
+  return `${prefix}_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
+};
+
+export const createRandomEdgeId = () => createRandomId("edge");
+
+export const createRandomGroupId = () => createRandomId("group");
 
 interface TemplateBounds {
   minX: number;

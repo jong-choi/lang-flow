@@ -136,10 +136,16 @@ export async function createWorkflow(input: {
             const edgesToInsert = input.edges?.map((edge) => {
               // 항상 서버에서 새로운 id 생성 (클라이언트 id 사용 방지)
               const serverEdgeId = crypto.randomUUID();
-              const mappedSource =
-                nodeIdMap.get(String(edge.sourceId)) ?? String(edge.sourceId);
-              const mappedTarget =
-                nodeIdMap.get(String(edge.targetId)) ?? String(edge.targetId);
+              const clientSourceId = String(edge.sourceId);
+              const clientTargetId = String(edge.targetId);
+              const mappedSource = nodeIdMap.get(clientSourceId);
+              const mappedTarget = nodeIdMap.get(clientTargetId);
+
+              if (!mappedSource || !mappedTarget) {
+                throw new Error(
+                  `엣지를 생성하기 위한 노드 정보가 누락되었습니다. (sourceId: ${clientSourceId}, targetId: ${clientTargetId})`,
+                );
+              }
 
               return {
                 ...edge,
