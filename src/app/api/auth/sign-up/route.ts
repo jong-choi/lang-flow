@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { z } from "zod";
 import bcrypt from "bcryptjs";
 import { eq } from "drizzle-orm";
 import {
@@ -14,7 +15,7 @@ export async function POST(request: Request) {
     const parsed = signUpSchema.safeParse(body);
 
     if (!parsed.success) {
-      const { formErrors, fieldErrors } = parsed.error.flatten();
+      const { formErrors, fieldErrors } = z.flattenError(parsed.error);
       const fieldMessage = Object.values(fieldErrors).find(
         (messages): messages is string[] =>
           Array.isArray(messages) && messages.length > 0,

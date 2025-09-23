@@ -1,5 +1,6 @@
 import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
+import { z } from "zod";
 import { authConfig } from "@/features/auth/lib/auth.config";
 import {
   getSessionCookieConfig,
@@ -21,7 +22,7 @@ export async function POST(request: Request) {
     const parsed = signInSchema.safeParse(body);
 
     if (!parsed.success) {
-      const { formErrors, fieldErrors } = parsed.error.flatten();
+      const { formErrors, fieldErrors } = z.flattenError(parsed.error);
       const fieldMessage = Object.values(fieldErrors).find(
         (messages): messages is string[] =>
           Array.isArray(messages) && messages.length > 0,
