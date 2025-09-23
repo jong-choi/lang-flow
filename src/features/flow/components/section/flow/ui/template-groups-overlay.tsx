@@ -1,3 +1,5 @@
+"use client";
+
 import type { CSSProperties } from "react";
 import { useStore as useReactFlowStore } from "@xyflow/react";
 import type { TemplateGroup } from "@/features/flow/utils/canvas";

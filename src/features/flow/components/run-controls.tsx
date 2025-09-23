@@ -2,7 +2,7 @@
 
 import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { PromptInputModal } from "@/features/flow/components/prompt-input-modal";
+import { PromptInputModal } from "@/features/flow/components/ui/prompt-input-modal";
 
 interface RunControlsProps {
   canStart: boolean;

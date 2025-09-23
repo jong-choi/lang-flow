@@ -1,25 +1,21 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
+import type { DragEvent } from "react";
 import { toast } from "sonner";
 import { useShallow } from "zustand/react/shallow";
 import {
-  Background,
-  type Connection,
-  Controls,
-  MiniMap,
-  ReactFlow,
   addEdge,
+  type Connection,
+  type IsValidConnection,
   reconnectEdge,
   useEdgesState,
   useNodesState,
   useReactFlow,
 } from "@xyflow/react";
 import "@xyflow/react/dist/style.css";
-import { edgeTypes } from "@/features/flow/components/nodes/custom-edge";
-import { nodeTypes } from "@/features/flow/components/nodes/node-type-map";
-import { ResultsTab } from "@/features/flow/components/results-tab";
-import { TemplateGroupsOverlay } from "@/features/flow/components/workflow/template-group-layover";
+import { FlowGraphView } from "@/features/flow/components/section/flow/ui/flow-graph-view";
+import { FlowResultsPanel } from "@/features/flow/components/section/message/results-panel";
 import { nodeTypeConfigs } from "@/features/flow/constants/node-config";
 import { useDelayApi } from "@/features/flow/hooks/use-delay-api";
 import { useFlowExecution } from "@/features/flow/hooks/use-flow-execution";
@@ -46,16 +42,12 @@ import {
 import { createNodeData, getId } from "@/features/flow/utils/node-factory";
 import { createRunGateState } from "@/features/flow/utils/workflow";
 
-type FlowCanvasProps = {
-  activeTab: "graph" | "results";
-  onRunComplete?: () => void;
-};
-
-export const FlowCanvas = ({ activeTab, onRunComplete }: FlowCanvasProps) => {
-  const reactFlowWrapper = useRef<HTMLDivElement>(null);
+export const FlowCanvas = () => {
   const edgeReconnectSuccessful = useRef(true);
   const initialNodes = useFlowGeneratorStore.use.initialNodes();
   const initialEdges = useFlowGeneratorStore.use.initialEdges();
+  const activeTab = useFlowGeneratorStore.use.activeTab();
+  const setActiveTab = useFlowGeneratorStore.use.setActiveTab();
   const [nodes, setNodes, onNodesChange] = useNodesState<SchemaNode>(
     initialNodes ?? createDefaultNodes(createNodeData),
   );
@@ -63,7 +55,7 @@ export const FlowCanvas = ({ activeTab, onRunComplete }: FlowCanvasProps) => {
     initialEdges ?? [],
   );
   const { screenToFlowPosition } = useReactFlow();
-  const type = useFlowGeneratorStore.use.draggingType();
+  const draggingType = useFlowGeneratorStore.use.draggingType();
   const setDraggingType = useFlowGeneratorStore.use.setDraggingType();
   const draggingTemplateId = useFlowGeneratorStore.use.draggingTemplateId();
   const setDraggingTemplateId =
@@ -82,7 +74,6 @@ export const FlowCanvas = ({ activeTab, onRunComplete }: FlowCanvasProps) => {
   const setRunGate = useFlowGeneratorStore.use.setRunGate();
   const setCanvasState = useFlowGeneratorStore.use.setCanvasState();
   const [templateGroups, setTemplateGroups] = useState<TemplateGroup[]>([]);
-  // 이벤트 기반 요청 상태/액션
   const runRequest = useFlowGeneratorStore.use.runRequest();
   const cancelRequestId = useFlowGeneratorStore.use.cancelRequestId();
   const retryRequestId = useFlowGeneratorStore.use.retryRequestId();
@@ -108,16 +99,29 @@ export const FlowCanvas = ({ activeTab, onRunComplete }: FlowCanvasProps) => {
     setFailedNodeIds,
     setFailedCount,
     setCurrentLevelIndex,
-    onComplete: () => onRunComplete?.(),
+    onComplete: () => setActiveTab("results"),
   });
 
-  // 마지막 사용된 프롬프트 저장 및 프롬프트 모달
   const [lastPrompt, setLastPrompt] = useState<string>("");
+  const validateConnection = useIsValidConnection(nodes);
+  const isValidConnection = useCallback<IsValidConnection<SchemaEdge>>(
+    (candidate: Parameters<IsValidConnection<SchemaEdge>>[0]) => {
+      const normalized: Connection =
+        'id' in candidate
+          ? {
+              source: candidate.source,
+              sourceHandle: candidate.sourceHandle ?? null,
+              target: candidate.target,
+              targetHandle: candidate.targetHandle ?? null,
+            }
+          : candidate;
 
-  // 엣지 연결 유효성 검사
-  const isValidConnection = useIsValidConnection(nodes);
+      return validateConnection(normalized);
+    },
+    [validateConnection],
+  );
 
-  // 엣지 추가
+
   const onConnect = useCallback(
     (connectionParams: Connection) => {
       if (isValidConnection(connectionParams)) {
@@ -156,25 +160,23 @@ export const FlowCanvas = ({ activeTab, onRunComplete }: FlowCanvasProps) => {
     edgeReconnectSuccessful.current = false;
   }, []);
 
-  // 기존 엣지를 새로운 연결로 갱신
   const onReconnect = useCallback(
     (oldEdge: SchemaEdge, newConnection: Connection) => {
-      // 재연결 시에도 동일한 유효성 검사를 적용해 우회 방지
       if (!isValidConnection(newConnection)) {
         edgeReconnectSuccessful.current = false;
         return;
       }
       edgeReconnectSuccessful.current = true;
-      setEdges((edges) => reconnectEdge(oldEdge, newConnection, edges));
+      setEdges((existingEdges) => reconnectEdge(oldEdge, newConnection, existingEdges));
     },
     [setEdges, isValidConnection],
   );
 
   const onReconnectEnd = useCallback(
-    (reconnectEvent: MouseEvent | TouchEvent, edge: SchemaEdge) => {
+    (_event: MouseEvent | TouchEvent, edge: SchemaEdge) => {
       if (!edgeReconnectSuccessful.current) {
-        setEdges((edges) =>
-          edges.filter((candidate) => candidate.id !== edge.id),
+        setEdges((existingEdges) =>
+          existingEdges.filter((candidate) => candidate.id !== edge.id),
         );
       }
       edgeReconnectSuccessful.current = true;
@@ -220,16 +222,15 @@ export const FlowCanvas = ({ activeTab, onRunComplete }: FlowCanvasProps) => {
   }, [nodes]);
 
   const onDragOver = useCallback(
-    (event: React.DragEvent) => {
+    (event: DragEvent) => {
       event.preventDefault();
       event.dataTransfer.dropEffect = draggingTemplateId ? "copy" : "move";
     },
     [draggingTemplateId],
   );
 
-  // 팔레트에서 노드/템플릿 드롭
   const onDrop = useCallback(
-    async (dropEvent: React.DragEvent) => {
+    async (dropEvent: DragEvent) => {
       dropEvent.preventDefault();
 
       const position = screenToFlowPosition({
@@ -249,11 +250,16 @@ export const FlowCanvas = ({ activeTab, onRunComplete }: FlowCanvasProps) => {
         return;
       }
 
-      if (!type) {
+      if (!draggingType) {
         return;
       }
 
-      const newNode = buildNewNode(type, position, getId, createNodeData);
+      const newNode = buildNewNode(
+        draggingType,
+        position,
+        getId,
+        createNodeData,
+      );
 
       setNodes((existingNodes) => existingNodes.concat(newNode));
       const shouldSkipDialog = nodeTypeConfigs[newNode.type]?.skipDialog;
@@ -268,6 +274,7 @@ export const FlowCanvas = ({ activeTab, onRunComplete }: FlowCanvasProps) => {
     },
     [
       draggingTemplateId,
+      draggingType,
       ensureTemplateDetail,
       insertTemplate,
       openNodeDialog,
@@ -275,30 +282,25 @@ export const FlowCanvas = ({ activeTab, onRunComplete }: FlowCanvasProps) => {
       setDraggingTemplateId,
       setDraggingType,
       setNodes,
-      type,
     ],
   );
 
-  // 실행 가능 조건 검사
   const runEligibility = useRunEligibility(nodes, edges);
 
-  // 실행 중단
   const cancelRun = useCallback(() => {
     if (!isRunning) return;
     delayCancelAll();
     sseCancelAll();
-    // 실행 중이던 노드를 실패로 표시
-    setNodes((nodes) => markRunningNodesAsFailed(nodes));
+    setNodes((existingNodes) => markRunningNodesAsFailed(existingNodes));
   }, [isRunning, delayCancelAll, sseCancelAll, setNodes]);
 
-  // 전체 실행 시작
   const runFlow = useCallback(
     async (prompt: string) => {
       if (!runEligibility.ok || isRunning) return;
 
       try {
         setIsRunning(true);
-        setLastPrompt(prompt); // (1) 프롬프트 저장
+        setLastPrompt(prompt);
         await runFlowExec(prompt, nodes, edges);
       } catch (error) {
         console.error("플로우 실행 오류:", error);
@@ -309,7 +311,6 @@ export const FlowCanvas = ({ activeTab, onRunComplete }: FlowCanvasProps) => {
     [runEligibility.ok, isRunning, runFlowExec, nodes, edges, setIsRunning],
   );
 
-  // 플로우 재시작 (2) 저장된 프롬프트 재사용
   const retryFlow = useCallback(async () => {
     if (!lastPrompt || !runEligibility.ok || isRunning) return;
 
@@ -367,39 +368,24 @@ export const FlowCanvas = ({ activeTab, onRunComplete }: FlowCanvasProps) => {
   }, [runEligibility, isRunning, error, failedNodeIds, setRunGate]);
 
   return (
-    <div className="relative min-h-0 flex-1" ref={reactFlowWrapper}>
+    <div className="relative min-h-0 flex-1">
       {activeTab === "graph" ? (
-        <>
-          <ReactFlow<SchemaNode, SchemaEdge>
-            nodes={nodes}
-            edges={edges}
-            onNodesChange={onNodesChange}
-            onEdgesChange={onEdgesChange}
-            onConnect={onConnect}
-            isValidConnection={isValidConnection}
-            onDrop={onDrop}
-            onDragOver={onDragOver}
-            onReconnect={onReconnect}
-            onReconnectStart={onReconnectStart}
-            onReconnectEnd={onReconnectEnd}
-            nodeTypes={nodeTypes}
-            edgeTypes={edgeTypes}
-            fitView
-            tabIndex={0}
-            className="bg-gradient-to-br from-slate-50 to-violet-50"
-            defaultEdgeOptions={{
-              type: "custom",
-              deletable: true,
-            }}
-          >
-            <Controls />
-            <MiniMap />
-            <Background />
-          </ReactFlow>
-          <TemplateGroupsOverlay groups={templateGroups} />
-        </>
+        <FlowGraphView
+          nodes={nodes}
+          edges={edges}
+          onNodesChange={onNodesChange}
+          onEdgesChange={onEdgesChange}
+          onConnect={onConnect}
+          isValidConnection={isValidConnection}
+          onDrop={onDrop}
+          onDragOver={onDragOver}
+          onReconnect={onReconnect}
+          onReconnectStart={onReconnectStart}
+          onReconnectEnd={onReconnectEnd}
+          templateGroups={templateGroups}
+        />
       ) : (
-        <ResultsTab results={results} sessionId={sessionId} />
+        <FlowResultsPanel results={results} sessionId={sessionId} />
       )}
     </div>
   );

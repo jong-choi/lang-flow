@@ -5,7 +5,7 @@ import { AlertCircle, RotateCw } from "lucide-react";
 import {
   createBasicMenuItems,
   createFullMenuItems,
-} from "@/features/flow/components/nodes/menu/node-menu-items";
+} from "@/features/flow/utils/node-menu-items";
 import { CustomHandle } from "@/features/flow/components/nodes/ui/custom-handle";
 import { EditDialog } from "@/features/flow/components/nodes/ui/edit-dialog";
 import { NodeContainer } from "@/features/flow/components/nodes/ui/node-container";

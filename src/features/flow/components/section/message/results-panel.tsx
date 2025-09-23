@@ -1,17 +1,16 @@
 "use client";
 
-import React from "react";
 import { Bot, MessageSquare, SquareTerminal } from "lucide-react";
 
-interface ResultsTabProps {
+export interface FlowResultsPanelProps {
   results: Array<{ nodeId: string; nodeType: string; text: string }>;
   sessionId?: string | null;
 }
 
-/**
- * 채팅 노드의 결과물을 표시하는 탭
- */
-export function ResultsTab({ results, sessionId }: ResultsTabProps) {
+export const FlowResultsPanel = ({
+  results,
+  sessionId,
+}: FlowResultsPanelProps) => {
   return (
     <div className="flex h-full w-full flex-col">
       <div className="flex shrink-0 items-center justify-between border-b border-slate-200 bg-white/60 px-4 py-2 backdrop-blur supports-[backdrop-filter]:bg-white/40 dark:border-slate-800 dark:bg-slate-900/60">
@@ -20,8 +19,7 @@ export function ResultsTab({ results, sessionId }: ResultsTabProps) {
         </div>
         {sessionId && (
           <div className="flex items-center gap-1 text-xs text-slate-500 dark:text-slate-400">
-            <SquareTerminal className="size-3" />
-            세션: {sessionId}
+            <SquareTerminal className="size-3" /> 세션: {sessionId}
           </div>
         )}
       </div>
@@ -53,4 +51,4 @@ export function ResultsTab({ results, sessionId }: ResultsTabProps) {
       </div>
     </div>
   );
-}
+};
