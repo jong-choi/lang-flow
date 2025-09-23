@@ -20,6 +20,7 @@ import { edgeTypes } from "@/features/flow/components/nodes/custom-edge";
 import { nodeTypes } from "@/features/flow/components/nodes/node-type-map";
 import { ResultsTab } from "@/features/flow/components/results-tab";
 import { TemplateGroupsOverlay } from "@/features/flow/components/workflow/template-group-layover";
+import { nodeTypeConfigs } from "@/features/flow/constants/node-config";
 import { useDelayApi } from "@/features/flow/hooks/use-delay-api";
 import { useFlowExecution } from "@/features/flow/hooks/use-flow-execution";
 import { useIsValidConnection } from "@/features/flow/hooks/use-is-valid-connection";
@@ -48,23 +49,18 @@ import { createRunGateState } from "@/features/flow/utils/workflow";
 type FlowCanvasProps = {
   activeTab: "graph" | "results";
   onRunComplete?: () => void;
-  initialNodes?: SchemaNode[];
-  initialEdges?: SchemaEdge[];
 };
 
-export const FlowCanvas = ({
-  activeTab,
-  onRunComplete,
-  initialNodes: initialNodesProp,
-  initialEdges: initialEdgesProp,
-}: FlowCanvasProps) => {
+export const FlowCanvas = ({ activeTab, onRunComplete }: FlowCanvasProps) => {
   const reactFlowWrapper = useRef<HTMLDivElement>(null);
   const edgeReconnectSuccessful = useRef(true);
+  const initialNodes = useFlowGeneratorStore.use.initialNodes();
+  const initialEdges = useFlowGeneratorStore.use.initialEdges();
   const [nodes, setNodes, onNodesChange] = useNodesState<SchemaNode>(
-    initialNodesProp ?? createDefaultNodes(createNodeData),
+    initialNodes ?? createDefaultNodes(createNodeData),
   );
   const [edges, setEdges, onEdgesChange] = useEdgesState<SchemaEdge>(
-    initialEdgesProp ?? [],
+    initialEdges ?? [],
   );
   const { screenToFlowPosition } = useReactFlow();
   const type = useFlowGeneratorStore.use.draggingType();
@@ -96,6 +92,7 @@ export const FlowCanvas = ({
   const consumeRetryRequest = useFlowGeneratorStore.use.consumeRetryRequest();
   const consumeNodeRetryRequest =
     useFlowGeneratorStore.use.consumeNodeRetryRequest();
+  const openNodeDialog = useFlowGeneratorStore.use.openNodeDialog();
 
   const {
     runFlow: runFlowExec,
@@ -193,9 +190,9 @@ export const FlowCanvas = ({
   const hasHydratedEdgesFromProps = useRef(false);
 
   useEffect(() => {
-    if (initialNodesProp) {
+    if (initialNodes) {
       hasHydratedNodesFromProps.current = true;
-      setNodes(duplicateNodes(initialNodesProp));
+      setNodes(duplicateNodes(initialNodes));
       return;
     }
 
@@ -203,12 +200,12 @@ export const FlowCanvas = ({
       hasHydratedNodesFromProps.current = false;
       setNodes(createDefaultNodes(createNodeData));
     }
-  }, [initialNodesProp, setNodes]);
+  }, [initialNodes, setNodes]);
 
   useEffect(() => {
-    if (initialEdgesProp) {
+    if (initialEdges) {
       hasHydratedEdgesFromProps.current = true;
-      setEdges(duplicateEdges(initialEdgesProp));
+      setEdges(duplicateEdges(initialEdges));
       return;
     }
 
@@ -216,7 +213,7 @@ export const FlowCanvas = ({
       hasHydratedEdgesFromProps.current = false;
       setEdges([]);
     }
-  }, [initialEdgesProp, setEdges]);
+  }, [initialEdges, setEdges]);
 
   useEffect(() => {
     setTemplateGroups((groups) => pruneEmptyTemplateGroups(groups, nodes));
@@ -259,12 +256,21 @@ export const FlowCanvas = ({
       const newNode = buildNewNode(type, position, getId, createNodeData);
 
       setNodes((existingNodes) => existingNodes.concat(newNode));
+      const shouldSkipDialog = nodeTypeConfigs[newNode.type]?.skipDialog;
+      if (!shouldSkipDialog) {
+        openNodeDialog({
+          nodeId: newNode.id,
+          nodeData: newNode.data,
+          trigger: "palette-drop",
+        });
+      }
       setDraggingType(undefined);
     },
     [
       draggingTemplateId,
       ensureTemplateDetail,
       insertTemplate,
+      openNodeDialog,
       screenToFlowPosition,
       setDraggingTemplateId,
       setDraggingType,

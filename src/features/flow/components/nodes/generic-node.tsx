@@ -8,7 +8,6 @@ import {
 } from "@/features/flow/components/nodes/menu/node-menu-items";
 import { CustomHandle } from "@/features/flow/components/nodes/ui/custom-handle";
 import { EditDialog } from "@/features/flow/components/nodes/ui/edit-dialog";
-import { MessageEditDialog } from "@/features/flow/components/nodes/ui/message-edit-dialog";
 import { NodeContainer } from "@/features/flow/components/nodes/ui/node-container";
 import { NodeContent } from "@/features/flow/components/nodes/ui/node-content";
 import { nodeConfigs } from "@/features/flow/constants/node-config";
@@ -88,12 +87,6 @@ export const GenericNode: React.FC<GenericNodeProps> = ({
         nodeData={menu.editDialog.nodeData}
         onOpenChange={menu.editDialog.onOpenChange}
         onSubmit={menu.editDialog.onSubmit}
-      />
-      <MessageEditDialog
-        open={menu.messageEditDialog.open}
-        nodeData={menu.messageEditDialog.nodeData}
-        onOpenChange={menu.messageEditDialog.onOpenChange}
-        onSubmit={menu.messageEditDialog.onSubmit}
       />
     </>
   );

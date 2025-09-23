@@ -9,26 +9,16 @@ import {
   shouldFetchTemplates,
 } from "@/features/flow/utils/workflow";
 
-interface WorkflowPaletteProps {
-  onOpen?: (template: WorkflowTemplateSummary) => void;
-  onCreate?: () => void;
-  onAction?: (
-    template: WorkflowTemplateSummary,
-    action: "edit" | "delete",
-  ) => void;
-}
-
-export const WorkflowPalette = ({
-  onOpen,
-  onCreate,
-  onAction,
-}: WorkflowPaletteProps) => {
+export const WorkflowPalette = () => {
   const [query, setQuery] = useState("");
   const templates = useFlowGeneratorStore.use.templates();
   const isLoading = useFlowGeneratorStore.use.isLoadingTemplates();
   const fetchTemplates = useFlowGeneratorStore.use.fetchTemplates();
   const setDraggingTemplateId =
     useFlowGeneratorStore.use.setDraggingTemplateId();
+  const setTemplateModalOpen = useFlowGeneratorStore.use.setTemplateModalOpen();
+  const setConfirmTemplateAction =
+    useFlowGeneratorStore.use.setConfirmTemplateAction();
 
   useEffect(() => {
     if (shouldFetchTemplates(templates)) {
@@ -41,12 +31,8 @@ export const WorkflowPalette = ({
   }, [query, templates]);
 
   const handleCreate = useCallback(() => {
-    if (onCreate) {
-      onCreate();
-      return;
-    }
-    void fetchTemplates();
-  }, [fetchTemplates, onCreate]);
+    setTemplateModalOpen(true);
+  }, [setTemplateModalOpen]);
 
   const handleDragStart = useCallback(
     (event: React.DragEvent, template: WorkflowTemplateSummary) => {
@@ -63,9 +49,9 @@ export const WorkflowPalette = ({
 
   const handleAction = useCallback(
     (template: WorkflowTemplateSummary, action: "edit" | "delete") => {
-      onAction?.(template, action);
+      setConfirmTemplateAction({ template, action });
     },
-    [onAction],
+    [setConfirmTemplateAction],
   );
 
   return (
@@ -129,7 +115,7 @@ export const WorkflowPalette = ({
                 </div>
                 <div className="min-w-0 flex-1">
                   <button
-                    onClick={() => onOpen?.(template)}
+                    onClick={() => handleAction(template, "edit")}
                     className="w-full text-left"
                     aria-label={`템플릿 열기 ${template.name}`}
                   >

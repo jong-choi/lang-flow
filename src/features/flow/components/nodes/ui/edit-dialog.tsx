@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useMemo } from "react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -15,40 +15,48 @@ import {
 import {
   Form,
   FormControl,
+  FormDescription,
   FormField,
   FormItem,
   FormLabel,
   FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import type { NodeData } from "@/features/flow/types/nodes";
 
-const AVAILABLE_MODELS = ["gemma-1b-it", "gemma-4b-it", "gemma-8b-it"] as const;
+const DEFAULT_MESSAGE_TEMPLATE = "기본 메시지: {input}";
 
-export const DEFAULT_MODEL = AVAILABLE_MODELS[0];
+export interface NodeEditFormValues {
+  label: string;
+  template?: string;
+}
 
-const editNodeSchema = z.object({
-  label: z.string().min(1, "노드 이름을 입력해주세요."),
-  prompt: z.string().optional(),
-  model: z.string().optional(),
-  template: z.string().optional(),
-});
+const createEditNodeSchema = (isMessageNode: boolean) =>
+  z
+    .object({
+      label: z.string().min(1, "노드 이름을 입력해주세요."),
+      template: z.string().optional(),
+    })
+    .superRefine((values, ctx) => {
+      if (!isMessageNode) {
+        return;
+      }
 
-export type EditNodeFormValues = z.infer<typeof editNodeSchema>;
+      if (!values.template || values.template.trim().length === 0) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: ["template"],
+          message: "메시지 템플릿을 입력해주세요.",
+        });
+      }
+    });
 
 interface EditDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   nodeData: NodeData | null;
-  onSubmit: (values: EditNodeFormValues) => void;
+  onSubmit: (values: NodeEditFormValues) => void;
 }
 
 export const EditDialog: React.FC<EditDialogProps> = ({
@@ -57,14 +65,22 @@ export const EditDialog: React.FC<EditDialogProps> = ({
   nodeData,
   onSubmit,
 }) => {
+  const isMessageNode = nodeData?.nodeType === "messageNode";
+  const schema = useMemo(() => createEditNodeSchema(isMessageNode), [
+    isMessageNode,
+  ]);
+
   const template =
-    typeof nodeData?.template === "string" ? nodeData.template : undefined;
-  const form = useForm<EditNodeFormValues>({
-    resolver: zodResolver(editNodeSchema),
+    typeof nodeData?.template === "string"
+      ? nodeData.template
+      : isMessageNode
+        ? DEFAULT_MESSAGE_TEMPLATE
+        : undefined;
+
+  const form = useForm<NodeEditFormValues>({
+    resolver: zodResolver(schema),
     defaultValues: {
       label: nodeData?.label ?? "",
-      prompt: nodeData?.prompt ?? "",
-      model: nodeData?.model ?? DEFAULT_MODEL,
       template,
     },
   });
@@ -76,37 +92,34 @@ export const EditDialog: React.FC<EditDialogProps> = ({
 
     form.reset({
       label: nodeData?.label ?? "",
-      prompt: nodeData?.prompt ?? "",
-      model: nodeData?.model ?? DEFAULT_MODEL,
       template,
     });
   }, [form, nodeData, open, template]);
 
-  const isProcessingNode = false; // custom 노드 제거: 처리 전용 필드 비활성화
-
   const handleSubmit = form.handleSubmit((values) => {
+    const trimmedTemplate = values.template?.trim();
     onSubmit({
       label: values.label,
-      prompt: undefined,
-      model: undefined,
-      template: values.template,
+      template: isMessageNode ? trimmedTemplate : undefined,
     });
   });
 
+  const dialogTitle = isMessageNode ? "메시지 노드 편집" : "노드 편집";
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent>
+      <DialogContent className={isMessageNode ? "max-w-md" : undefined}>
         <Form {...form}>
           <form onSubmit={handleSubmit} className="space-y-4">
             <DialogHeader>
-              <DialogTitle>노드 편집</DialogTitle>
+              <DialogTitle>{dialogTitle}</DialogTitle>
             </DialogHeader>
             <FormField
               control={form.control}
               name="label"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>이름</FormLabel>
+                  <FormLabel>노드 이름</FormLabel>
                   <FormControl>
                     <Input {...field} placeholder="노드 이름" />
                   </FormControl>
@@ -114,54 +127,46 @@ export const EditDialog: React.FC<EditDialogProps> = ({
                 </FormItem>
               )}
             />
-            {isProcessingNode && (
-              <>
-                <FormField
-                  control={form.control}
-                  name="prompt"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>프롬프트</FormLabel>
-                      <FormControl>
-                        <Textarea
-                          {...field}
-                          placeholder="모델에게 전달할 프롬프트를 입력하세요."
-                          rows={4}
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={form.control}
-                  name="model"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>모델</FormLabel>
-                      <Select
-                        onValueChange={field.onChange}
-                        value={field.value ?? undefined}
-                        defaultValue={field.value ?? undefined}
-                      >
-                        <FormControl>
-                          <SelectTrigger className="w-full">
-                            <SelectValue placeholder="모델을 선택하세요" />
-                          </SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
-                          {AVAILABLE_MODELS.map((model) => (
-                            <SelectItem key={model} value={model}>
-                              {model}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              </>
+            {isMessageNode && (
+              <FormField
+                control={form.control}
+                name="template"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>메시지 템플릿</FormLabel>
+                    <FormControl>
+                      <Textarea
+                        {...field}
+                        placeholder="메시지 템플릿을 입력해주세요"
+                        className="min-h-[120px] resize-none"
+                      />
+                    </FormControl>
+                    <FormDescription className="text-sm text-muted-foreground">
+                      <span className="space-y-1 block">
+                        <span className="font-medium block">템플릿 사용법:</span>
+                        <span className="block">
+                          • {" "}
+                          <code className="bg-muted px-1 py-0.5 rounded text-xs">
+                            {"{input}"}
+                          </code>
+                          을 사용하면 이전 노드의 출력 내용으로 자동 치환됩니다
+                        </span>
+                        <span className="block">
+                          • 예시 - 질문: {"{input}"} 답변을 요약해줘
+                        </span>
+                        <span className="block">
+                          • 여러 개의{" "}
+                          <code className="bg-muted px-1 py-0.5 rounded text-xs">
+                            {"{input}"}
+                          </code>
+                          을 사용할 수 있습니다
+                        </span>
+                      </span>
+                    </FormDescription>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
             )}
             <DialogFooter>
               <Button

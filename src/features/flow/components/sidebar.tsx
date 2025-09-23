@@ -3,7 +3,6 @@
 import type { ReactNode } from "react";
 import { Hand, Info, Link2, MousePointer2, Trash2 } from "lucide-react";
 import { useFlowGeneratorStore } from "@/features/flow/providers/flow-store-provider";
-import type { WorkflowTemplateSummary } from "@/features/flow/types/nodes";
 import { SidebarNodePalette } from "./panel/sidebar-node-palette";
 import { WorkflowPalette } from "./panel/workflow-palette";
 
@@ -30,20 +29,7 @@ const PaletteTab = ({
   </button>
 );
 
-export interface SidebarProps {
-  onTemplateAction?: (
-    template: WorkflowTemplateSummary,
-    action: "edit" | "delete",
-  ) => void;
-  onTemplateOpen?: (template: WorkflowTemplateSummary) => void;
-  onTemplateCreate?: () => void;
-}
-
-export const Sidebar = ({
-  onTemplateAction,
-  onTemplateOpen,
-  onTemplateCreate,
-}: SidebarProps) => {
+export const Sidebar = () => {
   const active = useFlowGeneratorStore.use.paletteView();
   const setActive = useFlowGeneratorStore.use.setPaletteView();
 
@@ -63,15 +49,7 @@ export const Sidebar = ({
 
       {/* 중간 영역 */}
       <div className="min-h-0 flex-1 overflow-y-auto pr-1">
-        {active === "nodes" ? (
-          <SidebarNodePalette />
-        ) : (
-          <WorkflowPalette
-            onAction={onTemplateAction}
-            onOpen={onTemplateOpen}
-            onCreate={onTemplateCreate}
-          />
-        )}
+        {active === "nodes" ? <SidebarNodePalette /> : <WorkflowPalette />}
       </div>
 
       {/* 하단 안내 */}
@@ -105,5 +83,3 @@ export const Sidebar = ({
     </aside>
   );
 };
-
-export default Sidebar;
