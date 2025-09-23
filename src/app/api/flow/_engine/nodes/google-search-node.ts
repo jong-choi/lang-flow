@@ -21,7 +21,7 @@ export async function googleSearchNode(
     // 검색 쿼리 추출 (마지막 메시지 혹은 프롬프트)
     const searchQuery =
       state.prompt ||
-      (state.messages[state.messages.length - 1]?.content as string) ||
+      String(state.messages[state.messages.length - 1]?.content) ||
       "";
 
     const apiKey = process.env.GOOGLE_SEARCH_API_KEY!;

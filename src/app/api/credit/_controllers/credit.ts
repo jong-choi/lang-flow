@@ -1,4 +1,4 @@
-import { desc, eq, sql } from "drizzle-orm";
+import { and, desc, eq, gte, sql } from "drizzle-orm";
 import {
   creditHistories,
   type creditHistoryTypeEnum,
@@ -62,13 +62,24 @@ const toSummary = (row: CreditRecord): CreditSummary => ({
   updatedAt: row.updatedAt ?? null,
 });
 
+const loadCreditForUpdate = async (
+  transaction: TransactionClient,
+  userId: string,
+) => {
+  const [credit] = await transaction
+    .select()
+    .from(credits)
+    .where(eq(credits.userId, userId))
+    .for("update");
+
+  return credit ?? null;
+};
+
 const ensureCreditRecord = async (
   transaction: TransactionClient,
   userId: string,
 ): Promise<CreditRecord> => {
-  const existing = await transaction.query.credits.findFirst({
-    where: (credit, { eq: equals }) => equals(credit.userId, userId),
-  });
+  const existing = await loadCreditForUpdate(transaction, userId);
 
   if (existing) {
     return existing;
@@ -77,13 +88,20 @@ const ensureCreditRecord = async (
   const [created] = await transaction
     .insert(credits)
     .values({ userId })
+    .onConflictDoNothing()
     .returning();
 
-  if (!created) {
+  if (created) {
+    return created;
+  }
+
+  const reloaded = await loadCreditForUpdate(transaction, userId);
+
+  if (!reloaded) {
     throw new Error("크레딧 정보를 생성하지 못했습니다.");
   }
 
-  return created;
+  return reloaded;
 };
 
 const toHistoryItem = (row: CreditHistoryRecord): CreditHistoryItem => ({
@@ -115,7 +133,7 @@ export const getCreditSummary = async (
     } satisfies CreditSummary;
   }
 
-  return toSummary(row as CreditRecord);
+  return toSummary(row);
 };
 
 export const setConsumptionFlag = async ({
@@ -141,7 +159,7 @@ export const setConsumptionFlag = async ({
       throw new Error("크레딧 정보를 갱신하지 못했습니다.");
     }
 
-    return toSummary(updated as CreditRecord);
+    return toSummary(updated);
   });
 };
 
@@ -159,12 +177,14 @@ export const chargeCredit = async ({
   }
 
   return db.transaction(async (transaction) => {
-    const credit = await ensureCreditRecord(transaction, userId);
-    const newBalance = credit.balance + amount;
+    await ensureCreditRecord(transaction, userId);
 
     const [updated] = await transaction
       .update(credits)
-      .set({ balance: newBalance, updatedAt: new Date() })
+      .set({
+        balance: sql`${credits.balance} + ${amount}`,
+        updatedAt: new Date(),
+      })
       .where(eq(credits.userId, userId))
       .returning();
 
@@ -172,20 +192,22 @@ export const chargeCredit = async ({
       throw new Error("크레딧 잔액을 갱신하지 못했습니다.");
     }
 
+    const updatedCredit = updated;
+
     const [history] = await transaction
       .insert(creditHistories)
       .values({
         userId,
         type: "charge",
         amount,
-        balanceAfter: newBalance,
+        balanceAfter: updatedCredit.balance,
         description: description ?? null,
       })
       .returning();
 
     return {
-      summary: toSummary(updated as CreditRecord),
-      history: toHistoryItem(history as CreditHistoryRecord),
+      summary: toSummary(updatedCredit),
+      history: toHistoryItem(history),
     };
   });
 };
@@ -222,25 +244,24 @@ export const consumeCredit = async ({
 
       return {
         summary: toSummary(credit),
-        history: toHistoryItem(history as CreditHistoryRecord),
+        history: toHistoryItem(history),
       };
     }
 
-    if (credit.balance < amount) {
-      throw new InsufficientCreditError();
-    }
-
-    const newBalance = credit.balance - amount;
-
     const [updated] = await transaction
       .update(credits)
-      .set({ balance: newBalance, updatedAt: new Date() })
-      .where(eq(credits.userId, userId))
+      .set({
+        balance: sql`${credits.balance} - ${amount}`,
+        updatedAt: new Date(),
+      })
+      .where(and(eq(credits.userId, userId), gte(credits.balance, amount)))
       .returning();
 
     if (!updated) {
-      throw new Error("크레딧 잔액을 갱신하지 못했습니다.");
+      throw new InsufficientCreditError();
     }
+
+    const updatedCredit = updated;
 
     const [history] = await transaction
       .insert(creditHistories)
@@ -248,14 +269,14 @@ export const consumeCredit = async ({
         userId,
         type: "consume",
         amount: -amount,
-        balanceAfter: newBalance,
+        balanceAfter: updatedCredit.balance,
         description: description ?? null,
       })
       .returning();
 
     return {
-      summary: toSummary(updated as CreditRecord),
-      history: toHistoryItem(history as CreditHistoryRecord),
+      summary: toSummary(updatedCredit),
+      history: toHistoryItem(history),
     };
   });
 };
@@ -286,9 +307,7 @@ export const listCreditHistory = async ({
     .where(eq(creditHistories.userId, userId));
 
   return {
-    histories: histories.map((history) =>
-      toHistoryItem(history as CreditHistoryRecord),
-    ),
+    histories: histories.map((history) => toHistoryItem(history)),
     pagination: {
       limit: safeLimit,
       offset: safeOffset,

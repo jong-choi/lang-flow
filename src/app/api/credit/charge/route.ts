@@ -2,7 +2,6 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import {
   chargeCredit,
-  CreditOperationError,
   InvalidCreditAmountError,
 } from "@/app/api/credit/_controllers/credit";
 
@@ -31,10 +30,6 @@ export async function POST(request: Request) {
     });
   } catch (error) {
     if (error instanceof InvalidCreditAmountError) {
-      return NextResponse.json({ message: error.message }, { status: 400 });
-    }
-
-    if (error instanceof CreditOperationError) {
       return NextResponse.json({ message: error.message }, { status: 400 });
     }
 
