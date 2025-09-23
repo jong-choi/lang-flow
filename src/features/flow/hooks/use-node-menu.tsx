@@ -24,7 +24,8 @@ export const useNodeMenu = (id: string) => {
   const nodeDialog = useFlowGeneratorStore.use.nodeDialog();
   const openNodeDialog = useFlowGeneratorStore.use.openNodeDialog();
   const closeNodeDialog = useFlowGeneratorStore.use.closeNodeDialog();
-  const updateNodeDialogData = useFlowGeneratorStore.use.updateNodeDialogData();
+  const updateNodeDialogData =
+    useFlowGeneratorStore.use.updateNodeDialogData();
   const isCurrentNodeDialogTarget = nodeDialog.targetNodeId === id;
 
   const handleDelete = useCallback(() => {
@@ -37,7 +38,11 @@ export const useNodeMenu = (id: string) => {
 
   const handleEdit = useCallback(
     (currentData: NodeData) => {
-      openNodeDialog({ nodeId: id, nodeData: currentData });
+      openNodeDialog({
+        nodeId: id,
+        nodeData: currentData,
+        trigger: "node-menu",
+      });
       setIsMenuOpen(false);
     },
     [id, openNodeDialog],
@@ -142,7 +147,11 @@ export const useNodeMenu = (id: string) => {
       setNodes((nodes) => [...nodes, newNode]);
       const shouldSkipDialog = nodeTypeConfigs[newNode.type]?.skipDialog;
       if (!shouldSkipDialog) {
-        openNodeDialog({ nodeId: newNode.id, nodeData: newNode.data });
+        openNodeDialog({
+          nodeId: newNode.id,
+          nodeData: newNode.data,
+          trigger: "node-menu",
+        });
       }
       setEdges((edges) => [...edges, newEdge]);
     }

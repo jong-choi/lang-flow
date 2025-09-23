@@ -263,7 +263,11 @@ export const FlowCanvas = ({
       setNodes((existingNodes) => existingNodes.concat(newNode));
       const shouldSkipDialog = nodeTypeConfigs[newNode.type]?.skipDialog;
       if (!shouldSkipDialog) {
-        openNodeDialog({ nodeId: newNode.id, nodeData: newNode.data });
+        openNodeDialog({
+          nodeId: newNode.id,
+          nodeData: newNode.data,
+          trigger: "palette-drop",
+        });
       }
       setDraggingType(undefined);
     },

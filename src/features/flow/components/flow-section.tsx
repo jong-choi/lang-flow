@@ -7,11 +7,7 @@ import { FlowCanvas } from "@/features/flow/components/flow-canvas";
 import { PromptInputModal } from "@/features/flow/components/prompt-input-modal";
 import { Sidebar } from "@/features/flow/components/sidebar";
 import { useFlowGeneratorStore } from "@/features/flow/providers/flow-store-provider";
-import type {
-  SchemaEdge,
-  SchemaNode,
-  WorkflowTemplateSummary,
-} from "@/features/flow/types/nodes";
+import type { SchemaEdge, SchemaNode } from "@/features/flow/types/nodes";
 
 const PlayIcon = <Play className="size-4" />;
 const SquareIcon = <Square className="size-4" />;
@@ -22,23 +18,13 @@ const MessageSquareIcon = <MessageSquare className="size-4" />;
 interface FlowSectionProps {
   initialNodes?: SchemaNode[];
   initialEdges?: SchemaEdge[];
-  onTemplateAction?: (
-    template: WorkflowTemplateSummary,
-    action: "edit" | "delete",
-  ) => void;
-  onTemplateOpen?: (template: WorkflowTemplateSummary) => void;
-  onTemplateCreate?: () => void;
 }
 
 export const FlowSection = ({
   initialNodes,
   initialEdges,
-  onTemplateAction,
-  onTemplateOpen,
-  onTemplateCreate,
 }: FlowSectionProps) => {
   const [activeTab, setActiveTab] = useState<"graph" | "results">("graph");
-  const [showPromptModal, setShowPromptModal] = useState(false);
   const isRunning = useFlowGeneratorStore.use.isRunning();
   const canRun = useFlowGeneratorStore.use.canRun();
   const runDisabledReason = useFlowGeneratorStore.use.runDisabledReason();
@@ -46,6 +32,10 @@ export const FlowSection = ({
   const requestRun = useFlowGeneratorStore.use.requestRun();
   const requestCancel = useFlowGeneratorStore.use.requestCancel();
   const requestRetry = useFlowGeneratorStore.use.requestRetry();
+  const isPromptDialogOpen = useFlowGeneratorStore.use.promptDialog(
+    (dialog) => dialog.isOpen,
+  );
+  const setPromptDialogOpen = useFlowGeneratorStore.use.setPromptDialogOpen();
 
   const startDisabled = !canRun;
   const startTitle = runDisabledReason ?? "";
@@ -65,11 +55,7 @@ export const FlowSection = ({
 
   return (
     <div className="flex flex-1 min-h-0">
-      <Sidebar
-        onTemplateAction={onTemplateAction}
-        onTemplateOpen={onTemplateOpen}
-        onTemplateCreate={onTemplateCreate}
-      />
+      <Sidebar />
       <div className="flex-1 flex flex-col">
         {/* 헤더 */}
         <div className="shrink-0 border-b bg-white/60 dark:bg-slate-900/60 backdrop-blur supports-[backdrop-filter]:bg-white/40 border-slate-200 dark:border-slate-800 px-4 py-2 flex items-center justify-between">
@@ -77,7 +63,7 @@ export const FlowSection = ({
             <div className="flex items-center gap-2">
               <button
                 className="inline-flex items-center gap-1 px-3 h-9 rounded-md bg-slate-900 text-slate-50 disabled:opacity-50 disabled:cursor-not-allowed"
-                onClick={() => setShowPromptModal(true)}
+                onClick={() => setPromptDialogOpen(true)}
                 disabled={startDisabled}
                 title={startTitle}
               >
@@ -142,8 +128,8 @@ export const FlowSection = ({
 
         {/* 프롬프트 모달 */}
         <PromptInputModal
-          open={showPromptModal}
-          onOpenChange={setShowPromptModal}
+          open={isPromptDialogOpen}
+          onOpenChange={setPromptDialogOpen}
           onSubmit={onSubmitPrompt}
         />
       </div>

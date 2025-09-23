@@ -29,50 +29,55 @@ export const createRunControlsSlice: StateCreator<
   [],
   [],
   RunControlsSlice
-> = (set) => ({
+> = (set, get) => ({
   canRun: false,
   runDisabledReason: null,
   canRetry: false,
-  setRunGate: (partial) =>
-    set((prev) => ({
-      ...prev,
-      ...partial,
-    })),
+  setRunGate: (partial) => {
+    const state = get();
+    const updates: Partial<RunControlsSlice> = {};
+
+    if (partial.canRun !== undefined && partial.canRun !== state.canRun) {
+      updates.canRun = partial.canRun;
+    }
+
+    if (
+      partial.runDisabledReason !== undefined &&
+      partial.runDisabledReason !== state.runDisabledReason
+    ) {
+      updates.runDisabledReason = partial.runDisabledReason;
+    }
+
+    if (partial.canRetry !== undefined && partial.canRetry !== state.canRetry) {
+      updates.canRetry = partial.canRetry;
+    }
+
+    if (Object.keys(updates).length === 0) {
+      return;
+    }
+
+    set(updates as Partial<FlowGeneratorState>);
+  },
 
   runRequest: null,
   cancelRequestId: null,
   retryRequestId: null,
   requestRun: (prompt) =>
-    set((prev) => ({
-      ...prev,
+    set({
       runRequest: {
         id: `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
         prompt,
       },
-    })),
+    }),
   requestCancel: () =>
-    set((prev) => ({
-      ...prev,
+    set({
       cancelRequestId: `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
-    })),
+    }),
   requestRetry: () =>
-    set((prev) => ({
-      ...prev,
+    set({
       retryRequestId: `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
-    })),
-  consumeRunRequest: () =>
-    set((prev) => ({
-      ...prev,
-      runRequest: null,
-    })),
-  consumeCancelRequest: () =>
-    set((prev) => ({
-      ...prev,
-      cancelRequestId: null,
-    })),
-  consumeRetryRequest: () =>
-    set((prev) => ({
-      ...prev,
-      retryRequestId: null,
-    })),
+    }),
+  consumeRunRequest: () => set({ runRequest: null }),
+  consumeCancelRequest: () => set({ cancelRequestId: null }),
+  consumeRetryRequest: () => set({ retryRequestId: null }),
 });

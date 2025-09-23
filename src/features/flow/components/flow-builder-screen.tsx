@@ -18,11 +18,7 @@ import {
   TemplateSaveDialog,
 } from "@/features/flow/components/template-save-dialog";
 import { useFlowGeneratorStore } from "@/features/flow/providers/flow-store-provider";
-import type {
-  SchemaEdge,
-  SchemaNode,
-  WorkflowTemplateSummary,
-} from "@/features/flow/types/nodes";
+import type { SchemaEdge, SchemaNode } from "@/features/flow/types/nodes";
 import {
   deserializeWorkflowDetail,
   serializeEdgeForApi,
@@ -125,13 +121,6 @@ export const FlowBuilderScreen = ({
     ],
   );
 
-  const handleTemplateAction = useCallback(
-    (template: WorkflowTemplateSummary, action: TemplateActionState["action"]) => {
-      setConfirmAction({ template, action });
-    },
-    [setConfirmAction],
-  );
-
   return (
     <div className="flex flex-col h-screen">
       <FlowHeader
@@ -142,8 +131,6 @@ export const FlowBuilderScreen = ({
       <FlowSection
         initialNodes={initialNodes}
         initialEdges={initialEdges}
-        onTemplateAction={handleTemplateAction}
-        onTemplateCreate={() => setTemplateModalOpen(true)}
       />
       <TemplateSaveDialog
         open={isTemplateModalOpen}
