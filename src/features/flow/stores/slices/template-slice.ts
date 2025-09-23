@@ -69,12 +69,19 @@ export const createTemplateSlice: StateCreator<TemplateSlice> = (set, get) => ({
       }
       const payload = (await response.json()) as WorkflowDetailResponse;
       const detail = deserializeWorkflowDetail(payload.workflow);
-      set((prev) => ({
-        templateDetails: { ...prev.templateDetails, [id]: detail },
-        templates: prev.templates.some((item) => item.id === id)
-          ? prev.templates
-          : prev.templates.concat(toTemplateSummary(payload.workflow)),
-      }));
+      set((prev) => {
+        const templateDetails = prev.templateDetails;
+        if (templateDetails[id]) {
+          return prev;
+        }
+
+        return {
+          templateDetails: { ...prev.templateDetails, [id]: detail },
+          templates: prev.templates.some((item) => item.id === id)
+            ? prev.templates
+            : prev.templates.concat(toTemplateSummary(payload.workflow)),
+        };
+      });
       return detail;
     } catch (error) {
       console.error("워크플로우 상세 정보를 불러오지 못했습니다.", error);

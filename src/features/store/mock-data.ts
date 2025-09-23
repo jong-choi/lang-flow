@@ -1,4 +1,4 @@
-import type { WorkflowTemplate } from "@/types/store";
+import type { WorkflowTemplate } from "@/features/store/types";
 
 export const mockTemplates: WorkflowTemplate[] = [
   {

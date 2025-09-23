@@ -2,9 +2,9 @@
 
 import type { ReactNode } from "react";
 import { Hand, Info, Link2, MousePointer2, Trash2 } from "lucide-react";
-import { useFlowGeneratorStore } from "@/features/flow/providers/flow-store-provider";
 import { SidebarNodePalette } from "@/features/flow/components/panel/sidebar-node-palette";
 import { WorkflowPalette } from "@/features/flow/components/panel/workflow-palette";
+import { useFlowGeneratorStore } from "@/features/flow/providers/flow-store-provider";
 
 const PaletteTab = ({
   view,
