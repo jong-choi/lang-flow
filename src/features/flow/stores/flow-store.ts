@@ -1,8 +1,12 @@
 import { createStore } from "zustand";
-import type { CanvasSlice } from "./slices/canvas-slice";
-import { createCanvasSlice } from "./slices/canvas-slice";
+import type { ActiveTabSlice } from "./slices/active-tab-slice";
+import { createActiveTabSlice } from "./slices/active-tab-slice";
 import type { BuilderUiSlice } from "./slices/builder-ui-slice";
 import { createBuilderUiSlice } from "./slices/builder-ui-slice";
+import type { CanvasSlice } from "./slices/canvas-slice";
+import { createCanvasSlice } from "./slices/canvas-slice";
+import type { DialogSlice } from "./slices/dialog-slice";
+import { createDialogSlice } from "./slices/dialog-slice";
 import type { DnDSlice } from "./slices/dnd-slice";
 import { createDnDSlice } from "./slices/dnd-slice";
 import type { NodeActionsSlice } from "./slices/node-actions-slice";
@@ -17,8 +21,6 @@ import type { RunSlice } from "./slices/run-slice";
 import { createRunSlice } from "./slices/run-slice";
 import type { TemplateSlice } from "./slices/template-slice";
 import { createTemplateSlice } from "./slices/template-slice";
-import type { DialogSlice } from "./slices/dialog-slice";
-import { createDialogSlice } from "./slices/dialog-slice";
 
 export type FlowGeneratorState = DnDSlice &
   RunSlice &
@@ -28,6 +30,7 @@ export type FlowGeneratorState = DnDSlice &
   PaletteSlice &
   TemplateSlice &
   CanvasSlice &
+  ActiveTabSlice &
   BuilderUiSlice &
   DialogSlice;
 
@@ -43,6 +46,7 @@ export const createFlowGeneratorStore = (
     ...createPaletteSlice(set, get, api),
     ...createTemplateSlice(set, get, api),
     ...createCanvasSlice(set, get, api),
+    ...createActiveTabSlice(set, get, api),
     ...createBuilderUiSlice(set, get, api),
     ...createDialogSlice(set, get, api),
     ...initialState,
