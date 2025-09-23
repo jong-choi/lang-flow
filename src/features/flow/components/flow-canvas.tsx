@@ -20,6 +20,7 @@ import { edgeTypes } from "@/features/flow/components/nodes/custom-edge";
 import { nodeTypes } from "@/features/flow/components/nodes/node-type-map";
 import { ResultsTab } from "@/features/flow/components/results-tab";
 import { TemplateGroupsOverlay } from "@/features/flow/components/workflow/template-group-layover";
+import { nodeTypeConfigs } from "@/features/flow/constants/node-config";
 import { useDelayApi } from "@/features/flow/hooks/use-delay-api";
 import { useFlowExecution } from "@/features/flow/hooks/use-flow-execution";
 import { useIsValidConnection } from "@/features/flow/hooks/use-is-valid-connection";
@@ -96,6 +97,7 @@ export const FlowCanvas = ({
   const consumeRetryRequest = useFlowGeneratorStore.use.consumeRetryRequest();
   const consumeNodeRetryRequest =
     useFlowGeneratorStore.use.consumeNodeRetryRequest();
+  const openNodeDialog = useFlowGeneratorStore.use.openNodeDialog();
 
   const {
     runFlow: runFlowExec,
@@ -259,12 +261,17 @@ export const FlowCanvas = ({
       const newNode = buildNewNode(type, position, getId, createNodeData);
 
       setNodes((existingNodes) => existingNodes.concat(newNode));
+      const shouldSkipDialog = nodeTypeConfigs[newNode.type]?.skipDialog;
+      if (!shouldSkipDialog) {
+        openNodeDialog({ nodeId: newNode.id, nodeData: newNode.data });
+      }
       setDraggingType(undefined);
     },
     [
       draggingTemplateId,
       ensureTemplateDetail,
       insertTemplate,
+      openNodeDialog,
       screenToFlowPosition,
       setDraggingTemplateId,
       setDraggingType,

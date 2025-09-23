@@ -98,6 +98,7 @@ export interface NodeTypeConfig {
   job: string;
   label: string;
   showInResults?: boolean;
+  skipDialog?: boolean;
 }
 
 export interface SidebarItemConfig {

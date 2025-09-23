@@ -5,27 +5,27 @@
  */
 import { useCallback, useState } from "react";
 import { type Edge, useReactFlow } from "@xyflow/react";
-import { type EditNodeFormValues } from "@/features/flow/components/nodes/ui/edit-dialog";
-import type { MessageNodeFormValues } from "@/features/flow/components/nodes/ui/message-edit-dialog";
-import type { NodeData, SchemaNode } from "@/features/flow/types/nodes";
+import { type NodeEditFormValues } from "@/features/flow/components/nodes/ui/edit-dialog";
+import { nodeTypeConfigs } from "@/features/flow/constants/node-config";
+import { useFlowGeneratorStore } from "@/features/flow/providers/flow-store-provider";
+import type {
+  NodeData,
+  SchemaEdge,
+  SchemaNode,
+} from "@/features/flow/types/nodes";
 import { createNodeData, getId } from "@/features/flow/utils/node-factory";
 
 export const useNodeMenu = (id: string) => {
-  const { setNodes, setEdges, getNodes } = useReactFlow();
+  const { setNodes, setEdges, getNodes } = useReactFlow<
+    SchemaNode,
+    SchemaEdge
+  >();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
-  const [editingNodeData, setEditingNodeData] = useState<NodeData | null>(null);
-  const [isMessageEditDialogOpen, setIsMessageEditDialogOpen] = useState(false);
-
-  const closeEditDialog = useCallback(() => {
-    setIsEditDialogOpen(false);
-    setEditingNodeData(null);
-  }, []);
-
-  const closeMessageEditDialog = useCallback(() => {
-    setIsMessageEditDialogOpen(false);
-    setEditingNodeData(null);
-  }, []);
+  const nodeDialog = useFlowGeneratorStore.use.nodeDialog();
+  const openNodeDialog = useFlowGeneratorStore.use.openNodeDialog();
+  const closeNodeDialog = useFlowGeneratorStore.use.closeNodeDialog();
+  const updateNodeDialogData = useFlowGeneratorStore.use.updateNodeDialogData();
+  const isCurrentNodeDialogTarget = nodeDialog.targetNodeId === id;
 
   const handleDelete = useCallback(() => {
     setNodes((nodes) => nodes.filter((node) => node.id !== id));
@@ -37,100 +37,58 @@ export const useNodeMenu = (id: string) => {
 
   const handleEdit = useCallback(
     (currentData: NodeData) => {
-      setEditingNodeData(currentData);
-
-      // messageNode의 경우 MessageEditDialog 사용
-      if (currentData.nodeType === "messageNode") {
-        setIsMessageEditDialogOpen(true);
-      } else {
-        setIsEditDialogOpen(true);
-      }
-
+      openNodeDialog({ nodeId: id, nodeData: currentData });
       setIsMenuOpen(false);
     },
-    [
-      setEditingNodeData,
-      setIsEditDialogOpen,
-      setIsMessageEditDialogOpen,
-      setIsMenuOpen,
-    ],
+    [id, openNodeDialog],
   );
 
   const handleEditSubmit = useCallback(
-    (values: EditNodeFormValues) => {
+    (values: NodeEditFormValues) => {
+      let updatedNodeData: NodeData | null = null;
+
       setNodes((nodes) =>
         nodes.map((node) => {
           if (node.id !== id) {
             return node;
           }
 
-          const updatedData: Partial<NodeData> = {
+          const nextData: NodeData = {
             ...node.data,
             label: values.label,
           };
 
-          // custom 제거됨: 편집 항목은 공용(label)만 처리
-
-          return {
-            ...node,
-            data: updatedData,
-          };
-        }),
-      );
-
-      closeEditDialog();
-    },
-    [closeEditDialog, id, setNodes],
-  );
-
-  const handleMessageEditSubmit = useCallback(
-    (values: MessageNodeFormValues) => {
-      setNodes((nodes) =>
-        nodes.map((node) => {
-          if (node.id !== id) {
-            return node;
+          if (typeof values.template === "string") {
+            nextData.template = values.template;
+          } else if ("template" in nextData) {
+            delete nextData.template;
           }
 
-          const updatedData: Partial<NodeData> = {
-            ...node.data,
-            label: values.label,
-            template: values.template,
-          };
+          updatedNodeData = nextData;
 
           return {
             ...node,
-            data: updatedData,
+            data: nextData,
           };
         }),
       );
 
-      closeMessageEditDialog();
+      if (updatedNodeData) {
+        updateNodeDialogData(updatedNodeData);
+      }
+
+      closeNodeDialog();
     },
-    [closeMessageEditDialog, id, setNodes],
+    [closeNodeDialog, id, setNodes, updateNodeDialogData],
   );
 
   const handleEditDialogOpenChange = useCallback(
     (open: boolean) => {
-      if (open) {
-        setIsEditDialogOpen(true);
-        return;
+      if (!open && isCurrentNodeDialogTarget) {
+        closeNodeDialog();
       }
-
-      closeEditDialog();
     },
-    [closeEditDialog],
-  );
-
-  const handleMessageEditDialogOpenChange = useCallback(
-    (open: boolean) => {
-      if (open) {
-        setIsMessageEditDialogOpen(true);
-        return;
-      }
-
-      closeMessageEditDialog();
-    },
-    [closeMessageEditDialog],
+    [closeNodeDialog, isCurrentNodeDialogTarget],
   );
 
   const handleDuplicate = useCallback(
@@ -182,10 +140,15 @@ export const useNodeMenu = (id: string) => {
       };
 
       setNodes((nodes) => [...nodes, newNode]);
+      const shouldSkipDialog = nodeTypeConfigs[newNode.type]?.skipDialog;
+      if (!shouldSkipDialog) {
+        openNodeDialog({ nodeId: newNode.id, nodeData: newNode.data });
+      }
       setEdges((edges) => [...edges, newEdge]);
     }
+
     setIsMenuOpen(false);
-  }, [getNodes, id, setEdges, setNodes]);
+  }, [getNodes, id, openNodeDialog, setEdges, setNodes]);
 
   return {
     isMenuOpen,
@@ -195,16 +158,10 @@ export const useNodeMenu = (id: string) => {
     handleDuplicate,
     handleAddConnection,
     editDialog: {
-      open: isEditDialogOpen,
-      nodeData: editingNodeData,
+      open: isCurrentNodeDialogTarget && nodeDialog.isOpen,
+      nodeData: isCurrentNodeDialogTarget ? nodeDialog.nodeData : null,
       onSubmit: handleEditSubmit,
       onOpenChange: handleEditDialogOpenChange,
-    },
-    messageEditDialog: {
-      open: isMessageEditDialogOpen,
-      nodeData: editingNodeData,
-      onSubmit: handleMessageEditSubmit,
-      onOpenChange: handleMessageEditDialogOpenChange,
     },
   };
 };

@@ -5,6 +5,8 @@ import type { DnDSlice } from "./slices/dnd-slice";
 import { createDnDSlice } from "./slices/dnd-slice";
 import type { NodeActionsSlice } from "./slices/node-actions-slice";
 import { createNodeActionsSlice } from "./slices/node-actions-slice";
+import type { NodeDialogSlice } from "./slices/node-dialog-slice";
+import { createNodeDialogSlice } from "./slices/node-dialog-slice";
 import type { PaletteSlice } from "./slices/palette-slice";
 import { createPaletteSlice } from "./slices/palette-slice";
 import type { RunControlsSlice } from "./slices/run-controls-slice";
@@ -20,6 +22,7 @@ export type FlowGeneratorState = DnDSlice &
   RunSlice &
   RunMetaSlice &
   NodeActionsSlice &
+  NodeDialogSlice &
   RunControlsSlice &
   PaletteSlice &
   TemplateSlice &
@@ -34,6 +37,7 @@ export const createFlowGeneratorStore = (
     ...createRunControlsSlice(set, get, api),
     ...createDnDSlice(set, get, api),
     ...createNodeActionsSlice(set, get, api),
+    ...createNodeDialogSlice(set, get, api),
     ...createPaletteSlice(set, get, api),
     ...createTemplateSlice(set, get, api),
     ...createCanvasSlice(set, get, api),

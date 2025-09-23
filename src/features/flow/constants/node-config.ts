@@ -86,17 +86,39 @@ export const nodeConfigs: Record<FlowNodeType, NodeConfig> = {
 };
 
 export const nodeTypeConfigs: Record<FlowNodeType, NodeTypeConfig> = {
-  inputNode: { emoji: "📥", job: "입력", label: "입력 노드" },
-  outputNode: { emoji: "📤", job: "출력", label: "출력 노드" },
-  chatNode: { emoji: "💬", job: "채팅", label: "채팅 노드" },
-  searchNode: { emoji: "🔍", job: "검색", label: "검색 노드" },
+  inputNode: {
+    emoji: "📥",
+    job: "입력",
+    label: "입력 노드",
+    skipDialog: true,
+  },
+  outputNode: {
+    emoji: "📤",
+    job: "출력",
+    label: "출력 노드",
+    skipDialog: true,
+  },
+  chatNode: {
+    emoji: "💬",
+    job: "채팅",
+    label: "채팅 노드",
+  },
+  searchNode: {
+    emoji: "🔍",
+    job: "검색",
+    label: "검색 노드",
+  },
   messageNode: {
     emoji: "💭",
     job: "메시지",
     label: "메시지 노드",
     showInResults: true,
   },
-  singleInputMultiOutput: { emoji: "🔀", job: "분기", label: "분기 노드" },
+  singleInputMultiOutput: {
+    emoji: "🔀",
+    job: "분기",
+    label: "분기 노드",
+  },
   multiInputSingleOutput: {
     emoji: "🔄",
     job: "합성",
