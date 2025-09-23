@@ -1,0 +1,135 @@
+import type { StateCreator } from "zustand";
+import type {
+  WorkflowTemplateDetail,
+  WorkflowTemplateSummary,
+} from "@/features/flow/types/nodes";
+import {
+  type WorkflowApiDetail,
+  deserializeWorkflowDetail,
+  toTemplateSummary,
+} from "@/features/flow/utils/workflow-transformers";
+import type { FlowGeneratorState } from "../flow-store";
+
+interface WorkflowListResponse {
+  workflows: WorkflowApiDetail[];
+}
+
+interface WorkflowDetailResponse {
+  workflow: WorkflowApiDetail;
+}
+
+export interface TemplateSlice {
+  templates: WorkflowTemplateSummary[];
+  templateDetails: Record<string, WorkflowTemplateDetail>;
+  isLoadingTemplates: boolean;
+  draggingTemplateId: string;
+  fetchTemplates: () => Promise<void>;
+  ensureTemplateDetail: (id: string) => Promise<WorkflowTemplateDetail | null>;
+  setDraggingTemplateId: (id: string | undefined) => void;
+  upsertTemplate: (template: WorkflowTemplateSummary) => void;
+  removeTemplate: (id: string) => void;
+  cacheTemplateDetail: (detail: WorkflowTemplateDetail) => void;
+}
+
+export const createTemplateSlice: StateCreator<
+  FlowGeneratorState,
+  [],
+  [],
+  TemplateSlice
+> = (set, get) => ({
+  templates: [],
+  templateDetails: {},
+  isLoadingTemplates: false,
+  draggingTemplateId: "",
+  fetchTemplates: async () => {
+    set((prev) => ({ ...prev, isLoadingTemplates: true }));
+    try {
+      const response = await fetch("/api/workflows", { cache: "no-store" });
+      if (!response.ok) {
+        throw new Error(`워크플로우 목록 조회 실패: ${response.status}`);
+      }
+      const payload = (await response.json()) as WorkflowListResponse;
+      const summaries = payload.workflows.map(toTemplateSummary);
+      set((prev) => ({
+        ...prev,
+        templates: summaries,
+        isLoadingTemplates: false,
+      }));
+    } catch (error) {
+      console.error("워크플로우 템플릿 목록을 불러오지 못했습니다.", error);
+      set((prev) => ({ ...prev, isLoadingTemplates: false }));
+    }
+  },
+  ensureTemplateDetail: async (id) => {
+    const { templateDetails } = get();
+    if (templateDetails[id]) {
+      return templateDetails[id];
+    }
+
+    try {
+      const response = await fetch(`/api/workflows/${id}`, {
+        cache: "no-store",
+      });
+      if (!response.ok) {
+        console.error("워크플로우 상세 조회 실패", response.status);
+        return null;
+      }
+      const payload = (await response.json()) as WorkflowDetailResponse;
+      const detail = deserializeWorkflowDetail(payload.workflow);
+      set((prev) => ({
+        ...prev,
+        templateDetails: { ...prev.templateDetails, [id]: detail },
+        templates: prev.templates.some((item) => item.id === id)
+          ? prev.templates
+          : prev.templates.concat(toTemplateSummary(payload.workflow)),
+      }));
+      return detail;
+    } catch (error) {
+      console.error("워크플로우 상세 정보를 불러오지 못했습니다.", error);
+      return null;
+    }
+  },
+  setDraggingTemplateId: (id) =>
+    set((prev) => ({ ...prev, draggingTemplateId: id })),
+  upsertTemplate: (template) =>
+    set((prev) => ({
+      ...prev,
+      templates: prev.templates.some((item) => item.id === template.id)
+        ? prev.templates.map((item) =>
+            item.id === template.id ? template : item,
+          )
+        : [template, ...prev.templates],
+      templateDetails: {
+        ...prev.templateDetails,
+        [template.id]: prev.templateDetails[template.id]
+          ? { ...prev.templateDetails[template.id], ...template }
+          : prev.templateDetails[template.id],
+      },
+    })),
+  removeTemplate: (id) =>
+    set((prev) => {
+      const restDetails = { ...prev.templateDetails };
+      delete restDetails[id];
+      return {
+        ...prev,
+        templates: prev.templates.filter((item) => item.id !== id),
+        templateDetails: restDetails,
+      };
+    }),
+  cacheTemplateDetail: (detail) =>
+    set((prev) => ({
+      ...prev,
+      templateDetails: { ...prev.templateDetails, [detail.id]: detail },
+      templates: prev.templates.some((item) => item.id === detail.id)
+        ? prev.templates
+        : [
+            {
+              id: detail.id,
+              name: detail.name,
+              description: detail.description ?? null,
+              updatedAt: detail.updatedAt ?? null,
+            },
+            ...prev.templates,
+          ],
+    })),
+});

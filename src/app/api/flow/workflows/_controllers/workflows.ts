@@ -97,30 +97,65 @@ export async function createWorkflow(input: {
       throw new Error("워크플로우 생성에 실패했습니다.");
     }
 
+    // 서버에서 노드/엣지의 고유 id를 생성하고, 클라이언트 임시 id -> 서버 id 매핑을 만든다.
+    const nodeIdMap = new Map<string, string>();
+
     const nodes =
       input.nodes && input.nodes.length > 0
-        ? await transaction
-            .insert(flowNodes)
-            .values(
-              input.nodes.map((node) => ({
+        ? await (async () => {
+            const nodesToInsert = input.nodes?.map((node) => {
+              // 입력 id가 number로 올 수 있으므로 문자열로 강제하여 매핑에서 일관성 유지
+              const clientId =
+                node.id !== undefined && node.id !== null
+                  ? String(node.id)
+                  : crypto.randomUUID();
+              const serverId = crypto.randomUUID();
+              nodeIdMap.set(clientId, serverId);
+
+              const insertObj = {
                 ...node,
+                // 항상 서버에서 생성한 id로 덮어쓴다
+                id: serverId,
                 workflowId: created.id,
-              })),
-            )
-            .returning(nodeSelection)
+              } as typeof flowNodes.$inferInsert;
+
+              return insertObj;
+            });
+
+            if (!nodesToInsert) return;
+            return await transaction
+              .insert(flowNodes)
+              .values(nodesToInsert)
+              .returning(nodeSelection);
+          })()
         : [];
 
     const edges =
       input.edges && input.edges.length > 0
-        ? await transaction
-            .insert(flowEdges)
-            .values(
-              input.edges.map((edge) => ({
+        ? await (async () => {
+            const edgesToInsert = input.edges?.map((edge) => {
+              // 항상 서버에서 새로운 id 생성 (클라이언트 id 사용 방지)
+              const serverEdgeId = crypto.randomUUID();
+              const mappedSource =
+                nodeIdMap.get(String(edge.sourceId)) ?? String(edge.sourceId);
+              const mappedTarget =
+                nodeIdMap.get(String(edge.targetId)) ?? String(edge.targetId);
+
+              return {
                 ...edge,
+                id: serverEdgeId,
+                sourceId: mappedSource,
+                targetId: mappedTarget,
                 workflowId: created.id,
-              })),
-            )
-            .returning(edgeSelection)
+              } as typeof flowEdges.$inferInsert;
+            });
+
+            if (!edgesToInsert) return;
+            return await transaction
+              .insert(flowEdges)
+              .values(edgesToInsert)
+              .returning(edgeSelection);
+          })()
         : [];
 
     return { ...created, nodes, edges };
