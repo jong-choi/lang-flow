@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
-import { z } from "zod";
 import bcrypt from "bcryptjs";
 import { eq } from "drizzle-orm";
+import { z } from "zod";
 import {
   type SignUpFormValues,
   signUpSchema,

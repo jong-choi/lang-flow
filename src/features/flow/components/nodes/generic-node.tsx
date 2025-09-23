@@ -69,10 +69,10 @@ export const GenericNode: React.FC<GenericNodeProps> = ({
         ))}
         <NodeContent data={data} config={config} />
         {data.runStatus === RUN_STATUS.FAILED && (
-          <div className="absolute -bottom-2 left-1/2 -translate-x-1/2 flex items-center gap-1">
+          <div className="absolute -bottom-2 left-1/2 flex -translate-x-1/2 items-center gap-1">
             <AlertCircle className="h-4 w-4 text-red-600" />
             <button
-              className="px-2 h-6 text-xs rounded-md bg-red-50 border border-red-200 text-red-700 hover:bg-red-100"
+              className="h-6 rounded-md border border-red-200 bg-red-50 px-2 text-xs text-red-700 hover:bg-red-100"
               onClick={() => requestNodeRetry(id)}
             >
               <span className="inline-flex items-center gap-1">

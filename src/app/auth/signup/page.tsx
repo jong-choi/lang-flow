@@ -76,13 +76,13 @@ export default function SignUpPage() {
       <div className="pointer-events-none absolute inset-0 -z-10 select-none">
         <div className="absolute -top-36 right-1/2 h-[420px] w-[420px] translate-x-1/2 rounded-full bg-violet-500/30 blur-3xl" />
         <div className="absolute -bottom-44 left-4 h-[340px] w-[340px] rounded-full bg-primary/25 blur-3xl" />
-        <div className="absolute right-14 top-1/3 h-64 w-64 rounded-full bg-emerald-400/20 blur-3xl" />
+        <div className="absolute top-1/3 right-14 h-64 w-64 rounded-full bg-emerald-400/20 blur-3xl" />
       </div>
 
       <div className="mx-auto grid max-w-5xl grid-cols-1 gap-10 rounded-3xl border border-border/60 bg-background/92 p-6 shadow-2xl shadow-primary/10 backdrop-blur-xl md:grid-cols-[1.05fr_1fr] md:p-12 lg:gap-14">
         <section className="flex flex-col justify-between gap-10">
           <div className="space-y-6">
-            <span className="inline-flex w-fit items-center gap-2 rounded-full border border-border/60 bg-muted/40 px-3 py-1 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+            <span className="inline-flex w-fit items-center gap-2 rounded-full border border-border/60 bg-muted/40 px-3 py-1 text-xs font-semibold tracking-wide text-muted-foreground uppercase">
               create account
             </span>
             <div className="space-y-4">

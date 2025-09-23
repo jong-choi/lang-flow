@@ -1,5 +1,8 @@
 {
-  "plugins": ["@trivago/prettier-plugin-sort-imports"],
+  "plugins": [
+    "@trivago/prettier-plugin-sort-imports",
+    "prettier-plugin-tailwindcss"
+  ],
   "importOrder": [
     "^react$",
     "^next(/.*)?$",
@@ -8,5 +11,6 @@
     "^@/",
     "^[./]"
   ],
-  "importOrderSortSpecifiers": true
+  "importOrderSortSpecifiers": true,
+  "tailwindStylesheet": "src/styles/globals.css"
 }

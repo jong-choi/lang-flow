@@ -16,13 +16,13 @@ export function PriceFilterSection() {
 
   return (
     <div>
-      <Label className="text-sm font-medium mb-3 block">가격 범위</Label>
+      <Label className="mb-3 block text-sm font-medium">가격 범위</Label>
       <div className="space-y-2">
         {PRICE_RANGES.map((range, index) => (
           <button
             key={index}
             className={cn(
-              "w-full text-left px-3 py-2 rounded-md text-sm transition-colors",
+              "w-full rounded-md px-3 py-2 text-left text-sm transition-colors",
               (priceRange?.min === range.value?.min &&
                 priceRange?.max === range.value?.max) ||
                 (!priceRange && !range.value)

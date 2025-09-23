@@ -22,7 +22,7 @@ export function FlowHeader({ children }: FlowHeaderProps) {
   const isTemplateDisabled = !canRun;
 
   return (
-    <header className="w-full bg-white/60 backdrop-blur-sm border-b border-gray-100 px-4 py-2 flex items-center justify-between gap-3">
+    <header className="flex w-full items-center justify-between gap-3 border-b border-gray-100 bg-white/60 px-4 py-2 backdrop-blur-sm">
       <div className="flex items-center gap-4">
         <div className="flex flex-col">
           {editing ? (
@@ -35,7 +35,7 @@ export function FlowHeader({ children }: FlowHeaderProps) {
                 if (e.key === "Enter") setEditing(false);
                 if (e.key === "Escape") setEditing(false);
               }}
-              className="px-2 py-1 border rounded-md text-base font-semibold w-48"
+              className="w-48 rounded-md border px-2 py-1 text-base font-semibold"
               data-testid="flow-name-input"
             />
           ) : (
@@ -57,7 +57,7 @@ export function FlowHeader({ children }: FlowHeaderProps) {
           onClick={() => setTemplateModalOpen(true)}
           className={cn(
             "inline-flex items-center gap-2 rounded-md border border-violet-200 px-3 py-1.5 text-sm font-semibold text-violet-600 hover:bg-violet-50",
-            "disabled:opacity-50 disabled:cursor-not-allowed",
+            "disabled:cursor-not-allowed disabled:opacity-50",
           )}
           disabled={isTemplateDisabled}
           title={
@@ -70,7 +70,7 @@ export function FlowHeader({ children }: FlowHeaderProps) {
         <button
           type="button"
           onClick={() => toast.error("삭제기능 미구현")}
-          className="inline-flex items-center gap-2 border border-gray-200 text-gray-700 px-2.5 py-1.5 rounded-md hover:bg-gray-50 text-sm"
+          className="inline-flex items-center gap-2 rounded-md border border-gray-200 px-2.5 py-1.5 text-sm text-gray-700 hover:bg-gray-50"
           data-testid="delete-btn"
         >
           삭제

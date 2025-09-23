@@ -20,7 +20,7 @@ function StoreLayoutShell({ children }: StoreLayoutProps) {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50">
-      <div className="border-b bg-white/80 backdrop-blur-sm sticky top-0 z-50">
+      <div className="sticky top-0 z-50 border-b bg-white/80 backdrop-blur-sm">
         <div className="container mx-auto px-4 py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4">
@@ -32,10 +32,10 @@ function StoreLayoutShell({ children }: StoreLayoutProps) {
             <div className="flex items-center gap-4">
               <Link href="/store/cart">
                 <Button variant="outline" className="relative">
-                  <ShoppingCart className="w-4 h-4 mr-2" />
+                  <ShoppingCart className="mr-2 h-4 w-4" />
                   장바구니
                   {totalItems > 0 && (
-                    <Badge className="absolute -top-2 -right-2 bg-red-500 text-white min-w-[20px] h-5 text-xs flex items-center justify-center rounded-full px-1">
+                    <Badge className="absolute -top-2 -right-2 flex h-5 min-w-[20px] items-center justify-center rounded-full bg-red-500 px-1 text-xs text-white">
                       {totalItems}
                     </Badge>
                   )}

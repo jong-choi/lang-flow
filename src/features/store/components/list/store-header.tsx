@@ -26,22 +26,22 @@ export function StoreHeader() {
   return (
     <div className="space-y-6">
       <div className="text-center">
-        <h1 className="text-4xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent mb-4">
+        <h1 className="mb-4 bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-4xl font-bold text-transparent">
           워크플로우 템플릿 스토어
         </h1>
-        <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
+        <p className="mx-auto max-w-2xl text-lg text-muted-foreground">
           전문가들이 만든 검증된 워크플로우 템플릿을 구매하고, 업무 효율성을
           즉시 향상시켜보세요.
         </p>
       </div>
 
-      <div className="relative max-w-2xl mx-auto w-full">
-        <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-5 h-5" />
+      <div className="relative mx-auto w-full max-w-2xl">
+        <Search className="absolute top-1/2 left-3 h-5 w-5 -translate-y-1/2 transform text-muted-foreground" />
         <Input
           placeholder="워크플로우 템플릿 검색..."
           value={searchQuery}
           onChange={(event) => setSearchQuery(event.target.value)}
-          className="pl-10 h-12 text-lg"
+          className="h-12 pl-10 text-lg"
         />
       </div>
 
@@ -54,9 +54,9 @@ export function StoreHeader() {
             variant="ghost"
             size="sm"
             onClick={() => toggleFilters()}
-            className="hidden md:inline-flex items-center gap-2"
+            className="hidden items-center gap-2 md:inline-flex"
           >
-            <Filter className="w-4 h-4" />
+            <Filter className="h-4 w-4" />
             {filtersVisible ? "필터 숨기기" : "필터 보기"}
           </Button>
         </div>
@@ -67,14 +67,14 @@ export function StoreHeader() {
             size="sm"
             onClick={() => setViewMode("grid")}
           >
-            <Grid className="w-4 h-4" />
+            <Grid className="h-4 w-4" />
           </Button>
           <Button
             variant={viewMode === "list" ? "default" : "outline"}
             size="sm"
             onClick={() => setViewMode("list")}
           >
-            <List className="w-4 h-4" />
+            <List className="h-4 w-4" />
           </Button>
         </div>
       </div>

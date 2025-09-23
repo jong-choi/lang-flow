@@ -1,5 +1,5 @@
-import Link from "next/link";
 import { useMemo } from "react";
+import Link from "next/link";
 import { CreditCard } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -27,10 +27,10 @@ export function CartSummary() {
   };
 
   return (
-    <Card className="p-6 sticky top-24">
-      <h3 className="text-xl font-semibold mb-6">결제 요약</h3>
+    <Card className="sticky top-24 p-6">
+      <h3 className="mb-6 text-xl font-semibold">결제 요약</h3>
 
-      <div className="space-y-4 mb-6">
+      <div className="mb-6 space-y-4">
         <div className="flex justify-between">
           <span className="text-muted-foreground">
             템플릿 {cartSnapshot.totalItems}개
@@ -46,7 +46,7 @@ export function CartSummary() {
         </div>
       </div>
 
-      <div className="bg-muted p-4 rounded-lg mb-6 space-y-2 text-sm">
+      <div className="mb-6 space-y-2 rounded-lg bg-muted p-4 text-sm">
         <div className="flex justify-between">
           <span className="text-muted-foreground">보유 크레딧:</span>
           <span className="font-medium">{CURRENT_CREDITS} 크레딧</span>
@@ -62,8 +62,8 @@ export function CartSummary() {
       </div>
 
       {!isAffordable && (
-        <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-6">
-          <div className="text-sm text-red-600 space-y-1">
+        <div className="mb-6 rounded-lg border border-red-200 bg-red-50 p-4">
+          <div className="space-y-1 text-sm text-red-600">
             <p className="font-medium">크레딧이 부족합니다</p>
             <p>
               {cartSnapshot.totalPrice - CURRENT_CREDITS}
@@ -73,12 +73,16 @@ export function CartSummary() {
         </div>
       )}
 
-      <Button className="w-full" disabled={!isAffordable} onClick={handleCheckout}>
-        <CreditCard className="w-4 h-4 mr-2" />
+      <Button
+        className="w-full"
+        disabled={!isAffordable}
+        onClick={handleCheckout}
+      >
+        <CreditCard className="mr-2 h-4 w-4" />
         {cartSnapshot.totalPrice} 크레딧으로 결제
       </Button>
 
-      <Link href="/store" className="block mt-4">
+      <Link href="/store" className="mt-4 block">
         <Button variant="outline" className="w-full">
           계속 쇼핑하기
         </Button>

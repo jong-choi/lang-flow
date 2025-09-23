@@ -41,7 +41,7 @@ const PaletteItem: FC<PaletteItemProps> = ({
         </div>
         <div className="flex-1">
           <div className="font-bold text-gray-800">{name}</div>
-          <div className="text-sm text-violet-600 font-medium">
+          <div className="text-sm font-medium text-violet-600">
             {description}
           </div>
         </div>

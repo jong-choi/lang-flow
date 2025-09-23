@@ -47,7 +47,7 @@ export function RunControls({
           중단
         </Button>
         <button
-          className="px-3 h-9 rounded-md bg-secondary text-secondary-foreground disabled:opacity-50"
+          className="h-9 rounded-md bg-secondary px-3 text-secondary-foreground disabled:opacity-50"
           onClick={onRetry}
           disabled={isRunning || failedCount === 0}
           title={

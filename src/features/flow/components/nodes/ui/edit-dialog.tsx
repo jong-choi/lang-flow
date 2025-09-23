@@ -66,9 +66,10 @@ export const EditDialog: React.FC<EditDialogProps> = ({
   onSubmit,
 }) => {
   const isMessageNode = nodeData?.nodeType === "messageNode";
-  const schema = useMemo(() => createEditNodeSchema(isMessageNode), [
-    isMessageNode,
-  ]);
+  const schema = useMemo(
+    () => createEditNodeSchema(isMessageNode),
+    [isMessageNode],
+  );
 
   const template =
     typeof nodeData?.template === "string"
@@ -142,11 +143,13 @@ export const EditDialog: React.FC<EditDialogProps> = ({
                       />
                     </FormControl>
                     <FormDescription className="text-sm text-muted-foreground">
-                      <span className="space-y-1 block">
-                        <span className="font-medium block">템플릿 사용법:</span>
+                      <span className="block space-y-1">
+                        <span className="block font-medium">
+                          템플릿 사용법:
+                        </span>
                         <span className="block">
-                          • {" "}
-                          <code className="bg-muted px-1 py-0.5 rounded text-xs">
+                          •{" "}
+                          <code className="rounded bg-muted px-1 py-0.5 text-xs">
                             {"{input}"}
                           </code>
                           을 사용하면 이전 노드의 출력 내용으로 자동 치환됩니다
@@ -156,7 +159,7 @@ export const EditDialog: React.FC<EditDialogProps> = ({
                         </span>
                         <span className="block">
                           • 여러 개의{" "}
-                          <code className="bg-muted px-1 py-0.5 rounded text-xs">
+                          <code className="rounded bg-muted px-1 py-0.5 text-xs">
                             {"{input}"}
                           </code>
                           을 사용할 수 있습니다

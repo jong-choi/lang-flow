@@ -21,8 +21,8 @@ export function TagFilterSection() {
 
   return (
     <div>
-      <Label className="text-sm font-medium mb-3 flex items-center gap-2">
-        <Tag className="w-4 h-4" />
+      <Label className="mb-3 flex items-center gap-2 text-sm font-medium">
+        <Tag className="h-4 w-4" />
         인기 태그
       </Label>
       <div className="flex flex-wrap gap-2">
@@ -30,7 +30,7 @@ export function TagFilterSection() {
           <Badge
             key={tag}
             variant={selectedTags.includes(tag) ? "default" : "outline"}
-            className="cursor-pointer hover:bg-primary hover:text-primary-foreground transition-colors"
+            className="cursor-pointer transition-colors hover:bg-primary hover:text-primary-foreground"
             onClick={() => handleTagClick(tag)}
           >
             {tag}

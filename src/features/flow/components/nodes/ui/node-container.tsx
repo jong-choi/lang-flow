@@ -10,10 +10,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { SHARED_STYLES } from "@/features/flow/constants/node-config";
-import type {
-  MenuItem,
-  NodeConfig,
-} from "@/features/flow/types/nodes";
+import type { MenuItem, NodeConfig } from "@/features/flow/types/nodes";
 
 export const NodeContainer: React.FC<{
   config: NodeConfig;

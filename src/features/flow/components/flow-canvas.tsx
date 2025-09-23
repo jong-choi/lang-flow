@@ -367,7 +367,7 @@ export const FlowCanvas = ({ activeTab, onRunComplete }: FlowCanvasProps) => {
   }, [runEligibility, isRunning, error, failedNodeIds, setRunGate]);
 
   return (
-    <div className="min-h-0 flex-1 relative" ref={reactFlowWrapper}>
+    <div className="relative min-h-0 flex-1" ref={reactFlowWrapper}>
       {activeTab === "graph" ? (
         <>
           <ReactFlow<SchemaNode, SchemaEdge>

@@ -7,8 +7,8 @@ import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { useStoreStore } from "@/features/store/providers/store-store-provider";
 import { useTemplateById } from "@/features/store/hooks/use-template-by-id";
+import { useStoreStore } from "@/features/store/providers/store-store-provider";
 import { cn } from "@/utils/cn";
 
 interface TemplateCardProps {
@@ -51,26 +51,26 @@ export function TemplateCard({ templateId }: TemplateCardProps) {
 
   return (
     <Card
-      className="group relative cursor-pointer overflow-hidden transition-all hover:shadow-lg hover:-translate-y-1"
+      className="group relative cursor-pointer overflow-hidden transition-all hover:-translate-y-1 hover:shadow-lg"
       onClick={handleViewDetails}
     >
       <div className="absolute top-3 left-3 z-10 flex gap-2">
         {template.isFeatured && (
           <Badge className="bg-gradient-to-r from-purple-500 to-pink-500 text-white">
-            <Crown className="w-3 h-3 mr-1" />
+            <Crown className="mr-1 h-3 w-3" />
             추천
           </Badge>
         )}
         {template.isPopular && (
           <Badge className="bg-gradient-to-r from-orange-500 to-red-500 text-white">
-            <TrendingUp className="w-3 h-3 mr-1" />
+            <TrendingUp className="mr-1 h-3 w-3" />
             인기
           </Badge>
         )}
       </div>
 
       <div className="p-6">
-        <div className="flex items-center justify-between mb-3">
+        <div className="mb-3 flex items-center justify-between">
           <Badge variant="outline" className="text-xs">
             {template.category}
           </Badge>
@@ -82,17 +82,17 @@ export function TemplateCard({ templateId }: TemplateCardProps) {
           </div>
         </div>
 
-        <h3 className="font-semibold text-lg mb-2 line-clamp-2 group-hover:text-primary transition-colors">
+        <h3 className="mb-2 line-clamp-2 text-lg font-semibold transition-colors group-hover:text-primary">
           {template.title}
         </h3>
 
-        <p className="text-sm text-muted-foreground mb-4 line-clamp-2">
+        <p className="mb-4 line-clamp-2 text-sm text-muted-foreground">
           {template.description}
         </p>
 
-        <div className="flex items-center gap-2 mb-4">
+        <div className="mb-4 flex items-center gap-2">
           <div className="flex items-center gap-1">
-            <Star className="w-4 h-4 fill-yellow-400 text-yellow-400" />
+            <Star className="h-4 w-4 fill-yellow-400 text-yellow-400" />
             <span className="text-sm font-medium">{template.rating}</span>
           </div>
           <span className="text-sm text-muted-foreground">
@@ -100,8 +100,8 @@ export function TemplateCard({ templateId }: TemplateCardProps) {
           </span>
         </div>
 
-        <div className="flex items-center gap-2 mb-4">
-          <div className="w-6 h-6 rounded-full overflow-hidden relative">
+        <div className="mb-4 flex items-center gap-2">
+          <div className="relative h-6 w-6 overflow-hidden rounded-full">
             {template.author.avatar ? (
               <Image
                 src={template.author.avatar}
@@ -111,7 +111,7 @@ export function TemplateCard({ templateId }: TemplateCardProps) {
                 sizes="24px"
               />
             ) : (
-              <div className="w-full h-full bg-gray-200 flex items-center justify-center text-xs">
+              <div className="flex h-full w-full items-center justify-center bg-gray-200 text-xs">
                 {template.author.name.charAt(0)}
               </div>
             )}
@@ -121,7 +121,7 @@ export function TemplateCard({ templateId }: TemplateCardProps) {
           </span>
         </div>
 
-        <div className="flex flex-wrap gap-1 mb-4">
+        <div className="mb-4 flex flex-wrap gap-1">
           {template.tags.slice(0, 3).map((tag) => (
             <Badge key={tag} variant="secondary" className="text-xs">
               {tag}
@@ -144,12 +144,12 @@ export function TemplateCard({ templateId }: TemplateCardProps) {
             >
               {isInCart ? (
                 <>
-                  <Crown className="w-4 h-4 mr-2" />
+                  <Crown className="mr-2 h-4 w-4" />
                   장바구니에 담김
                 </>
               ) : (
                 <>
-                  <Plus className="w-4 h-4 mr-2" />
+                  <Plus className="mr-2 h-4 w-4" />
                   장바구니 담기
                 </>
               )}
@@ -168,12 +168,12 @@ export function TemplateCard({ templateId }: TemplateCardProps) {
           >
             {template.isPurchased ? (
               <>
-                <Crown className="w-4 h-4 mr-2" />
+                <Crown className="mr-2 h-4 w-4" />
                 구매완료
               </>
             ) : (
               <>
-                <ShoppingCart className="w-4 h-4 mr-2" />
+                <ShoppingCart className="mr-2 h-4 w-4" />
                 {template.price > 0
                   ? `${template.price} 크레딧으로 구매`
                   : "무료 다운로드"}

@@ -1,5 +1,5 @@
-import Link from "next/link";
 import { useMemo } from "react";
+import Link from "next/link";
 import { ArrowLeft, Trash2 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -24,11 +24,11 @@ export function CartPage() {
 
   return (
     <div className="container mx-auto px-4 py-8">
-      <div className="flex items-center justify-between mb-8">
+      <div className="mb-8 flex items-center justify-between">
         <div className="flex items-center gap-4">
           <Link href="/store">
             <Button variant="ghost">
-              <ArrowLeft className="w-4 h-4 mr-2" />
+              <ArrowLeft className="mr-2 h-4 w-4" />
               스토어로 돌아가기
             </Button>
           </Link>
@@ -43,13 +43,13 @@ export function CartPage() {
           onClick={() => clearCart()}
           className="text-red-600 hover:bg-red-50"
         >
-          <Trash2 className="w-4 h-4 mr-2" />
+          <Trash2 className="mr-2 h-4 w-4" />
           전체 삭제
         </Button>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
-        <div className="lg:col-span-3 space-y-4">
+      <div className="grid grid-cols-1 gap-8 lg:grid-cols-4">
+        <div className="space-y-4 lg:col-span-3">
           {cartSnapshot.items.map((item) => (
             <CartItem key={item.templateId} templateId={item.templateId} />
           ))}

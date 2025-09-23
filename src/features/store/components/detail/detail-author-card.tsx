@@ -16,9 +16,9 @@ export function DetailAuthorCard({ templateId }: DetailAuthorCardProps) {
 
   return (
     <Card className="p-6">
-      <h2 className="text-xl font-semibold mb-4">작성자</h2>
+      <h2 className="mb-4 text-xl font-semibold">작성자</h2>
       <div className="flex items-start gap-4">
-        <div className="w-12 h-12 rounded-full overflow-hidden relative">
+        <div className="relative h-12 w-12 overflow-hidden rounded-full">
           {template.author.avatar ? (
             <Image
               src={template.author.avatar}
@@ -28,7 +28,7 @@ export function DetailAuthorCard({ templateId }: DetailAuthorCardProps) {
               sizes="48px"
             />
           ) : (
-            <div className="w-full h-full bg-gray-200 flex items-center justify-center">
+            <div className="flex h-full w-full items-center justify-center bg-gray-200">
               {template.author.name.charAt(0)}
             </div>
           )}

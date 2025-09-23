@@ -22,11 +22,11 @@ export function BuilderHeader() {
   const stopDisabled = !isRunning;
   const retryDisabled = isRunning || !canRetry;
   return (
-    <div className="shrink-0 border-b bg-white/60 dark:bg-slate-900/60 backdrop-blur supports-[backdrop-filter]:bg-white/40 border-slate-200 dark:border-slate-800 px-4 py-2 flex items-center justify-between">
+    <div className="flex shrink-0 items-center justify-between border-b border-slate-200 bg-white/60 px-4 py-2 backdrop-blur supports-[backdrop-filter]:bg-white/40 dark:border-slate-800 dark:bg-slate-900/60">
       <div className="flex items-center gap-3">
         <div className="flex items-center gap-2">
           <button
-            className="inline-flex items-center gap-1 px-3 h-9 rounded-md bg-slate-900 text-slate-50 disabled:opacity-50 disabled:cursor-not-allowed"
+            className="inline-flex h-9 items-center gap-1 rounded-md bg-slate-900 px-3 text-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
             onClick={() => setPromptDialogOpen(true)}
             disabled={startDisabled}
             title={startTitle}
@@ -34,14 +34,14 @@ export function BuilderHeader() {
             {PlayIcon} 시작
           </button>
           <button
-            className="inline-flex items-center gap-1 px-3 h-9 rounded-md border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 text-slate-900 dark:text-slate-100 disabled:opacity-50"
+            className="inline-flex h-9 items-center gap-1 rounded-md border border-slate-300 bg-white px-3 text-slate-900 disabled:opacity-50 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100"
             onClick={() => requestCancel()}
             disabled={stopDisabled}
           >
             {SquareIcon} 중단
           </button>
           <button
-            className="inline-flex items-center gap-1 px-3 h-9 rounded-md bg-slate-100 dark:bg-slate-800 text-slate-900 dark:text-slate-100 disabled:opacity-50"
+            className="inline-flex h-9 items-center gap-1 rounded-md bg-slate-100 px-3 text-slate-900 disabled:opacity-50 dark:bg-slate-800 dark:text-slate-100"
             onClick={() => requestRetry()}
             disabled={!!retryDisabled}
             title={retryDisabled ? "재시도할 항목 없음" : undefined}
@@ -52,20 +52,20 @@ export function BuilderHeader() {
         <div className="h-6 w-px bg-slate-300 dark:bg-slate-700" />
         <nav className="flex items-center gap-1">
           <button
-            className={`inline-flex items-center gap-1 px-3 h-8 rounded-md border ${
+            className={`inline-flex h-8 items-center gap-1 rounded-md border px-3 ${
               activeTab === "graph"
-                ? "bg-slate-900 text-white border-slate-900"
-                : "bg-white dark:bg-slate-950 text-slate-700 dark:text-slate-300 border-slate-300 dark:border-slate-700"
+                ? "border-slate-900 bg-slate-900 text-white"
+                : "border-slate-300 bg-white text-slate-700 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-300"
             }`}
             onClick={() => setActiveTab("graph")}
           >
             {GitBranchIcon} 그래프
           </button>
           <button
-            className={`inline-flex items-center gap-1 px-3 h-8 rounded-md border ${
+            className={`inline-flex h-8 items-center gap-1 rounded-md border px-3 ${
               activeTab === "results"
-                ? "bg-slate-900 text-white border-slate-900"
-                : "bg-white dark:bg-slate-950 text-slate-700 dark:text-slate-300 border-slate-300 dark:border-slate-700"
+                ? "border-slate-900 bg-slate-900 text-white"
+                : "border-slate-300 bg-white text-slate-700 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-300"
             }`}
             onClick={() => setActiveTab("results")}
           >

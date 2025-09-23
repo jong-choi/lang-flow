@@ -24,8 +24,7 @@ export const useNodeMenu = (id: string) => {
   const nodeDialog = useFlowGeneratorStore.use.nodeDialog();
   const openNodeDialog = useFlowGeneratorStore.use.openNodeDialog();
   const closeNodeDialog = useFlowGeneratorStore.use.closeNodeDialog();
-  const updateNodeDialogData =
-    useFlowGeneratorStore.use.updateNodeDialogData();
+  const updateNodeDialogData = useFlowGeneratorStore.use.updateNodeDialogData();
   const isCurrentNodeDialogTarget = nodeDialog.targetNodeId === id;
 
   const handleDelete = useCallback(() => {

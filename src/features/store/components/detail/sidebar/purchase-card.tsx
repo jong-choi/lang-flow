@@ -2,8 +2,8 @@ import { Download, Plus, ShoppingCart } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { useStoreStore } from "@/features/store/providers/store-store-provider";
 import { useTemplateById } from "@/features/store/hooks/use-template-by-id";
+import { useStoreStore } from "@/features/store/providers/store-store-provider";
 
 interface PurchaseCardProps {
   templateId: string;
@@ -35,9 +35,9 @@ export function PurchaseCard({ templateId }: PurchaseCardProps) {
   };
 
   return (
-    <Card className="p-6 space-y-4">
+    <Card className="space-y-4 p-6">
       <div className="text-center">
-        <div className="text-3xl font-bold text-primary mb-2">
+        <div className="mb-2 text-3xl font-bold text-primary">
           {template.price} 크레딧
         </div>
         {template.price > 0 && (
@@ -54,12 +54,12 @@ export function PurchaseCard({ templateId }: PurchaseCardProps) {
         >
           {isInCart ? (
             <>
-              <ShoppingCart className="w-4 h-4 mr-2" />
+              <ShoppingCart className="mr-2 h-4 w-4" />
               장바구니에 담김
             </>
           ) : (
             <>
-              <Plus className="w-4 h-4 mr-2" />
+              <Plus className="mr-2 h-4 w-4" />
               장바구니 담기
             </>
           )}
@@ -75,12 +75,12 @@ export function PurchaseCard({ templateId }: PurchaseCardProps) {
           <>구매완료</>
         ) : template.price > 0 ? (
           <>
-            <ShoppingCart className="w-4 h-4 mr-2" />
+            <ShoppingCart className="mr-2 h-4 w-4" />
             구매하기
           </>
         ) : (
           <>
-            <Download className="w-4 h-4 mr-2" />
+            <Download className="mr-2 h-4 w-4" />
             무료 다운로드
           </>
         )}

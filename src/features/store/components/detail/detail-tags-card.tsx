@@ -15,7 +15,7 @@ export function DetailTagsCard({ templateId }: DetailTagsCardProps) {
 
   return (
     <Card className="p-6">
-      <h2 className="text-xl font-semibold mb-4">태그</h2>
+      <h2 className="mb-4 text-xl font-semibold">태그</h2>
       <div className="flex flex-wrap gap-2">
         {template.tags.map((tag) => (
           <Badge key={tag} variant="secondary" className="px-3 py-1">

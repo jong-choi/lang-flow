@@ -6,11 +6,18 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { Loader2 } from "lucide-react";
 import { signIn } from "next-auth/react";
 import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
 import { toast } from "sonner";
+import { zodResolver } from "@hookform/resolvers/zod";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { AuthAlert } from "@/features/auth/components/ui/auth-alert";
 import {
@@ -18,8 +25,8 @@ import {
   GoogleIcon,
 } from "@/features/auth/components/ui/auth-icons";
 import {
-  signInSchema,
   type SignInFormValues,
+  signInSchema,
 } from "@/features/auth/types/forms";
 
 export default function SignInPage() {
@@ -92,14 +99,14 @@ export default function SignInPage() {
     <div className="relative isolate overflow-hidden py-16">
       <div className="pointer-events-none absolute inset-0 -z-10 select-none">
         <div className="absolute -top-40 left-1/2 h-[420px] w-[420px] -translate-x-1/2 rounded-full bg-primary/25 blur-3xl" />
-        <div className="absolute -bottom-48 -right-24 h-[360px] w-[360px] rounded-full bg-sky-500/20 blur-3xl" />
-        <div className="absolute -left-24 top-1/2 h-[320px] w-[320px] -translate-y-1/2 rounded-full bg-purple-500/20 blur-3xl" />
+        <div className="absolute -right-24 -bottom-48 h-[360px] w-[360px] rounded-full bg-sky-500/20 blur-3xl" />
+        <div className="absolute top-1/2 -left-24 h-[320px] w-[320px] -translate-y-1/2 rounded-full bg-purple-500/20 blur-3xl" />
       </div>
 
       <div className="mx-auto grid max-w-5xl grid-cols-1 gap-10 rounded-3xl border border-border/60 bg-background/90 p-6 shadow-2xl shadow-primary/10 backdrop-blur-xl md:grid-cols-[1.1fr_1fr] md:p-12 lg:gap-16">
         <section className="flex flex-col justify-between gap-8">
           <div className="space-y-6">
-            <span className="inline-flex w-fit items-center gap-2 rounded-full border border-border/60 bg-muted/30 px-3 py-1 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+            <span className="inline-flex w-fit items-center gap-2 rounded-full border border-border/60 bg-muted/30 px-3 py-1 text-xs font-semibold tracking-wide text-muted-foreground uppercase">
               seamless access
             </span>
             <div className="space-y-4">
@@ -191,11 +198,7 @@ export default function SignInPage() {
                   )}
                 />
 
-                <Button
-                  type="submit"
-                  className="w-full"
-                  disabled={isLoading}
-                >
+                <Button type="submit" className="w-full" disabled={isLoading}>
                   {isSubmitting ? (
                     <span className="flex items-center justify-center gap-2">
                       <Loader2 className="size-4 animate-spin" />
@@ -208,8 +211,8 @@ export default function SignInPage() {
               </form>
             </Form>
 
-            <div className="relative py-2 text-center text-xs uppercase tracking-[0.3em] text-muted-foreground">
-              <span className="absolute left-0 top-1/2 block h-px w-full -translate-y-1/2 bg-border" />
+            <div className="relative py-2 text-center text-xs tracking-[0.3em] text-muted-foreground uppercase">
+              <span className="absolute top-1/2 left-0 block h-px w-full -translate-y-1/2 bg-border" />
               <span className="relative bg-background px-3">
                 or continue with
               </span>

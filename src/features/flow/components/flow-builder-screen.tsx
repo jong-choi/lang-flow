@@ -7,7 +7,7 @@ import { TemplateSaveDialog } from "@/features/flow/components/template-save-dia
 
 export const FlowBuilderScreen = () => {
   return (
-    <div className="flex flex-col h-screen">
+    <div className="flex h-screen flex-col">
       <FlowHeader />
       <FlowSection />
       <TemplateSaveDialog />

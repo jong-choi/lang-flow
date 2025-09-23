@@ -23,7 +23,9 @@ export const selectPurchaseTemplates = (
   templates: WorkflowTemplate[],
 ) =>
   templateIds
-    .map((templateId) => templates.find((template) => template.id === templateId))
+    .map((templateId) =>
+      templates.find((template) => template.id === templateId),
+    )
     .filter((template): template is WorkflowTemplate => Boolean(template));
 
 export const createPurchaseSlice: StateCreator<PurchaseSlice> = (set) => ({

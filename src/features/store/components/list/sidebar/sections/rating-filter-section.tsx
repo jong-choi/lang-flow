@@ -17,20 +17,20 @@ export function RatingFilterSection() {
 
   return (
     <div>
-      <Label className="text-sm font-medium mb-3 block">평점</Label>
+      <Label className="mb-3 block text-sm font-medium">평점</Label>
       <div className="space-y-2">
         {RATING_OPTIONS.map((option, index) => (
           <button
             key={index}
             className={cn(
-              "w-full text-left px-3 py-2 rounded-md text-sm transition-colors flex items-center gap-2",
+              "flex w-full items-center gap-2 rounded-md px-3 py-2 text-left text-sm transition-colors",
               rating === option.value || (!rating && !option.value)
                 ? "bg-primary text-primary-foreground"
                 : "hover:bg-muted",
             )}
             onClick={() => updateFilters({ rating: option.value })}
           >
-            <Star className="w-4 h-4" />
+            <Star className="h-4 w-4" />
             {option.label}
           </button>
         ))}

@@ -18,7 +18,7 @@ const PaletteTab = ({
   children: ReactNode;
 }) => (
   <button
-    className={`flex-1 text-center px-4 py-2 text-sm font-semibold rounded-md transition-colors ${
+    className={`flex-1 rounded-md px-4 py-2 text-center text-sm font-semibold transition-colors ${
       currentView === view
         ? "bg-slate-900 text-white"
         : "bg-transparent text-slate-500 hover:bg-slate-100"
@@ -34,10 +34,10 @@ export const Sidebar = () => {
   const setActive = useFlowGeneratorStore.use.setPaletteView();
 
   return (
-    <aside className="w-80 h-full border-r bg-white dark:bg-slate-950 border-slate-200 dark:border-slate-800 p-6 flex flex-col">
+    <aside className="flex h-full w-80 flex-col border-r border-slate-200 bg-white p-6 dark:border-slate-800 dark:bg-slate-950">
       {/* 상단 헤더 */}
-      <div className="shrink-0 mb-4">
-        <div className="p-1 bg-slate-200 rounded-lg flex">
+      <div className="mb-4 shrink-0">
+        <div className="flex rounded-lg bg-slate-200 p-1">
           <PaletteTab view="nodes" currentView={active} onClick={setActive}>
             노드
           </PaletteTab>
@@ -53,29 +53,29 @@ export const Sidebar = () => {
       </div>
 
       {/* 하단 안내 */}
-      <div className="shrink-0 mt-4 rounded-xl border bg-slate-50 dark:bg-slate-900 border-slate-200 dark:border-slate-800 p-4">
-        <div className="flex items-center gap-2 font-bold text-slate-900 dark:text-slate-100 mb-3">
+      <div className="mt-4 shrink-0 rounded-xl border border-slate-200 bg-slate-50 p-4 dark:border-slate-800 dark:bg-slate-900">
+        <div className="mb-3 flex items-center gap-2 font-bold text-slate-900 dark:text-slate-100">
           <Info className="size-4" /> 조작 방법
         </div>
         <ul className="space-y-2 text-sm text-slate-700 dark:text-slate-300">
           <li className="flex items-start gap-2">
-            <MousePointer2 className="size-4 mt-0.5 text-violet-600" />
+            <MousePointer2 className="mt-0.5 size-4 text-violet-600" />
             <span>사이드바에서 노드를 드래그하여 캔버스에 추가</span>
           </li>
           <li className="flex items-start gap-2">
-            <Link2 className="size-4 mt-0.5 text-violet-600" />
+            <Link2 className="mt-0.5 size-4 text-violet-600" />
             <span>노드의 핸들을 드래그하여 다른 노드와 연결</span>
           </li>
           <li className="flex items-start gap-2">
-            <Hand className="size-4 mt-0.5 text-violet-600" />
+            <Hand className="mt-0.5 size-4 text-violet-600" />
             <span>엣지를 드래그해 빈 공간에 놓으면 연결 해제</span>
           </li>
           <li className="flex items-start gap-2">
-            <Link2 className="size-4 mt-0.5 text-violet-600" />
+            <Link2 className="mt-0.5 size-4 text-violet-600" />
             <span>엣지를 다른 핸들로 드래그하면 재연결</span>
           </li>
           <li className="flex items-start gap-2">
-            <Trash2 className="size-4 mt-0.5 text-violet-600" />
+            <Trash2 className="mt-0.5 size-4 text-violet-600" />
             <span>Delete 키로 선택한 노드/엣지 삭제</span>
           </li>
         </ul>

@@ -32,22 +32,27 @@ This project uses PostgreSQL with Drizzle ORM for database management.
 ### Setup Steps
 
 1. **Environment Variables**
+
    ```bash
    cp .env.example .env.local
    ```
+
    Update `DATABASE_URL` in `.env.local` with your PostgreSQL connection string:
+
    ```
    DATABASE_URL="postgresql://username:password@localhost:5432/database_name"
    ```
 
 2. **Database Schema**
    Push the database schema to your PostgreSQL database:
+
    ```bash
    npm run db:push
    ```
 
 3. **Seed Data (Optional)**
    Add sample data to your database:
+
    ```bash
    npm run db:seed
    ```

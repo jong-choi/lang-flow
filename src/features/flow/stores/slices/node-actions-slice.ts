@@ -6,7 +6,9 @@ export interface NodeActionsSlice {
   consumeNodeRetryRequest: () => void;
 }
 
-export const createNodeActionsSlice: StateCreator<NodeActionsSlice> = (set) => ({
+export const createNodeActionsSlice: StateCreator<NodeActionsSlice> = (
+  set,
+) => ({
   nodeRetryRequest: null,
   requestNodeRetry: (nodeId) =>
     set({

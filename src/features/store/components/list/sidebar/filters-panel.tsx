@@ -27,23 +27,23 @@ export function FiltersPanel({ className }: FiltersPanelProps) {
   }, [filters]);
 
   return (
-    <Card className={cn("py-6 h-full gap-0", className)}>
+    <Card className={cn("h-full gap-0 py-6", className)}>
       <div className="flex items-center justify-between px-6">
         <div className="flex items-center gap-2">
-          <Filter className="w-5 h-5" />
+          <Filter className="h-5 w-5" />
           <h3 className="font-semibold">필터</h3>
         </div>
         <SortFilterSection />
       </div>
 
-      <div className="space-y-6 overflow-auto max-h-full flex flex-col pt-4 px-6">
+      <div className="flex max-h-full flex-col space-y-6 overflow-auto px-6 pt-4">
         <CategoryFilterSection />
         <PriceFilterSection />
         <RatingFilterSection />
         <TagFilterSection />
         {hasActiveFilters && (
           <Button variant="ghost" size="sm" onClick={() => resetFilters()}>
-            <X className="w-4 h-4 ml-auto" />
+            <X className="ml-auto h-4 w-4" />
             필터 초기화
           </Button>
         )}
