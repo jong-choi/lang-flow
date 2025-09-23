@@ -8,7 +8,6 @@ import {
   deserializeWorkflowDetail,
   toTemplateSummary,
 } from "@/features/flow/utils/workflow-transformers";
-import type { FlowGeneratorState } from "../flow-store";
 
 interface WorkflowListResponse {
   workflows: WorkflowApiDetail[];
@@ -31,18 +30,13 @@ export interface TemplateSlice {
   cacheTemplateDetail: (detail: WorkflowTemplateDetail) => void;
 }
 
-export const createTemplateSlice: StateCreator<
-  FlowGeneratorState,
-  [],
-  [],
-  TemplateSlice
-> = (set, get) => ({
+export const createTemplateSlice: StateCreator<TemplateSlice> = (set, get) => ({
   templates: [],
   templateDetails: {},
   isLoadingTemplates: false,
   draggingTemplateId: undefined,
   fetchTemplates: async () => {
-    set((prev) => ({ ...prev, isLoadingTemplates: true }));
+    set({ isLoadingTemplates: true });
     try {
       const response = await fetch("/api/workflows", { cache: "no-store" });
       if (!response.ok) {
@@ -50,14 +44,13 @@ export const createTemplateSlice: StateCreator<
       }
       const payload = (await response.json()) as WorkflowListResponse;
       const summaries = payload.workflows.map(toTemplateSummary);
-      set((prev) => ({
-        ...prev,
+      set({
         templates: summaries,
         isLoadingTemplates: false,
-      }));
+      });
     } catch (error) {
       console.error("워크플로우 템플릿 목록을 불러오지 못했습니다.", error);
-      set((prev) => ({ ...prev, isLoadingTemplates: false }));
+      set({ isLoadingTemplates: false });
     }
   },
   ensureTemplateDetail: async (id) => {
@@ -77,7 +70,6 @@ export const createTemplateSlice: StateCreator<
       const payload = (await response.json()) as WorkflowDetailResponse;
       const detail = deserializeWorkflowDetail(payload.workflow);
       set((prev) => ({
-        ...prev,
         templateDetails: { ...prev.templateDetails, [id]: detail },
         templates: prev.templates.some((item) => item.id === id)
           ? prev.templates
@@ -89,8 +81,7 @@ export const createTemplateSlice: StateCreator<
       return null;
     }
   },
-  setDraggingTemplateId: (id) =>
-    set((prev) => ({ ...prev, draggingTemplateId: id })),
+  setDraggingTemplateId: (id) => set({ draggingTemplateId: id }),
   upsertTemplate: (template) =>
     set((prev) => {
       const templateExists = prev.templates.some(
@@ -99,7 +90,6 @@ export const createTemplateSlice: StateCreator<
       const hasTemplateDetail = Boolean(prev.templateDetails[template.id]);
 
       return {
-        ...prev,
         templates: templateExists
           ? prev.templates.map((item) =>
               item.id === template.id ? template : item,
@@ -121,14 +111,12 @@ export const createTemplateSlice: StateCreator<
       const restDetails = { ...prev.templateDetails };
       delete restDetails[id];
       return {
-        ...prev,
         templates: prev.templates.filter((item) => item.id !== id),
         templateDetails: restDetails,
       };
     }),
   cacheTemplateDetail: (detail) =>
     set((prev) => ({
-      ...prev,
       templateDetails: { ...prev.templateDetails, [detail.id]: detail },
       templates: prev.templates.some((item) => item.id === detail.id)
         ? prev.templates

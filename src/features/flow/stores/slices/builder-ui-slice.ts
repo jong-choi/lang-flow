@@ -1,6 +1,5 @@
 import type { StateCreator } from "zustand";
 import type { WorkflowTemplateSummary } from "@/features/flow/types/nodes";
-import type { FlowGeneratorState } from "../flow-store";
 
 export interface TemplateActionState {
   template: WorkflowTemplateSummary;
@@ -20,40 +19,30 @@ export interface BuilderUiSlice {
   setNavigationAfterSave: (action: TemplateActionState | null) => void;
 }
 
-export const createBuilderUiSlice: StateCreator<
-  FlowGeneratorState,
-  [],
-  [],
-  BuilderUiSlice
-> = (set) => ({
+export const createBuilderUiSlice: StateCreator<BuilderUiSlice> = (set) => ({
   workflowName: "untitled",
   setWorkflowName: (nextName) =>
-    set((prev) => ({
-      ...prev,
+    set({
       workflowName: nextName,
-    })),
+    }),
   isTemplateModalOpen: false,
   setTemplateModalOpen: (open) =>
-    set((prev) => ({
-      ...prev,
+    set({
       isTemplateModalOpen: open,
-    })),
+    }),
   isSavingTemplate: false,
   setIsSavingTemplate: (isSaving) =>
-    set((prev) => ({
-      ...prev,
+    set({
       isSavingTemplate: isSaving,
-    })),
+    }),
   confirmTemplateAction: null,
   setConfirmTemplateAction: (action) =>
-    set((prev) => ({
-      ...prev,
+    set({
       confirmTemplateAction: action,
-    })),
+    }),
   navigationAfterSave: null,
   setNavigationAfterSave: (action) =>
-    set((prev) => ({
-      ...prev,
+    set({
       navigationAfterSave: action,
-    })),
+    }),
 });

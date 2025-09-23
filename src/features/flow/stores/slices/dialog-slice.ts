@@ -1,6 +1,5 @@
 import type { StateCreator } from "zustand";
 import type { NodeData } from "@/features/flow/types/nodes";
-import type { FlowGeneratorState } from "../flow-store";
 
 export type NodeDialogTrigger =
   | "palette-drop"
@@ -42,12 +41,7 @@ export interface DialogSlice {
   setPromptDialogOpen: (open: boolean) => void;
 }
 
-export const createDialogSlice: StateCreator<
-  FlowGeneratorState,
-  [],
-  [],
-  DialogSlice
-> = (set) => ({
+export const createDialogSlice: StateCreator<DialogSlice> = (set) => ({
   nodeDialog: initialNodeDialogState,
   promptDialog: initialPromptDialogState,
   openNodeDialog: ({ nodeId, nodeData, trigger }) =>
@@ -70,7 +64,6 @@ export const createDialogSlice: StateCreator<
       }
 
       return {
-        ...prevState,
         nodeDialog: nextDialog,
       };
     }),
@@ -81,7 +74,6 @@ export const createDialogSlice: StateCreator<
       }
 
       return {
-        ...prevState,
         nodeDialog: initialNodeDialogState,
       };
     }),
@@ -96,7 +88,6 @@ export const createDialogSlice: StateCreator<
       }
 
       return {
-        ...prevState,
         nodeDialog: {
           ...prevState.nodeDialog,
           nodeData,
@@ -110,7 +101,6 @@ export const createDialogSlice: StateCreator<
       }
 
       return {
-        ...prevState,
         promptDialog: {
           ...prevState.promptDialog,
           isOpen: open,

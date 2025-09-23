@@ -1,5 +1,4 @@
 import type { StateCreator } from "zustand";
-import type { FlowGeneratorState } from "../flow-store";
 
 export interface RunMetaSlice {
   failedNodeIds: Set<string>;
@@ -12,34 +11,13 @@ export interface RunMetaSlice {
   setLevels: (lv: string[][]) => void;
 }
 
-export const createRunMetaSlice: StateCreator<
-  FlowGeneratorState,
-  [],
-  [],
-  RunMetaSlice
-> = (set) => ({
+export const createRunMetaSlice: StateCreator<RunMetaSlice> = (set) => ({
   failedNodeIds: new Set<string>(),
   failedCount: 0,
   currentLevelIndex: 0,
   levels: [],
-  setFailedNodeIds: (ids: Set<string>) =>
-    set((prevState) => ({
-      ...prevState,
-      failedNodeIds: new Set(ids),
-    })),
-  setFailedCount: (count: number) =>
-    set((prevState) => ({
-      ...prevState,
-      failedCount: count,
-    })),
-  setCurrentLevelIndex: (index: number) =>
-    set((prevState) => ({
-      ...prevState,
-      currentLevelIndex: index,
-    })),
-  setLevels: (levelsArg: string[][]) =>
-    set((prevState) => ({
-      ...prevState,
-      levels: levelsArg,
-    })),
+  setFailedNodeIds: (ids: Set<string>) => set({ failedNodeIds: new Set(ids) }),
+  setFailedCount: (count: number) => set({ failedCount: count }),
+  setCurrentLevelIndex: (index: number) => set({ currentLevelIndex: index }),
+  setLevels: (levelsArg: string[][]) => set({ levels: levelsArg }),
 });

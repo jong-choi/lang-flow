@@ -1,5 +1,4 @@
 import type { StateCreator } from "zustand";
-import type { FlowGeneratorState } from "../flow-store";
 
 export interface RunControlsSlice {
   canRun: boolean;
@@ -24,12 +23,7 @@ export interface RunControlsSlice {
   consumeRetryRequest: () => void;
 }
 
-export const createRunControlsSlice: StateCreator<
-  FlowGeneratorState,
-  [],
-  [],
-  RunControlsSlice
-> = (set, get) => ({
+export const createRunControlsSlice: StateCreator<RunControlsSlice> = (set, get) => ({
   canRun: false,
   runDisabledReason: null,
   canRetry: false,
@@ -56,7 +50,7 @@ export const createRunControlsSlice: StateCreator<
       return;
     }
 
-    set(updates as Partial<FlowGeneratorState>);
+    set(updates);
   },
 
   runRequest: null,
