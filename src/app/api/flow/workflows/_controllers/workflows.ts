@@ -100,69 +100,63 @@ export async function createWorkflow(input: {
     // 서버에서 노드/엣지의 고유 id를 생성하고, 클라이언트 임시 id -> 서버 id 매핑을 만든다.
     const nodeIdMap = new Map<string, string>();
 
-    const nodes =
-      input.nodes && input.nodes.length > 0
-        ? await (async () => {
-            const nodesToInsert = input.nodes?.map((node) => {
-              // 입력 id가 number로 올 수 있으므로 문자열로 강제하여 매핑에서 일관성 유지
-              const clientId =
-                node.id !== undefined && node.id !== null
-                  ? String(node.id)
-                  : crypto.randomUUID();
-              const serverId = crypto.randomUUID();
-              nodeIdMap.set(clientId, serverId);
+    let nodes: Array<typeof flowNodes.$inferInsert> = [];
+    if (input.nodes?.length) {
+      const nodesToInsert = input.nodes.map((node) => {
+        if (node.id === undefined || node.id === null) {
+          throw new Error(
+            "노드를 생성하기 위한 클라이언트 id가 누락되었습니다.",
+          );
+        }
 
-              const insertObj = {
-                ...node,
-                // 항상 서버에서 생성한 id로 덮어쓴다
-                id: serverId,
-                workflowId: created.id,
-              } as typeof flowNodes.$inferInsert;
+        const clientId = String(node.id);
+        const serverId = crypto.randomUUID();
+        nodeIdMap.set(clientId, serverId);
 
-              return insertObj;
-            });
+        return {
+          ...node,
+          // 항상 서버에서 생성한 id로 덮어쓴다
+          id: serverId,
+          workflowId: created.id,
+        };
+      });
 
-            if (!nodesToInsert) return;
-            return await transaction
-              .insert(flowNodes)
-              .values(nodesToInsert)
-              .returning(nodeSelection);
-          })()
-        : [];
+      nodes = await transaction
+        .insert(flowNodes)
+        .values(nodesToInsert)
+        .returning(nodeSelection);
+    }
 
-    const edges =
-      input.edges && input.edges.length > 0
-        ? await (async () => {
-            const edgesToInsert = input.edges?.map((edge) => {
-              // 항상 서버에서 새로운 id 생성 (클라이언트 id 사용 방지)
-              const serverEdgeId = crypto.randomUUID();
-              const clientSourceId = String(edge.sourceId);
-              const clientTargetId = String(edge.targetId);
-              const mappedSource = nodeIdMap.get(clientSourceId);
-              const mappedTarget = nodeIdMap.get(clientTargetId);
+    let edges: Array<typeof flowEdges.$inferInsert> = [];
+    if (input.edges?.length) {
+      const edgesToInsert = input.edges.map((edge) => {
+        // 항상 서버에서 새로운 id 생성 (클라이언트 id 사용 방지)
+        const serverEdgeId = crypto.randomUUID();
+        const clientSourceId = String(edge.sourceId);
+        const clientTargetId = String(edge.targetId);
+        const mappedSource = nodeIdMap.get(clientSourceId);
+        const mappedTarget = nodeIdMap.get(clientTargetId);
 
-              if (!mappedSource || !mappedTarget) {
-                throw new Error(
-                  `엣지를 생성하기 위한 노드 정보가 누락되었습니다. (sourceId: ${clientSourceId}, targetId: ${clientTargetId})`,
-                );
-              }
+        if (!mappedSource || !mappedTarget) {
+          throw new Error(
+            `엣지를 생성하기 위한 노드 정보가 누락되었습니다. (sourceId: ${clientSourceId}, targetId: ${clientTargetId})`,
+          );
+        }
 
-              return {
-                ...edge,
-                id: serverEdgeId,
-                sourceId: mappedSource,
-                targetId: mappedTarget,
-                workflowId: created.id,
-              } as typeof flowEdges.$inferInsert;
-            });
+        return {
+          ...edge,
+          id: serverEdgeId,
+          sourceId: mappedSource,
+          targetId: mappedTarget,
+          workflowId: created.id,
+        };
+      });
 
-            if (!edgesToInsert) return;
-            return await transaction
-              .insert(flowEdges)
-              .values(edgesToInsert)
-              .returning(edgeSelection);
-          })()
-        : [];
+      edges = await transaction
+        .insert(flowEdges)
+        .values(edgesToInsert)
+        .returning(edgeSelection);
+    }
 
     return { ...created, nodes, edges };
   });

@@ -92,20 +92,30 @@ export const createTemplateSlice: StateCreator<
   setDraggingTemplateId: (id) =>
     set((prev) => ({ ...prev, draggingTemplateId: id })),
   upsertTemplate: (template) =>
-    set((prev) => ({
-      ...prev,
-      templates: prev.templates.some((item) => item.id === template.id)
-        ? prev.templates.map((item) =>
-            item.id === template.id ? template : item,
-          )
-        : [template, ...prev.templates],
-      templateDetails: {
-        ...prev.templateDetails,
-        [template.id]: prev.templateDetails[template.id]
-          ? { ...prev.templateDetails[template.id], ...template }
-          : prev.templateDetails[template.id],
-      },
-    })),
+    set((prev) => {
+      const templateExists = prev.templates.some(
+        (item) => item.id === template.id,
+      );
+      const hasTemplateDetail = Boolean(prev.templateDetails[template.id]);
+
+      return {
+        ...prev,
+        templates: templateExists
+          ? prev.templates.map((item) =>
+              item.id === template.id ? template : item,
+            )
+          : [template, ...prev.templates],
+        templateDetails: hasTemplateDetail
+          ? {
+              ...prev.templateDetails,
+              [template.id]: {
+                ...prev.templateDetails[template.id],
+                ...template,
+              },
+            }
+          : prev.templateDetails,
+      };
+    }),
   removeTemplate: (id) =>
     set((prev) => {
       const restDetails = { ...prev.templateDetails };
