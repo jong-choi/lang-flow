@@ -2,11 +2,13 @@
 
 import React, { useState } from "react";
 import type { ReactNode } from "react";
+import { Save } from "lucide-react";
 
 export type FlowHeaderProps = {
   initialName?: string;
   onCreate?: () => void;
   onDelete?: () => void;
+  onSaveTemplate?: () => void;
   children?: ReactNode;
 };
 
@@ -14,6 +16,7 @@ export function FlowHeader({
   initialName = "untitled",
   onCreate,
   onDelete,
+  onSaveTemplate,
   children,
 }: FlowHeaderProps) {
   const [name, setName] = useState(initialName);
@@ -50,6 +53,13 @@ export function FlowHeader({
       </div>
 
       <div className="flex items-center gap-3">
+        <button
+          type="button"
+          onClick={onSaveTemplate}
+          className="inline-flex items-center gap-2 rounded-md border border-violet-200 px-3 py-1.5 text-sm font-semibold text-violet-600 hover:bg-violet-50"
+        >
+          <Save className="size-4" /> 템플릿으로 저장
+        </button>
         <button
           type="button"
           onClick={onCreate}

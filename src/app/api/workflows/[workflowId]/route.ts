@@ -52,14 +52,14 @@ type WorkflowDetail = Exclude<
 type UpdateWorkflowPayload = z.infer<typeof updateWorkflowSchema>;
 
 type Params = {
-  params: {
+  params: Promise<{
     workflowId: string;
-  };
+  }>;
 };
 
 export async function GET(_: Request, { params }: Params) {
   try {
-    const { workflowId } = params;
+    const { workflowId } = await params;
     const workflow = await getWorkflowById(workflowId);
 
     if (!workflow) {
@@ -91,7 +91,7 @@ export async function PATCH(request: Request, { params }: Params) {
       return NextResponse.json({ message }, { status: 400 });
     }
 
-    const { workflowId } = params;
+    const { workflowId } = await params;
     const data: UpdateWorkflowPayload = parsed.data;
     const updated = await updateWorkflow(workflowId, data);
 
@@ -115,7 +115,7 @@ export async function PATCH(request: Request, { params }: Params) {
 
 export async function DELETE(_: Request, { params }: Params) {
   try {
-    const { workflowId } = params;
+    const { workflowId } = await params;
     const deleted = await deleteWorkflow(workflowId);
 
     if (!deleted) {

@@ -1,6 +1,6 @@
 /** 최소 주석, 한 파일 SSOT */
 import type { CSSProperties, ComponentType } from "react";
-import type { InferSelectModel } from "drizzle-orm";
+import type { InferInsertModel, InferSelectModel } from "drizzle-orm";
 import type { BaseMessage } from "@langchain/core/messages";
 import type {
   Position,
@@ -17,6 +17,9 @@ type ComplexValue = Primitive | object;
 // ============= DB 스키마 타입 =============
 type FlowNodeRow = InferSelectModel<typeof flowNodes>;
 type FlowEdgeRow = InferSelectModel<typeof flowEdges>;
+export type FlowInsertNodeRow = InferInsertModel<typeof flowNodes>;
+export type FlowInsertEdgeRow = InferInsertModel<typeof flowEdges>;
+
 type NodeId = FlowNodeRow["id"];
 export type FlowNodeType = FlowNodeRow["type"];
 
@@ -66,6 +69,18 @@ export interface ReactFlowEdge extends SchemaEdge {
   sourceHandle?: FlowEdgeRow["sourceHandle"];
   targetHandle?: FlowEdgeRow["targetHandle"];
   label?: FlowEdgeRow["label"];
+}
+
+export interface WorkflowTemplateSummary {
+  id: string;
+  name: string;
+  description?: string | null;
+  updatedAt?: string | null;
+}
+
+export interface WorkflowTemplateDetail extends WorkflowTemplateSummary {
+  nodes: SchemaNode[];
+  edges: SchemaEdge[];
 }
 
 // ============= 노드 설정 =============

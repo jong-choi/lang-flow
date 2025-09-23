@@ -7,6 +7,11 @@ import { FlowCanvas } from "@/features/flow/components/flow-canvas";
 import { PromptInputModal } from "@/features/flow/components/prompt-input-modal";
 import { Sidebar } from "@/features/flow/components/sidebar";
 import { useFlowGeneratorStore } from "@/features/flow/providers/flow-store-provider";
+import type {
+  SchemaEdge,
+  SchemaNode,
+  WorkflowTemplateSummary,
+} from "@/features/flow/types/nodes";
 
 const PlayIcon = <Play className="size-4" />;
 const SquareIcon = <Square className="size-4" />;
@@ -14,7 +19,24 @@ const RotateCwIcon = <RotateCw className="size-4" />;
 const GitBranchIcon = <GitBranch className="size-4" />;
 const MessageSquareIcon = <MessageSquare className="size-4" />;
 
-export const FlowSection = () => {
+interface FlowSectionProps {
+  initialNodes?: SchemaNode[];
+  initialEdges?: SchemaEdge[];
+  onTemplateAction?: (
+    template: WorkflowTemplateSummary,
+    action: "edit" | "delete",
+  ) => void;
+  onTemplateOpen?: (template: WorkflowTemplateSummary) => void;
+  onTemplateCreate?: () => void;
+}
+
+export const FlowSection = ({
+  initialNodes,
+  initialEdges,
+  onTemplateAction,
+  onTemplateOpen,
+  onTemplateCreate,
+}: FlowSectionProps) => {
   const [activeTab, setActiveTab] = useState<"graph" | "results">("graph");
   const [showPromptModal, setShowPromptModal] = useState(false);
   const isRunning = useFlowGeneratorStore.use.isRunning();
@@ -42,8 +64,12 @@ export const FlowSection = () => {
   }, []);
 
   return (
-    <div className="flex h-screen">
-      <Sidebar />
+    <div className="flex flex-1 min-h-0">
+      <Sidebar
+        onTemplateAction={onTemplateAction}
+        onTemplateOpen={onTemplateOpen}
+        onTemplateCreate={onTemplateCreate}
+      />
       <div className="flex-1 flex flex-col">
         {/* 헤더 */}
         <div className="shrink-0 border-b bg-white/60 dark:bg-slate-900/60 backdrop-blur supports-[backdrop-filter]:bg-white/40 border-slate-200 dark:border-slate-800 px-4 py-2 flex items-center justify-between">
@@ -106,7 +132,12 @@ export const FlowSection = () => {
 
         {/* 캔버스/결과 */}
         <ReactFlowProvider>
-          <FlowCanvas activeTab={activeTab} onRunComplete={onRunComplete} />
+          <FlowCanvas
+            activeTab={activeTab}
+            onRunComplete={onRunComplete}
+            initialNodes={initialNodes}
+            initialEdges={initialEdges}
+          />
         </ReactFlowProvider>
 
         {/* 프롬프트 모달 */}

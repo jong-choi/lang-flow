@@ -97,31 +97,66 @@ export async function createWorkflow(input: {
       throw new Error("워크플로우 생성에 실패했습니다.");
     }
 
-    const nodes =
-      input.nodes && input.nodes.length > 0
-        ? await transaction
-            .insert(flowNodes)
-            .values(
-              input.nodes.map((node) => ({
-                ...node,
-                workflowId: created.id,
-              })),
-            )
-            .returning(nodeSelection)
-        : [];
+    // 서버에서 노드/엣지의 고유 id를 생성하고, 클라이언트 임시 id -> 서버 id 매핑을 만든다.
+    const nodeIdMap = new Map<string, string>();
 
-    const edges =
-      input.edges && input.edges.length > 0
-        ? await transaction
-            .insert(flowEdges)
-            .values(
-              input.edges.map((edge) => ({
-                ...edge,
-                workflowId: created.id,
-              })),
-            )
-            .returning(edgeSelection)
-        : [];
+    let nodes: Array<typeof flowNodes.$inferInsert> = [];
+    if (input.nodes?.length) {
+      const nodesToInsert = input.nodes.map((node) => {
+        if (node.id === undefined || node.id === null) {
+          throw new Error(
+            "노드를 생성하기 위한 클라이언트 id가 누락되었습니다.",
+          );
+        }
+
+        const clientId = String(node.id);
+        const serverId = crypto.randomUUID();
+        nodeIdMap.set(clientId, serverId);
+
+        return {
+          ...node,
+          // 항상 서버에서 생성한 id로 덮어쓴다
+          id: serverId,
+          workflowId: created.id,
+        };
+      });
+
+      nodes = await transaction
+        .insert(flowNodes)
+        .values(nodesToInsert)
+        .returning(nodeSelection);
+    }
+
+    let edges: Array<typeof flowEdges.$inferInsert> = [];
+    if (input.edges?.length) {
+      const edgesToInsert = input.edges.map((edge) => {
+        // 항상 서버에서 새로운 id 생성 (클라이언트 id 사용 방지)
+        const serverEdgeId = crypto.randomUUID();
+        const clientSourceId = String(edge.sourceId);
+        const clientTargetId = String(edge.targetId);
+        const mappedSource = nodeIdMap.get(clientSourceId);
+        const mappedTarget = nodeIdMap.get(clientTargetId);
+
+        if (!mappedSource || !mappedTarget) {
+          throw new Error(
+            `엣지를 생성하기 위한 노드 정보가 누락되었습니다. (sourceId: ${clientSourceId}, targetId: ${clientTargetId})`,
+          );
+        }
+
+        return {
+          ...edge,
+          id: serverEdgeId,
+          sourceId: mappedSource,
+          targetId: mappedTarget,
+          workflowId: created.id,
+        };
+      });
+
+      edges = await transaction
+        .insert(flowEdges)
+        .values(edgesToInsert)
+        .returning(edgeSelection);
+    }
 
     return { ...created, nodes, edges };
   });

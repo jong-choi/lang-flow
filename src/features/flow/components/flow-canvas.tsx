@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
+import { toast } from "sonner";
 import { useShallow } from "zustand/react/shallow";
 import {
   Background,
@@ -18,37 +19,60 @@ import "@xyflow/react/dist/style.css";
 import { edgeTypes } from "@/features/flow/components/nodes/custom-edge";
 import { nodeTypes } from "@/features/flow/components/nodes/node-type-map";
 import { ResultsTab } from "@/features/flow/components/results-tab";
+import { TemplateGroupsOverlay } from "@/features/flow/components/workflow/template-group-layover";
 import { useDelayApi } from "@/features/flow/hooks/use-delay-api";
 import { useFlowExecution } from "@/features/flow/hooks/use-flow-execution";
 import { useIsValidConnection } from "@/features/flow/hooks/use-is-valid-connection";
 import { useRunEligibility } from "@/features/flow/hooks/use-run-eligibility";
 import { useFlowGeneratorStore } from "@/features/flow/providers/flow-store-provider";
-import type { SchemaEdge, SchemaNode } from "@/features/flow/types/nodes";
+import type {
+  SchemaEdge,
+  SchemaNode,
+  WorkflowTemplateDetail,
+} from "@/features/flow/types/nodes";
+import {
+  type TemplateGroup,
+  buildNewNode,
+  calculateTemplateInsertion,
+  createDefaultNodes,
+  createRandomEdgeId,
+  createRandomGroupId,
+  duplicateEdges,
+  duplicateNodes,
+  markRunningNodesAsFailed,
+  pruneEmptyTemplateGroups,
+} from "@/features/flow/utils/canvas";
 import { createNodeData, getId } from "@/features/flow/utils/node-factory";
-
-const initialNodes: SchemaNode[] = [
-  {
-    id: "1",
-    type: "inputNode",
-    data: createNodeData("inputNode"),
-    position: { x: 250, y: 25 },
-  },
-];
+import { createRunGateState } from "@/features/flow/utils/workflow";
 
 type FlowCanvasProps = {
   activeTab: "graph" | "results";
   onRunComplete?: () => void;
+  initialNodes?: SchemaNode[];
+  initialEdges?: SchemaEdge[];
 };
 
-export const FlowCanvas = ({ activeTab, onRunComplete }: FlowCanvasProps) => {
+export const FlowCanvas = ({
+  activeTab,
+  onRunComplete,
+  initialNodes: initialNodesProp,
+  initialEdges: initialEdgesProp,
+}: FlowCanvasProps) => {
   const reactFlowWrapper = useRef<HTMLDivElement>(null);
   const edgeReconnectSuccessful = useRef(true);
-  const [nodes, setNodes, onNodesChange] =
-    useNodesState<SchemaNode>(initialNodes);
-  const [edges, setEdges, onEdgesChange] = useEdgesState<SchemaEdge>([]);
+  const [nodes, setNodes, onNodesChange] = useNodesState<SchemaNode>(
+    initialNodesProp ?? createDefaultNodes(createNodeData),
+  );
+  const [edges, setEdges, onEdgesChange] = useEdgesState<SchemaEdge>(
+    initialEdgesProp ?? [],
+  );
   const { screenToFlowPosition } = useReactFlow();
   const type = useFlowGeneratorStore.use.draggingType();
   const setDraggingType = useFlowGeneratorStore.use.setDraggingType();
+  const draggingTemplateId = useFlowGeneratorStore.use.draggingTemplateId();
+  const setDraggingTemplateId =
+    useFlowGeneratorStore.use.setDraggingTemplateId();
+  const ensureTemplateDetail = useFlowGeneratorStore.use.ensureTemplateDetail();
   const isRunning = useFlowGeneratorStore.use.isRunning();
   const setIsRunning = useFlowGeneratorStore.use.setRunning();
   const { cancelAll: delayCancelAll } = useDelayApi();
@@ -60,6 +84,8 @@ export const FlowCanvas = ({ activeTab, onRunComplete }: FlowCanvasProps) => {
     useShallow((ids) => ids),
   );
   const setRunGate = useFlowGeneratorStore.use.setRunGate();
+  const setCanvasState = useFlowGeneratorStore.use.setCanvasState();
+  const [templateGroups, setTemplateGroups] = useState<TemplateGroup[]>([]);
   // 이벤트 기반 요청 상태/액션
   const runRequest = useFlowGeneratorStore.use.runRequest();
   const cancelRequestId = useFlowGeneratorStore.use.cancelRequestId();
@@ -104,6 +130,31 @@ export const FlowCanvas = ({ activeTab, onRunComplete }: FlowCanvasProps) => {
     [setEdges, isValidConnection],
   );
 
+  const insertTemplate = useCallback(
+    (
+      template: WorkflowTemplateDetail,
+      dropPosition: { x: number; y: number },
+    ) => {
+      const insertion = calculateTemplateInsertion(template, dropPosition, {
+        generateNodeId: getId,
+        generateEdgeId: createRandomEdgeId,
+        generateGroupId: createRandomGroupId,
+      });
+
+      if (!insertion) {
+        toast.error("추가할 노드를 찾지 못했습니다.");
+        return;
+      }
+
+      const { nodesToAdd, edgesToAdd, group } = insertion;
+
+      setNodes((prev) => prev.concat(nodesToAdd));
+      setEdges((prev) => prev.concat(edgesToAdd));
+      setTemplateGroups((prev) => prev.concat(group));
+    },
+    [setEdges, setNodes, setTemplateGroups],
+  );
+
   const onReconnectStart = useCallback(() => {
     edgeReconnectSuccessful.current = false;
   }, []);
@@ -134,37 +185,92 @@ export const FlowCanvas = ({ activeTab, onRunComplete }: FlowCanvasProps) => {
     [setEdges],
   );
 
-  const onDragOver = useCallback((event: React.DragEvent) => {
-    event.preventDefault();
-    event.dataTransfer.dropEffect = "move";
-  }, []);
+  useEffect(() => {
+    setCanvasState(nodes, edges);
+  }, [edges, nodes, setCanvasState]);
 
-  // 팔레트에서 노드 드롭
+  const hasHydratedNodesFromProps = useRef(false);
+  const hasHydratedEdgesFromProps = useRef(false);
+
+  useEffect(() => {
+    if (initialNodesProp) {
+      hasHydratedNodesFromProps.current = true;
+      setNodes(duplicateNodes(initialNodesProp));
+      return;
+    }
+
+    if (hasHydratedNodesFromProps.current) {
+      hasHydratedNodesFromProps.current = false;
+      setNodes(createDefaultNodes(createNodeData));
+    }
+  }, [initialNodesProp, setNodes]);
+
+  useEffect(() => {
+    if (initialEdgesProp) {
+      hasHydratedEdgesFromProps.current = true;
+      setEdges(duplicateEdges(initialEdgesProp));
+      return;
+    }
+
+    if (hasHydratedEdgesFromProps.current) {
+      hasHydratedEdgesFromProps.current = false;
+      setEdges([]);
+    }
+  }, [initialEdgesProp, setEdges]);
+
+  useEffect(() => {
+    setTemplateGroups((groups) => pruneEmptyTemplateGroups(groups, nodes));
+  }, [nodes]);
+
+  const onDragOver = useCallback(
+    (event: React.DragEvent) => {
+      event.preventDefault();
+      event.dataTransfer.dropEffect = draggingTemplateId ? "copy" : "move";
+    },
+    [draggingTemplateId],
+  );
+
+  // 팔레트에서 노드/템플릿 드롭
   const onDrop = useCallback(
-    (dropEvent: React.DragEvent) => {
+    async (dropEvent: React.DragEvent) => {
       dropEvent.preventDefault();
-
-      if (!type) {
-        return;
-      }
 
       const position = screenToFlowPosition({
         x: dropEvent.clientX,
         y: dropEvent.clientY,
       });
 
-      const newNode: SchemaNode = {
-        id: getId(),
-        type,
-        position,
-        data: createNodeData(type),
-      };
+      if (draggingTemplateId) {
+        const templateDetail = await ensureTemplateDetail(draggingTemplateId);
+        if (templateDetail) {
+          insertTemplate(templateDetail, position);
+        } else {
+          toast.error("템플릿을 불러오지 못했습니다.");
+        }
+        setDraggingTemplateId(undefined);
+        setDraggingType(undefined);
+        return;
+      }
+
+      if (!type) {
+        return;
+      }
+
+      const newNode = buildNewNode(type, position, getId, createNodeData);
 
       setNodes((existingNodes) => existingNodes.concat(newNode));
-      // 드랍 후 초기화
       setDraggingType(undefined);
     },
-    [screenToFlowPosition, type, setNodes, setDraggingType],
+    [
+      draggingTemplateId,
+      ensureTemplateDetail,
+      insertTemplate,
+      screenToFlowPosition,
+      setDraggingTemplateId,
+      setDraggingType,
+      setNodes,
+      type,
+    ],
   );
 
   // 실행 가능 조건 검사
@@ -176,13 +282,7 @@ export const FlowCanvas = ({ activeTab, onRunComplete }: FlowCanvasProps) => {
     delayCancelAll();
     sseCancelAll();
     // 실행 중이던 노드를 실패로 표시
-    setNodes((nodes) =>
-      nodes.map((node) =>
-        node.data.runStatus === "running"
-          ? { ...node, data: { ...node.data, runStatus: "failed" } }
-          : node,
-      ),
-    );
+    setNodes((nodes) => markRunningNodesAsFailed(nodes));
   }, [isRunning, delayCancelAll, sseCancelAll, setNodes]);
 
   // 전체 실행 시작
@@ -250,51 +350,48 @@ export const FlowCanvas = ({ activeTab, onRunComplete }: FlowCanvasProps) => {
   }, [cancelRequestId, cancelRun, consumeCancelRequest]);
 
   useEffect(() => {
-    setRunGate({
-      canRun: runEligibility.ok && !isRunning,
-      runDisabledReason: runEligibility.ok
-        ? null
-        : (runEligibility.reason ?? null),
-      canRetry: !!error || failedNodeIds.size > 0,
-    });
-  }, [
-    isRunning,
-    runEligibility.ok,
-    runEligibility.reason,
-    error,
-    failedNodeIds,
-    setRunGate,
-  ]);
+    setRunGate(
+      createRunGateState({
+        runEligibility,
+        isRunning,
+        error,
+        failedNodeIds,
+      }),
+    );
+  }, [runEligibility, isRunning, error, failedNodeIds, setRunGate]);
 
   return (
     <div className="min-h-0 flex-1 relative" ref={reactFlowWrapper}>
       {activeTab === "graph" ? (
-        <ReactFlow<SchemaNode, SchemaEdge>
-          nodes={nodes}
-          edges={edges}
-          onNodesChange={onNodesChange}
-          onEdgesChange={onEdgesChange}
-          onConnect={onConnect}
-          isValidConnection={isValidConnection}
-          onDrop={onDrop}
-          onDragOver={onDragOver}
-          onReconnect={onReconnect}
-          onReconnectStart={onReconnectStart}
-          onReconnectEnd={onReconnectEnd}
-          nodeTypes={nodeTypes}
-          edgeTypes={edgeTypes}
-          fitView
-          tabIndex={0}
-          className="bg-gradient-to-br from-slate-50 to-violet-50"
-          defaultEdgeOptions={{
-            type: "custom",
-            deletable: true,
-          }}
-        >
-          <Controls />
-          <MiniMap />
-          <Background />
-        </ReactFlow>
+        <>
+          <ReactFlow<SchemaNode, SchemaEdge>
+            nodes={nodes}
+            edges={edges}
+            onNodesChange={onNodesChange}
+            onEdgesChange={onEdgesChange}
+            onConnect={onConnect}
+            isValidConnection={isValidConnection}
+            onDrop={onDrop}
+            onDragOver={onDragOver}
+            onReconnect={onReconnect}
+            onReconnectStart={onReconnectStart}
+            onReconnectEnd={onReconnectEnd}
+            nodeTypes={nodeTypes}
+            edgeTypes={edgeTypes}
+            fitView
+            tabIndex={0}
+            className="bg-gradient-to-br from-slate-50 to-violet-50"
+            defaultEdgeOptions={{
+              type: "custom",
+              deletable: true,
+            }}
+          >
+            <Controls />
+            <MiniMap />
+            <Background />
+          </ReactFlow>
+          <TemplateGroupsOverlay groups={templateGroups} />
+        </>
       ) : (
         <ResultsTab results={results} sessionId={sessionId} />
       )}

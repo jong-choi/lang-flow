@@ -22,6 +22,20 @@
       "when": 1758541468679,
       "tag": "0002_confused_zuras",
       "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1758598230108,
+      "tag": "0003_wide_selene",
+      "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1758598784041,
+      "tag": "0004_optimal_praxagora",
+      "breakpoints": true
     }
   ]
 }
