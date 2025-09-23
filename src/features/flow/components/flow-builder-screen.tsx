@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useState } from "react";
+import { useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -29,39 +29,38 @@ import {
   serializeNodeForApi,
   toTemplateSummary,
 } from "@/features/flow/utils/workflow-transformers";
+import type { TemplateActionState } from "@/features/flow/stores/slices/builder-ui-slice";
 
 interface FlowBuilderScreenProps {
   initialNodes?: SchemaNode[];
   initialEdges?: SchemaEdge[];
-  workflowName?: string;
-}
-
-interface TemplateAction {
-  template: WorkflowTemplateSummary;
-  action: "edit" | "delete";
 }
 
 export const FlowBuilderScreen = ({
   initialNodes,
   initialEdges,
-  workflowName,
 }: FlowBuilderScreenProps) => {
   const router = useRouter();
-  const [showTemplateModal, setShowTemplateModal] = useState(false);
-  const [isSavingTemplate, setIsSavingTemplate] = useState(false);
-  const [confirmAction, setConfirmAction] = useState<TemplateAction | null>(
-    null,
-  );
-  const [navigationAfterSave, setNavigationAfterSave] =
-    useState<TemplateAction | null>(null);
   const canvasNodes = useFlowGeneratorStore.use.canvasNodes();
   const canvasEdges = useFlowGeneratorStore.use.canvasEdges();
   const upsertTemplate = useFlowGeneratorStore.use.upsertTemplate();
   const cacheTemplateDetail = useFlowGeneratorStore.use.cacheTemplateDetail();
   const fetchTemplates = useFlowGeneratorStore.use.fetchTemplates();
+  const workflowName = useFlowGeneratorStore.use.workflowName();
+  const setWorkflowName = useFlowGeneratorStore.use.setWorkflowName();
+  const isTemplateModalOpen = useFlowGeneratorStore.use.isTemplateModalOpen();
+  const setTemplateModalOpen = useFlowGeneratorStore.use.setTemplateModalOpen();
+  const isSavingTemplate = useFlowGeneratorStore.use.isSavingTemplate();
+  const setIsSavingTemplate = useFlowGeneratorStore.use.setIsSavingTemplate();
+  const confirmAction = useFlowGeneratorStore.use.confirmTemplateAction();
+  const setConfirmAction = useFlowGeneratorStore.use.setConfirmTemplateAction();
+  const navigationAfterSave =
+    useFlowGeneratorStore.use.navigationAfterSave();
+  const setNavigationAfterSave =
+    useFlowGeneratorStore.use.setNavigationAfterSave();
 
   const navigateToTemplate = useCallback(
-    (action: TemplateAction) => {
+    (action: TemplateActionState) => {
       const search = new URLSearchParams({ action: action.action }).toString();
       router.push(`/flow/${action.template.id}${search ? `?${search}` : ""}`);
     },
@@ -98,7 +97,7 @@ export const FlowBuilderScreen = ({
         cacheTemplateDetail(detail);
         upsertTemplate(toTemplateSummary(payload.workflow));
         toast.success("템플릿이 저장되었습니다.");
-        setShowTemplateModal(false);
+        setTemplateModalOpen(false);
         void fetchTemplates();
 
         if (navigationAfterSave) {
@@ -119,34 +118,39 @@ export const FlowBuilderScreen = ({
       fetchTemplates,
       navigateToTemplate,
       navigationAfterSave,
+      setIsSavingTemplate,
+      setNavigationAfterSave,
+      setTemplateModalOpen,
       upsertTemplate,
     ],
   );
 
-  const handleTemplateAction = useCallback((action: TemplateAction) => {
-    setConfirmAction(action);
-  }, []);
+  const handleTemplateAction = useCallback(
+    (template: WorkflowTemplateSummary, action: TemplateActionState["action"]) => {
+      setConfirmAction({ template, action });
+    },
+    [setConfirmAction],
+  );
 
   return (
     <div className="flex flex-col h-screen">
       <FlowHeader
-        initialName={workflowName}
-        onSaveTemplate={() => setShowTemplateModal(true)}
+        name={workflowName}
+        onNameChange={setWorkflowName}
+        onSaveTemplate={() => setTemplateModalOpen(true)}
       />
       <FlowSection
         initialNodes={initialNodes}
         initialEdges={initialEdges}
-        onTemplateAction={(template, action) =>
-          handleTemplateAction({ template, action })
-        }
-        onTemplateCreate={() => setShowTemplateModal(true)}
+        onTemplateAction={handleTemplateAction}
+        onTemplateCreate={() => setTemplateModalOpen(true)}
       />
       <TemplateSaveDialog
-        open={showTemplateModal}
-        onOpenChange={setShowTemplateModal}
+        open={isTemplateModalOpen}
+        onOpenChange={setTemplateModalOpen}
         onSubmit={handleTemplateSubmit}
         isSubmitting={isSavingTemplate}
-        initialName={workflowName ?? "새 템플릿"}
+        initialName={workflowName}
       />
       <Dialog
         open={!!confirmAction}
@@ -183,7 +187,7 @@ export const FlowBuilderScreen = ({
                 if (!confirmAction) return;
                 setNavigationAfterSave(confirmAction);
                 setConfirmAction(null);
-                setShowTemplateModal(true);
+                setTemplateModalOpen(true);
               }}
             >
               저장 후 이동

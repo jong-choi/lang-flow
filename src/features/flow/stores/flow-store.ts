@@ -1,6 +1,8 @@
 import { createStore } from "zustand";
 import type { CanvasSlice } from "./slices/canvas-slice";
 import { createCanvasSlice } from "./slices/canvas-slice";
+import type { BuilderUiSlice } from "./slices/builder-ui-slice";
+import { createBuilderUiSlice } from "./slices/builder-ui-slice";
 import type { DnDSlice } from "./slices/dnd-slice";
 import { createDnDSlice } from "./slices/dnd-slice";
 import type { NodeActionsSlice } from "./slices/node-actions-slice";
@@ -26,7 +28,8 @@ export type FlowGeneratorState = DnDSlice &
   RunControlsSlice &
   PaletteSlice &
   TemplateSlice &
-  CanvasSlice;
+  CanvasSlice &
+  BuilderUiSlice;
 
 export const createFlowGeneratorStore = (
   initialState?: Partial<FlowGeneratorState>,
@@ -41,5 +44,6 @@ export const createFlowGeneratorStore = (
     ...createPaletteSlice(set, get, api),
     ...createTemplateSlice(set, get, api),
     ...createCanvasSlice(set, get, api),
+    ...createBuilderUiSlice(set, get, api),
     ...initialState,
   }));

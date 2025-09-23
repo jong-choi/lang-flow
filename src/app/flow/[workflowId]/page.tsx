@@ -24,11 +24,12 @@ export default async function FlowPage({ params }: FlowPageParams) {
   const initialEdges = (workflow.edges ?? []).map(mapRowToSchemaEdge);
 
   return (
-    <FlowGeneratorStoreProvider>
+    <FlowGeneratorStoreProvider
+      initialState={{ workflowName: workflow.name ?? "untitled" }}
+    >
       <FlowBuilderScreen
         initialNodes={initialNodes}
         initialEdges={initialEdges}
-        workflowName={workflow.name}
       />
     </FlowGeneratorStoreProvider>
   );
