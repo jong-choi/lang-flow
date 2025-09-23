@@ -1,4 +1,8 @@
 import { createStore } from "zustand";
+import {
+  type InitialGraphSlice,
+  createInitialGraphSlice,
+} from "@/features/flow/stores/slices/initial-graph-slice";
 import type { ActiveTabSlice } from "./slices/active-tab-slice";
 import { createActiveTabSlice } from "./slices/active-tab-slice";
 import type { BuilderUiSlice } from "./slices/builder-ui-slice";
@@ -32,7 +36,8 @@ export type FlowGeneratorState = DnDSlice &
   CanvasSlice &
   ActiveTabSlice &
   BuilderUiSlice &
-  DialogSlice;
+  DialogSlice &
+  InitialGraphSlice;
 
 export const createFlowGeneratorStore = (
   initialState?: Partial<FlowGeneratorState>,
@@ -49,5 +54,6 @@ export const createFlowGeneratorStore = (
     ...createActiveTabSlice(set, get, api),
     ...createBuilderUiSlice(set, get, api),
     ...createDialogSlice(set, get, api),
+    ...createInitialGraphSlice(set, get, api),
     ...initialState,
   }));

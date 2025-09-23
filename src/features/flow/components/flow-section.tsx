@@ -7,17 +7,8 @@ import { FlowCanvas } from "@/features/flow/components/flow-canvas";
 import { PromptInputModal } from "@/features/flow/components/prompt-input-modal";
 import { Sidebar } from "@/features/flow/components/sidebar";
 import { useFlowGeneratorStore } from "@/features/flow/providers/flow-store-provider";
-import type { SchemaEdge, SchemaNode } from "@/features/flow/types/nodes";
 
-interface FlowSectionProps {
-  initialNodes?: SchemaNode[];
-  initialEdges?: SchemaEdge[];
-}
-
-export const FlowSection = ({
-  initialNodes,
-  initialEdges,
-}: FlowSectionProps) => {
+export const FlowSection = () => {
   const activeTab = useFlowGeneratorStore.use.activeTab();
   const setActiveTab = useFlowGeneratorStore.use.setActiveTab();
   const requestRun = useFlowGeneratorStore.use.requestRun();
@@ -44,12 +35,7 @@ export const FlowSection = ({
 
         {/* 캔버스/결과 */}
         <ReactFlowProvider>
-          <FlowCanvas
-            activeTab={activeTab}
-            onRunComplete={onRunComplete}
-            initialNodes={initialNodes}
-            initialEdges={initialEdges}
-          />
+          <FlowCanvas activeTab={activeTab} onRunComplete={onRunComplete} />
         </ReactFlowProvider>
 
         {/* 프롬프트 모달 */}

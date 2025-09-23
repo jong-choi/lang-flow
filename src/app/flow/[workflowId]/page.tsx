@@ -25,12 +25,13 @@ export default async function FlowPage({ params }: FlowPageParams) {
 
   return (
     <FlowGeneratorStoreProvider
-      initialState={{ workflowName: workflow.name ?? "untitled" }}
+      initialState={{
+        workflowName: workflow.name ?? "untitled",
+        initialNodes: initialNodes,
+        initialEdges: initialEdges,
+      }}
     >
-      <FlowBuilderScreen
-        initialNodes={initialNodes}
-        initialEdges={initialEdges}
-      />
+      <FlowBuilderScreen />
     </FlowGeneratorStoreProvider>
   );
 }

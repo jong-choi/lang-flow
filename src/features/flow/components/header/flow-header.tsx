@@ -3,27 +3,22 @@
 import { useState } from "react";
 import type { ReactNode } from "react";
 import { Save } from "lucide-react";
+import { toast } from "sonner";
 import { useFlowGeneratorStore } from "@/features/flow/providers/flow-store-provider";
 import { cn } from "@/utils/cn";
 
 export type FlowHeaderProps = {
-  name?: string;
-  onDelete?: () => void;
-  onSaveTemplate?: () => void;
-  onNameChange?: (nextName: string) => void;
   children?: ReactNode;
 };
 
-export function FlowHeader({
-  name = "untitled",
-  onDelete,
-  onSaveTemplate,
-  onNameChange,
-  children,
-}: FlowHeaderProps) {
+export function FlowHeader({ children }: FlowHeaderProps) {
   const [editing, setEditing] = useState(false);
+  const workflowName = useFlowGeneratorStore.use.workflowName();
+  const setWorkflowName = useFlowGeneratorStore.use.setWorkflowName();
+  const name = workflowName ?? "새 템플릿";
   const canRun = useFlowGeneratorStore.use.canRun();
   const runDisabledReason = useFlowGeneratorStore.use.runDisabledReason();
+  const setTemplateModalOpen = useFlowGeneratorStore.use.setTemplateModalOpen();
   const isTemplateDisabled = !canRun;
 
   return (
@@ -34,7 +29,7 @@ export function FlowHeader({
             <input
               aria-label="workflow-name"
               value={name}
-              onChange={(event) => onNameChange?.(event.target.value)}
+              onChange={(event) => setWorkflowName(event.target.value)}
               onBlur={() => setEditing(false)}
               onKeyDown={(e) => {
                 if (e.key === "Enter") setEditing(false);
@@ -59,20 +54,22 @@ export function FlowHeader({
       <div className="flex items-center gap-3">
         <button
           type="button"
-          onClick={onSaveTemplate}
+          onClick={() => setTemplateModalOpen(true)}
           className={cn(
             "inline-flex items-center gap-2 rounded-md border border-violet-200 px-3 py-1.5 text-sm font-semibold text-violet-600 hover:bg-violet-50",
             "disabled:opacity-50 disabled:cursor-not-allowed",
           )}
           disabled={isTemplateDisabled}
-          title={isTemplateDisabled ? runDisabledReason ?? undefined : undefined}
+          title={
+            isTemplateDisabled ? (runDisabledReason ?? undefined) : undefined
+          }
         >
           <Save className="size-4" /> 템플릿으로 저장
         </button>
 
         <button
           type="button"
-          onClick={onDelete}
+          onClick={() => toast.error("삭제기능 미구현")}
           className="inline-flex items-center gap-2 border border-gray-200 text-gray-700 px-2.5 py-1.5 rounded-md hover:bg-gray-50 text-sm"
           data-testid="delete-btn"
         >
