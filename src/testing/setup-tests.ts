@@ -1,8 +1,8 @@
 import { afterAll, afterEach, beforeAll, vi } from "vitest";
 import "@testing-library/jest-dom/vitest";
-import amplitudeMock from "../testing/mocks/amplitude";
-import "./mocks/database";
-import { server } from "./mocks/server";
+import amplitudeMock from "@/testing/mocks/amplitude";
+import "@/testing/mocks/database";
+import { server } from "@/testing/mocks/server";
 
 // amplitude를 모듈 스코프에서 모킹하여 '@/lib/amplitude'를 임포트할 때 항상 모킹된 객체를 사용하도록 함
 vi.mock("@/lib/amplitude", () => ({
