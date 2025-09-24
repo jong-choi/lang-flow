@@ -28,9 +28,12 @@ export const TemplateMoveDialog = ({}) => {
     [router],
   );
 
+  const isMoveAction =
+    confirmAction?.action === "move" || confirmAction?.action === "edit";
+
   return (
     <Dialog
-      open={!!confirmAction}
+      open={isMoveAction}
       onOpenChange={(open) => {
         if (!open) {
           setConfirmAction(null);

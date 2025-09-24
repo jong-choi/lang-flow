@@ -1,7 +1,21 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { FileText, Folder, Loader2, Plus, Search, Trash2 } from "lucide-react";
+import {
+  FileText,
+  Folder,
+  Loader2,
+  MoreVertical,
+  Plus,
+  Search,
+  Trash2,
+} from "lucide-react";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { useFlowGeneratorStore } from "@/features/flow/providers/flow-store-provider";
 import type { WorkflowTemplateSummary } from "@/features/flow/types/nodes";
 import {
@@ -21,6 +35,7 @@ export const WorkflowPalette = () => {
   const hasFetchedTemplates = useFlowGeneratorStore.use.hasFetchedTemplates();
   const removeTemplate = useFlowGeneratorStore.use.removeTemplate();
   const [pendingLicenseId, setPendingLicenseId] = useState<string | null>(null);
+  const [openMenuId, setOpenMenuId] = useState<string | null>(null);
 
   useEffect(() => {
     if (!hasFetchedTemplates && shouldFetchTemplates(templates)) {
@@ -45,9 +60,10 @@ export const WorkflowPalette = () => {
     setDraggingTemplateId(undefined);
   }, [setDraggingTemplateId]);
 
-  const handleAction = useCallback(
-    (template: WorkflowTemplateSummary, action: "edit" | "delete") => {
-      setConfirmTemplateAction({ template, action });
+  const handleNavigate = useCallback(
+    (template: WorkflowTemplateSummary) => {
+      setConfirmTemplateAction({ template, action: "move" });
+      setOpenMenuId(null);
     },
     [setConfirmTemplateAction],
   );
@@ -126,7 +142,7 @@ export const WorkflowPalette = () => {
                 </div>
                 <div className="min-w-0 flex-1">
                   <button
-                    onClick={() => handleAction(template, "edit")}
+                    onClick={() => handleNavigate(template)}
                     className="w-full text-left"
                     aria-label={`템플릿 열기 ${template.name}`}
                   >
@@ -155,21 +171,29 @@ export const WorkflowPalette = () => {
                 </div>
                 <div className="flex items-center gap-2">
                   {template.isOwner ? (
-                    <>
-                      <button
-                        onClick={() => handleAction(template, "edit")}
-                        className="rounded-md border border-slate-200 px-2 py-1 text-xs font-semibold text-slate-600 hover:border-violet-200 hover:text-violet-600 dark:border-slate-700 dark:text-slate-300 dark:hover:border-violet-400 dark:hover:text-violet-300"
-                      >
-                        수정
-                      </button>
-                      <button
-                        onClick={() => handleAction(template, "delete")}
-                        className="inline-flex items-center gap-1 rounded-md border border-red-200 px-2 py-1 text-xs font-semibold text-red-600 hover:bg-red-50 dark:border-red-800 dark:text-red-300 dark:hover:bg-red-900/40"
-                        aria-label={`템플릿 삭제 ${template.name}`}
-                      >
-                        <Trash2 className="size-3" /> 삭제
-                      </button>
-                    </>
+                    <DropdownMenu
+                      open={openMenuId === template.id}
+                      onOpenChange={(isOpen) =>
+                        setOpenMenuId(isOpen ? template.id : null)
+                      }
+                    >
+                      <DropdownMenuTrigger asChild>
+                        <button
+                          className="inline-flex items-center rounded-md border border-slate-200 p-2 text-slate-500 transition hover:border-violet-200 hover:text-violet-600 focus:outline-none focus:ring-2 focus:ring-violet-200 dark:border-slate-700 dark:text-slate-300 dark:hover:border-violet-400 dark:hover:text-violet-200"
+                          aria-label={`${template.name} 메뉴 열기`}
+                          type="button"
+                        >
+                          <MoreVertical className="size-4" />
+                        </button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end" className="min-w-[160px]">
+                        <DropdownMenuItem
+                          onClick={() => handleNavigate(template)}
+                        >
+                          해당 템플릿으로 이동
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
                   ) : (
                     <button
                       onClick={() => handleRemoveLicense(template)}

@@ -3,7 +3,7 @@ import type { WorkflowTemplateSummary } from "@/features/flow/types/nodes";
 
 export interface TemplateActionState {
   template: WorkflowTemplateSummary;
-  action: "edit" | "delete";
+  action: "move" | "delete" | "edit";
 }
 
 export interface BuilderUiSlice {
