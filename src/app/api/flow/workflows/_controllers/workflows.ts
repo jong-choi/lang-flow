@@ -1,5 +1,10 @@
 import { and, desc, eq, inArray, isNull, or, sql } from "drizzle-orm";
-import { flowEdges, flowNodes, workflows } from "@/features/flow/db/schema";
+import {
+  flowEdges,
+  flowNodes,
+  workflowLicenses,
+  workflows,
+} from "@/features/flow/db/schema";
 import { db } from "@/lib/db";
 
 const workflowSelection = {
@@ -47,23 +52,85 @@ const edgeColumns = Object.fromEntries(
   Object.keys(edgeSelection).map((key) => [key, true]),
 ) as Record<keyof typeof edgeSelection, true>;
 
+type WorkflowSelectionKeys = keyof typeof workflowSelection;
+type WorkflowSelect = typeof workflows.$inferSelect;
+
+export type WorkflowListItem = Pick<WorkflowSelect, WorkflowSelectionKeys> & {
+  isOwner: boolean;
+  isLicensed: boolean;
+};
+
 function withUndefinedToNull<T>(value: T | undefined): T | null | undefined {
   if (value === undefined) return undefined;
   return (value ?? null) as T | null;
 }
 
-export async function listWorkflows({ ownerId }: { ownerId?: string | null }) {
-  const condition = ownerId
-    ? and(isNull(workflows.deletedAt), eq(workflows.ownerId, ownerId))
-    : isNull(workflows.deletedAt);
-
+export async function listWorkflows({
+  userId,
+  ownedOnly = false,
+}: {
+  userId: string;
+  ownedOnly?: boolean;
+}): Promise<WorkflowListItem[]> {
   const rows = await db
-    .select(workflowSelection)
+    .select({
+      workflow: workflowSelection,
+      licenseUserId: workflowLicenses.userId,
+    })
     .from(workflows)
-    .where(condition)
+    .leftJoin(
+      workflowLicenses,
+      and(
+        eq(workflowLicenses.workflowId, workflows.id),
+        eq(workflowLicenses.userId, userId),
+      ),
+    )
+    .where(
+      ownedOnly
+        ? and(isNull(workflows.deletedAt), eq(workflows.ownerId, userId))
+        : and(
+            isNull(workflows.deletedAt),
+            or(eq(workflows.ownerId, userId), eq(workflowLicenses.userId, userId)),
+          ),
+    )
     .orderBy(desc(workflows.createdAt));
 
-  return rows;
+  return rows.map(({ workflow, licenseUserId }) => ({
+    ...workflow,
+    isOwner: workflow.ownerId === userId,
+    isLicensed:
+      workflow.ownerId !== userId && licenseUserId !== null && licenseUserId !== undefined,
+  }));
+}
+
+export async function getWorkflowAccess(
+  workflowId: string,
+  userId: string,
+): Promise<{ isOwner: boolean; isLicensed: boolean } | null> {
+  const [row] = await db
+    .select({
+      ownerId: workflows.ownerId,
+      licenseUserId: workflowLicenses.userId,
+    })
+    .from(workflows)
+    .leftJoin(
+      workflowLicenses,
+      and(
+        eq(workflowLicenses.workflowId, workflows.id),
+        eq(workflowLicenses.userId, userId),
+      ),
+    )
+    .where(and(eq(workflows.id, workflowId), isNull(workflows.deletedAt)))
+    .limit(1);
+
+  if (!row) {
+    return null;
+  }
+
+  const isOwner = row.ownerId === userId;
+  const isLicensed = !isOwner && Boolean(row.licenseUserId);
+
+  return { isOwner, isLicensed };
 }
 
 export async function createWorkflow(input: {
@@ -409,4 +476,40 @@ export async function deleteWorkflow(id: string) {
 
     return true;
   });
+}
+
+export async function grantWorkflowLicense({
+  workflowId,
+  userId,
+}: {
+  workflowId: string;
+  userId: string;
+}) {
+  const [inserted] = await db
+    .insert(workflowLicenses)
+    .values({ workflowId, userId })
+    .onConflictDoNothing()
+    .returning({ workflowId: workflowLicenses.workflowId });
+
+  return Boolean(inserted);
+}
+
+export async function revokeWorkflowLicense({
+  workflowId,
+  userId,
+}: {
+  workflowId: string;
+  userId: string;
+}) {
+  const deleted = await db
+    .delete(workflowLicenses)
+    .where(
+      and(
+        eq(workflowLicenses.workflowId, workflowId),
+        eq(workflowLicenses.userId, userId),
+      ),
+    )
+    .returning({ workflowId: workflowLicenses.workflowId });
+
+  return deleted.length > 0;
 }

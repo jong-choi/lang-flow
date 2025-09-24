@@ -21,6 +21,7 @@ export interface TemplateSlice {
   templates: WorkflowTemplateSummary[];
   templateDetails: Record<string, WorkflowTemplateDetail>;
   isLoadingTemplates: boolean;
+  hasFetchedTemplates: boolean;
   draggingTemplateId: string | undefined;
   fetchTemplates: () => Promise<void>;
   ensureTemplateDetail: (id: string) => Promise<WorkflowTemplateDetail | null>;
@@ -34,6 +35,7 @@ export const createTemplateSlice: StateCreator<TemplateSlice> = (set, get) => ({
   templates: [],
   templateDetails: {},
   isLoadingTemplates: false,
+  hasFetchedTemplates: false,
   draggingTemplateId: undefined,
   fetchTemplates: async () => {
     set({ isLoadingTemplates: true });
@@ -47,10 +49,11 @@ export const createTemplateSlice: StateCreator<TemplateSlice> = (set, get) => ({
       set({
         templates: summaries,
         isLoadingTemplates: false,
+        hasFetchedTemplates: true,
       });
     } catch (error) {
       console.error("워크플로우 템플릿 목록을 불러오지 못했습니다.", error);
-      set({ isLoadingTemplates: false });
+      set({ isLoadingTemplates: false, hasFetchedTemplates: true });
     }
   },
   ensureTemplateDetail: async (id) => {
@@ -133,6 +136,9 @@ export const createTemplateSlice: StateCreator<TemplateSlice> = (set, get) => ({
               name: detail.name,
               description: detail.description ?? null,
               updatedAt: detail.updatedAt ?? null,
+              ownership: detail.ownership,
+              isOwner: detail.isOwner,
+              isLicensed: detail.isLicensed,
             },
             ...prev.templates,
           ],

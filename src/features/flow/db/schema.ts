@@ -5,6 +5,7 @@ import {
   jsonb,
   pgEnum,
   pgTable,
+  primaryKey,
   text,
   timestamp,
 } from "drizzle-orm/pg-core";
@@ -85,10 +86,25 @@ export const flowEdges = pgTable("flow_edges", {
   deletedAt: timestamp("deleted_at", { mode: "date" }),
 });
 
+export const workflowLicenses = pgTable(
+  "workflow_licenses",
+  {
+    workflowId: text("workflow_id")
+      .notNull()
+      .references(() => workflows.id, { onDelete: "cascade" }),
+    userId: text("user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    createdAt: timestamp("created_at", { mode: "date" }).notNull().defaultNow(),
+  },
+  (table) => [primaryKey({ columns: [table.workflowId, table.userId] })],
+);
+
 // 릴레이션
 export const workflowsRelations = relations(workflows, ({ many }) => ({
   nodes: many(flowNodes),
   edges: many(flowEdges),
+  licenses: many(workflowLicenses),
 }));
 
 export const flowNodesRelations = relations(flowNodes, ({ one, many }) => ({
@@ -116,3 +132,17 @@ export const flowEdgesRelations = relations(flowEdges, ({ one }) => ({
     relationName: "targetNode",
   }),
 }));
+
+export const workflowLicensesRelations = relations(
+  workflowLicenses,
+  ({ one }) => ({
+    workflow: one(workflows, {
+      fields: [workflowLicenses.workflowId],
+      references: [workflows.id],
+    }),
+    user: one(users, {
+      fields: [workflowLicenses.userId],
+      references: [users.id],
+    }),
+  }),
+);

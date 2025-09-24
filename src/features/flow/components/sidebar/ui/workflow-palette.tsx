@@ -16,23 +16,21 @@ export const WorkflowPalette = () => {
   const fetchTemplates = useFlowGeneratorStore.use.fetchTemplates();
   const setDraggingTemplateId =
     useFlowGeneratorStore.use.setDraggingTemplateId();
-  const setTemplateModalOpen = useFlowGeneratorStore.use.setTemplateModalOpen();
   const setConfirmTemplateAction =
     useFlowGeneratorStore.use.setConfirmTemplateAction();
+  const hasFetchedTemplates = useFlowGeneratorStore.use.hasFetchedTemplates();
+  const removeTemplate = useFlowGeneratorStore.use.removeTemplate();
+  const [pendingLicenseId, setPendingLicenseId] = useState<string | null>(null);
 
   useEffect(() => {
-    if (shouldFetchTemplates(templates)) {
+    if (!hasFetchedTemplates && shouldFetchTemplates(templates)) {
       void fetchTemplates();
     }
-  }, [fetchTemplates, templates]);
+  }, [fetchTemplates, hasFetchedTemplates, templates]);
 
   const filtered = useMemo(() => {
     return filterTemplatesByQuery(templates, query);
   }, [query, templates]);
-
-  const handleCreate = useCallback(() => {
-    setTemplateModalOpen(true);
-  }, [setTemplateModalOpen]);
 
   const handleDragStart = useCallback(
     (event: React.DragEvent, template: WorkflowTemplateSummary) => {
@@ -54,6 +52,29 @@ export const WorkflowPalette = () => {
     [setConfirmTemplateAction],
   );
 
+  const handleRemoveLicense = useCallback(
+    async (template: WorkflowTemplateSummary) => {
+      if (pendingLicenseId) return;
+      setPendingLicenseId(template.id);
+      try {
+        const response = await fetch(`/api/workflows/${template.id}/licenses`, {
+          method: "DELETE",
+        });
+
+        if (!response.ok && response.status !== 204) {
+          throw new Error(`라이선스 제거 실패: ${response.status}`);
+        }
+
+        removeTemplate(template.id);
+      } catch (error) {
+        console.error("워크플로우 라이선스를 제거하지 못했습니다.", error);
+      } finally {
+        setPendingLicenseId(null);
+      }
+    },
+    [pendingLicenseId, removeTemplate],
+  );
+
   return (
     <div className="flex flex-col gap-3">
       <div className="flex items-center gap-2">
@@ -67,13 +88,6 @@ export const WorkflowPalette = () => {
             className="w-full rounded-md border border-slate-200 bg-slate-50 py-2 pr-3 pl-10 text-sm text-slate-900 focus:ring-2 focus:ring-violet-400 focus:outline-none dark:border-slate-800 dark:bg-slate-900 dark:text-slate-100"
           />
         </div>
-        <button
-          onClick={handleCreate}
-          aria-label="새 템플릿 생성"
-          className="inline-flex items-center gap-2 rounded-md bg-violet-600 px-3 py-2 text-sm font-semibold text-white hover:bg-violet-700"
-        >
-          <Plus className="size-4" /> 새로 만들기
-        </button>
       </div>
 
       <div className="flex flex-col gap-2">
@@ -89,14 +103,11 @@ export const WorkflowPalette = () => {
               저장된 템플릿이 없습니다
             </div>
             <p className="mt-1 text-sm text-slate-600 dark:text-slate-300">
-              워크플로우를 템플릿으로 저장해보세요.
+              워크플로우를 템플릿 추가해보세요.
             </p>
             <div className="mt-4">
-              <button
-                onClick={handleCreate}
-                className="inline-flex items-center gap-2 rounded-md bg-violet-600 px-3 py-2 text-sm font-semibold text-white hover:bg-violet-700"
-              >
-                <Plus className="size-4" /> 템플릿 생성
+              <button className="inline-flex items-center gap-2 rounded-md bg-violet-600 px-3 py-2 text-sm font-semibold text-white hover:bg-violet-700">
+                <Plus className="size-4" /> 템플릿 추가
               </button>
             </div>
           </div>
@@ -135,22 +146,44 @@ export const WorkflowPalette = () => {
                         {new Date(template.updatedAt).toLocaleDateString()}
                       </span>
                     ) : null}
+                    <span
+                      className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[11px] font-medium ${template.isOwner ? "bg-violet-100 text-violet-700 dark:bg-violet-500/20 dark:text-violet-200" : "bg-slate-200 text-slate-700 dark:bg-slate-700 dark:text-slate-200"}`}
+                    >
+                      {template.isOwner ? "내 템플릿" : "내 계정에 추가됨"}
+                    </span>
                   </div>
                 </div>
                 <div className="flex items-center gap-2">
-                  <button
-                    onClick={() => handleAction(template, "edit")}
-                    className="rounded-md border border-slate-200 px-2 py-1 text-xs font-semibold text-slate-600 hover:border-violet-200 hover:text-violet-600 dark:border-slate-700 dark:text-slate-300 dark:hover:border-violet-400 dark:hover:text-violet-300"
-                  >
-                    수정
-                  </button>
-                  <button
-                    onClick={() => handleAction(template, "delete")}
-                    className="inline-flex items-center gap-1 rounded-md border border-red-200 px-2 py-1 text-xs font-semibold text-red-600 hover:bg-red-50 dark:border-red-800 dark:text-red-300 dark:hover:bg-red-900/40"
-                    aria-label={`템플릿 삭제 ${template.name}`}
-                  >
-                    <Trash2 className="size-3" /> 삭제
-                  </button>
+                  {template.isOwner ? (
+                    <>
+                      <button
+                        onClick={() => handleAction(template, "edit")}
+                        className="rounded-md border border-slate-200 px-2 py-1 text-xs font-semibold text-slate-600 hover:border-violet-200 hover:text-violet-600 dark:border-slate-700 dark:text-slate-300 dark:hover:border-violet-400 dark:hover:text-violet-300"
+                      >
+                        수정
+                      </button>
+                      <button
+                        onClick={() => handleAction(template, "delete")}
+                        className="inline-flex items-center gap-1 rounded-md border border-red-200 px-2 py-1 text-xs font-semibold text-red-600 hover:bg-red-50 dark:border-red-800 dark:text-red-300 dark:hover:bg-red-900/40"
+                        aria-label={`템플릿 삭제 ${template.name}`}
+                      >
+                        <Trash2 className="size-3" /> 삭제
+                      </button>
+                    </>
+                  ) : (
+                    <button
+                      onClick={() => handleRemoveLicense(template)}
+                      disabled={pendingLicenseId === template.id}
+                      className="inline-flex items-center gap-1 rounded-md border border-slate-200 px-2 py-1 text-xs font-semibold text-slate-600 hover:border-slate-300 hover:text-slate-800 disabled:cursor-not-allowed disabled:opacity-70 dark:border-slate-700 dark:text-slate-300 dark:hover:border-slate-500 dark:hover:text-slate-200"
+                    >
+                      {pendingLicenseId === template.id ? (
+                        <Loader2 className="size-3 animate-spin" />
+                      ) : (
+                        <Trash2 className="size-3" />
+                      )}
+                      제거
+                    </button>
+                  )}
                 </div>
               </li>
             ))}

@@ -76,6 +76,9 @@ export interface WorkflowTemplateSummary {
   name: string;
   description?: string | null;
   updatedAt?: string | null;
+  ownership: "owner" | "licensed";
+  isOwner: boolean;
+  isLicensed: boolean;
 }
 
 export interface WorkflowTemplateDetail extends WorkflowTemplateSummary {

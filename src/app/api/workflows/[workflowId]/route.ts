@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import {
   deleteWorkflow,
+  getWorkflowAccess,
   getWorkflowById,
   updateWorkflow,
 } from "@/app/api/flow/workflows/_controllers/workflows";
@@ -45,10 +46,15 @@ const updateWorkflowSchema = z.object({
   edges: z.array(edgeSchema).optional(),
 });
 
-type WorkflowDetail = Exclude<
+type WorkflowDetailBase = Exclude<
   Awaited<ReturnType<typeof getWorkflowById>>,
   null
 >;
+type WorkflowDetail = WorkflowDetailBase & {
+  isOwner: boolean;
+  isLicensed: boolean;
+  ownership: "owner" | "licensed";
+};
 type UpdateWorkflowPayload = z.infer<typeof updateWorkflowSchema>;
 
 type Params = {
@@ -69,6 +75,22 @@ export async function GET(_: Request, { params }: Params) {
     }
 
     const { workflowId } = await params;
+    const access = await getWorkflowAccess(workflowId, sessionUserId);
+
+    if (!access) {
+      return NextResponse.json(
+        { message: "워크플로우를 찾을 수 없습니다." },
+        { status: 404 },
+      );
+    }
+
+    if (!access.isOwner && !access.isLicensed) {
+      return NextResponse.json(
+        { message: "권한이 없습니다." },
+        { status: 403 },
+      );
+    }
+
     const workflow = await getWorkflowById(workflowId);
 
     if (!workflow) {
@@ -78,14 +100,12 @@ export async function GET(_: Request, { params }: Params) {
       );
     }
 
-    if (workflow.ownerId !== sessionUserId) {
-      return NextResponse.json(
-        { message: "권한이 없습니다." },
-        { status: 403 },
-      );
-    }
-
-    const payload: WorkflowDetail = workflow;
+    const payload: WorkflowDetail = {
+      ...workflow,
+      isOwner: access.isOwner,
+      isLicensed: access.isLicensed,
+      ownership: access.isOwner ? "owner" : "licensed",
+    };
     return NextResponse.json({ workflow: payload });
   } catch (error) {
     console.error("워크플로우 조회 실패", error);
@@ -143,7 +163,12 @@ export async function PATCH(request: Request, { params }: Params) {
       );
     }
 
-    const payload: WorkflowDetail = updated;
+    const payload: WorkflowDetail = {
+      ...updated,
+      isOwner: true,
+      isLicensed: false,
+      ownership: "owner",
+    };
     return NextResponse.json({ workflow: payload });
   } catch (error) {
     console.error("워크플로우 수정 실패", error);

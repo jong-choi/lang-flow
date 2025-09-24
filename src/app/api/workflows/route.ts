@@ -3,6 +3,7 @@ import { z } from "zod";
 import {
   createWorkflow,
   listWorkflows,
+  type WorkflowListItem,
 } from "@/app/api/flow/workflows/_controllers/workflows";
 import { flowNodeTypeEnum } from "@/features/flow/db/schema";
 import { auth } from "@/features/auth/lib/auth";
@@ -44,10 +45,16 @@ const createWorkflowSchema = z.object({
   edges: z.array(edgeSchema).optional(),
 });
 
-type WorkflowSummary = Awaited<ReturnType<typeof listWorkflows>>[number];
-type WorkflowDetail = Awaited<ReturnType<typeof createWorkflow>>;
+type WorkflowSummary = WorkflowListItem & {
+  ownership: "owner" | "licensed";
+};
 
-type CreateWorkflowPayload = z.infer<typeof createWorkflowSchema>;
+type WorkflowDetailBase = Awaited<ReturnType<typeof createWorkflow>>;
+type WorkflowDetail = WorkflowDetailBase & {
+  isOwner: boolean;
+  isLicensed: boolean;
+  ownership: "owner" | "licensed";
+};
 
 export async function GET(request: Request) {
   try {
@@ -71,10 +78,15 @@ export async function GET(request: Request) {
       );
     }
 
-    const ownerId = ownerIdParam ?? sessionUserId;
-
-    const workflows = await listWorkflows({ ownerId });
-    const payload: WorkflowSummary[] = workflows;
+    const ownedOnly = Boolean(ownerIdParam);
+    const workflows = await listWorkflows({
+      userId: sessionUserId,
+      ownedOnly,
+    });
+    const payload: WorkflowSummary[] = workflows.map((workflow) => ({
+      ...workflow,
+      ownership: workflow.isOwner ? "owner" : "licensed",
+    }));
 
     return NextResponse.json({ workflows: payload });
   } catch (error) {
@@ -116,7 +128,12 @@ export async function POST(request: Request) {
       edges,
     });
 
-    const payload: WorkflowDetail = workflow;
+    const payload: WorkflowDetail = {
+      ...workflow,
+      isOwner: true,
+      isLicensed: false,
+      ownership: "owner",
+    };
 
     return NextResponse.json({ workflow: payload }, { status: 201 });
   } catch (error) {
