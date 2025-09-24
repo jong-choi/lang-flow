@@ -71,6 +71,20 @@
       "when": 1758701394685,
       "tag": "0009_nice_william_stryker",
       "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1758712538526,
+      "tag": "0010_happy_sunfire",
+      "breakpoints": true
+    },
+    {
+      "idx": 11,
+      "version": "7",
+      "when": 1758714691441,
+      "tag": "0011_wakeful_blizzard",
+      "breakpoints": true
     }
   ]
 }
