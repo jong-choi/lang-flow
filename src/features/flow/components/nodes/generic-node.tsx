@@ -26,6 +26,7 @@ interface GenericNodeProps extends NodeProps {
   nodeType: FlowNodeType;
   menuType: MenuType;
   handles: HandleDefinition[];
+  extraContent?: React.ReactNode;
 }
 
 export const GenericNode: React.FC<GenericNodeProps> = ({
@@ -34,6 +35,7 @@ export const GenericNode: React.FC<GenericNodeProps> = ({
   nodeType,
   menuType,
   handles,
+  extraContent,
 }) => {
   const requestNodeRetry = useFlowGeneratorStore.use.requestNodeRetry();
   const menu = useNodeMenu(id);
@@ -68,6 +70,7 @@ export const GenericNode: React.FC<GenericNodeProps> = ({
           />
         ))}
         <NodeContent data={data} config={config} />
+        {extraContent}
         {data.runStatus === RUN_STATUS.FAILED && (
           <div className="absolute -bottom-2 left-1/2 flex -translate-x-1/2 items-center gap-1">
             <AlertCircle className="h-4 w-4 text-red-600" />

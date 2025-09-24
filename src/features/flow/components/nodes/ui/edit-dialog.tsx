@@ -22,7 +22,19 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
+import {
+  CHAT_MODELS,
+  CHAT_MODEL_VALUES,
+  DEFAULT_CHAT_MODEL,
+} from "@/features/flow/constants/chat-models";
 import type { NodeData } from "@/features/flow/types/nodes";
 
 const DEFAULT_MESSAGE_TEMPLATE = "기본 메시지: {input}";
@@ -30,25 +42,45 @@ const DEFAULT_MESSAGE_TEMPLATE = "기본 메시지: {input}";
 export interface NodeEditFormValues {
   label: string;
   template?: string;
+  model?: string;
 }
 
-const createEditNodeSchema = (isMessageNode: boolean) =>
+const createEditNodeSchema = (isMessageNode: boolean, isChatNode: boolean) =>
   z
     .object({
       label: z.string().min(1, "노드 이름을 입력해주세요."),
       template: z.string().optional(),
+      model: z.string().optional(),
     })
     .superRefine((values, ctx) => {
-      if (!isMessageNode) {
-        return;
+      if (isMessageNode) {
+        if (!values.template || values.template.trim().length === 0) {
+          ctx.addIssue({
+            code: "custom",
+            path: ["template"],
+            message: "메시지 템플릿을 입력해주세요.",
+          });
+        }
       }
 
-      if (!values.template || values.template.trim().length === 0) {
-        ctx.addIssue({
-          code: z.ZodIssueCode.custom,
-          path: ["template"],
-          message: "메시지 템플릿을 입력해주세요.",
-        });
+      if (isChatNode) {
+        const model = values.model?.trim();
+        if (!model) {
+          ctx.addIssue({
+            code: "custom",
+            path: ["model"],
+            message: "모델을 선택해주세요.",
+          });
+          return;
+        }
+
+        if (!CHAT_MODEL_VALUES.includes(model)) {
+          ctx.addIssue({
+            code: "custom",
+            path: ["model"],
+            message: "유효하지 않은 모델입니다.",
+          });
+        }
       }
     });
 
@@ -66,9 +98,10 @@ export const EditDialog: React.FC<EditDialogProps> = ({
   onSubmit,
 }) => {
   const isMessageNode = nodeData?.nodeType === "messageNode";
+  const isChatNode = nodeData?.nodeType === "chatNode";
   const schema = useMemo(
-    () => createEditNodeSchema(isMessageNode),
-    [isMessageNode],
+    () => createEditNodeSchema(isMessageNode, isChatNode),
+    [isMessageNode, isChatNode],
   );
 
   const template =
@@ -78,11 +111,19 @@ export const EditDialog: React.FC<EditDialogProps> = ({
         ? DEFAULT_MESSAGE_TEMPLATE
         : undefined;
 
+  const model =
+    isChatNode && typeof nodeData?.model === "string" && nodeData.model.length > 0
+      ? nodeData.model
+      : isChatNode
+        ? DEFAULT_CHAT_MODEL
+        : undefined;
+
   const form = useForm<NodeEditFormValues>({
     resolver: zodResolver(schema),
     defaultValues: {
       label: nodeData?.label ?? "",
       template,
+      model,
     },
   });
 
@@ -94,22 +135,29 @@ export const EditDialog: React.FC<EditDialogProps> = ({
     form.reset({
       label: nodeData?.label ?? "",
       template,
+      model,
     });
-  }, [form, nodeData, open, template]);
+  }, [form, model, nodeData, open, template]);
 
   const handleSubmit = form.handleSubmit((values) => {
     const trimmedTemplate = values.template?.trim();
+    const selectedModel = values.model?.trim();
     onSubmit({
       label: values.label,
       template: isMessageNode ? trimmedTemplate : undefined,
+      model:
+        isChatNode && selectedModel && CHAT_MODEL_VALUES.includes(selectedModel)
+          ? selectedModel
+          : undefined,
     });
   });
 
   const dialogTitle = isMessageNode ? "메시지 노드 편집" : "노드 편집";
+  const isCompactDialog = isMessageNode || isChatNode;
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className={isMessageNode ? "max-w-md" : undefined}>
+      <DialogContent className={isCompactDialog ? "max-w-md" : undefined}>
         <Form {...form}>
           <form onSubmit={handleSubmit} className="space-y-4">
             <DialogHeader>
@@ -128,6 +176,38 @@ export const EditDialog: React.FC<EditDialogProps> = ({
                 </FormItem>
               )}
             />
+            {isChatNode && (
+              <FormField
+                control={form.control}
+                name="model"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>사용 모델</FormLabel>
+                    <FormControl>
+                      <Select
+                        value={field.value ?? undefined}
+                        onValueChange={field.onChange}
+                      >
+                        <SelectTrigger className="w-full justify-between">
+                          <SelectValue placeholder="모델 선택" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {CHAT_MODELS.map((chatModel) => (
+                            <SelectItem
+                              key={chatModel.value}
+                              value={chatModel.value}
+                            >
+                              {chatModel.label}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            )}
             {isMessageNode && (
               <FormField
                 control={form.control}

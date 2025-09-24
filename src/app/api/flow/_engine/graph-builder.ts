@@ -118,7 +118,15 @@ export function buildGraphFromFlow(
         graph.addNode(nodeId, outputNode);
         break;
       case "chat":
-        graph.addNode(nodeId, chatNode);
+        graph.addNode(nodeId, async (state) =>
+          chatNode(state, {
+            nodeId,
+            model:
+              typeof reactNode.data.model === "string"
+                ? reactNode.data.model
+                : undefined,
+          }),
+        );
         break;
       case "google_search":
         graph.addNode(nodeId, googleSearchNode);

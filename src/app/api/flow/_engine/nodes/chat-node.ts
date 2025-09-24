@@ -4,21 +4,43 @@ import {
   SystemMessage,
 } from "@langchain/core/messages";
 import { ChatGoogle } from "@langchain/google-gauth";
+import {
+  CHAT_MODEL_VALUES,
+  DEFAULT_CHAT_MODEL,
+} from "@/features/flow/constants/chat-models";
 import type { FlowStateAnnotation } from "@/app/api/flow/_engine/graph-builder";
 
 const GOOGLE_API_KEY = process.env.GOOGLE_AI_API_KEY;
 
-export const llmModel = new ChatGoogle({
-  model: "gemma-3-27b-it",
-  maxOutputTokens: 2048,
-  apiKey: GOOGLE_API_KEY,
-});
+const MAX_OUTPUT_TOKENS = 2048;
+
+const isSupportedModel = (model?: string): model is string =>
+  typeof model === "string" && CHAT_MODEL_VALUES.includes(model);
+
+const createChatModel = (model: string) =>
+  new ChatGoogle({
+    model,
+    maxOutputTokens: MAX_OUTPUT_TOKENS,
+    apiKey: GOOGLE_API_KEY,
+  });
+
+interface ChatNodeOptions {
+  nodeId: string;
+  model?: string;
+}
 
 export async function chatNode(
   state: typeof FlowStateAnnotation.State,
+  { nodeId, model }: ChatNodeOptions,
 ): Promise<Partial<typeof state>> {
+  const resolvedModel = isSupportedModel(model) ? model : DEFAULT_CHAT_MODEL;
+  const llmModel = createChatModel(resolvedModel);
+
   console.log("=== Executing chat node ===");
-  console.log("Input state:", JSON.stringify(state, null, 2));
+  console.log(
+    `Node ID: ${nodeId}, Model: ${resolvedModel}, Input state:`,
+    JSON.stringify(state, null, 2),
+  );
 
   try {
     let inputMessages = state.messages;
@@ -47,6 +69,8 @@ export async function chatNode(
         ...state.nodeOutputs,
         chat: {
           response: aiMessage.content,
+          model: resolvedModel,
+          nodeId,
           timestamp: new Date().toISOString(),
         },
       },
@@ -55,7 +79,10 @@ export async function chatNode(
     console.log("=== Chat node result ===", JSON.stringify(result, null, 2));
     return result;
   } catch (error) {
-    console.error("Chat node error:", error);
+    console.error(
+      `Chat node error (nodeId: ${nodeId}, model: ${resolvedModel}):`,
+      error,
+    );
 
     const errorMessage = new AIMessage(
       "죄송합니다. 채팅 응답을 생성하는 중 오류가 발생했습니다.",
@@ -67,6 +94,8 @@ export async function chatNode(
         ...state.nodeOutputs,
         chat: {
           error: error instanceof Error ? error.message : "Unknown error",
+          model: resolvedModel,
+          nodeId,
           timestamp: new Date().toISOString(),
         },
       },

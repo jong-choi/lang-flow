@@ -68,6 +68,12 @@ export const useNodeMenu = (id: string) => {
             delete nextData.template;
           }
 
+          if (typeof values.model === "string" && values.model.length > 0) {
+            nextData.model = values.model;
+          } else if ("model" in nextData) {
+            delete nextData.model;
+          }
+
           updatedNodeData = nextData;
 
           return {
