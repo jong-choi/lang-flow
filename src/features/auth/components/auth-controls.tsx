@@ -8,6 +8,8 @@ export async function AuthControls() {
   const session = await auth(); //서버사이드 렌더링
 
   if (session?.user) {
+    const isGuest = session.user.email?.startsWith("guest@") ?? false;
+
     return (
       <div className="flex items-center gap-3">
         <div className="flex items-center gap-2 truncate">
@@ -38,6 +40,11 @@ export async function AuthControls() {
             )}
           </div>
         </div>
+        {isGuest && (
+          <Button variant="default" size="sm" asChild>
+            <Link href="/upgrade">Google 연동</Link>
+          </Button>
+        )}
         <LogoutButton />
       </div>
     );
@@ -47,9 +54,6 @@ export async function AuthControls() {
     <div className="flex items-center gap-2">
       <Button variant="ghost" asChild>
         <Link href="/auth/signin">로그인</Link>
-      </Button>
-      <Button asChild>
-        <Link href="/auth/signup">회원가입</Link>
       </Button>
     </div>
   );

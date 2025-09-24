@@ -1,86 +1,30 @@
 "use client";
 
 import { useState } from "react";
-import Link from "next/link";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useSearchParams } from "next/navigation";
 import { Loader2 } from "lucide-react";
 import { signIn } from "next-auth/react";
-import { useForm } from "react-hook-form";
-import { toast } from "sonner";
-import { zodResolver } from "@hookform/resolvers/zod";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import {
-  Form,
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from "@/components/ui/form";
-import { Input } from "@/components/ui/input";
+import { StartGuestButton } from "@/features/auth/components/start-guest-button";
 import { AuthAlert } from "@/features/auth/components/ui/auth-alert";
 import {
   FeatureItem,
   GoogleIcon,
 } from "@/features/auth/components/ui/auth-icons";
-import {
-  type SignInFormValues,
-  signInSchema,
-} from "@/features/auth/types/forms";
 
 export default function SignInPage() {
   const searchParams = useSearchParams();
-  const router = useRouter();
 
   const callbackUrl = searchParams.get("callbackUrl") || "/";
-  const registered = searchParams.has("registered");
 
   const [oauthLoading, setOauthLoading] = useState(false);
-
-  const form = useForm<SignInFormValues>({
-    resolver: zodResolver(signInSchema),
-    defaultValues: {
-      email: "",
-      password: "",
-    },
-  });
-
-  const handleCredentialsSignIn = async (values: SignInFormValues) => {
-    form.clearErrors("root");
-
-    try {
-      const response = await fetch("/api/auth/login-with-password", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        credentials: "same-origin",
-        body: JSON.stringify(values),
-      });
-
-      if (!response.ok) {
-        const data = (await response.json().catch(() => null)) as {
-          error?: string;
-        } | null;
-        const message = data?.error ?? "로그인에 실패했습니다.";
-        form.setError("root", { message });
-        toast.error(message);
-        return;
-      }
-
-      toast.success("로그인에 성공했습니다.");
-      router.push(callbackUrl);
-      router.refresh();
-    } catch (err) {
-      console.error("loginWithPassword request failed", err);
-      const message =
-        "네트워크 오류가 발생했습니다. 잠시 후 다시 시도해주세요.";
-      form.setError("root", { message });
-      toast.error(message);
-    }
-  };
+  const [guestLoading, setGuestLoading] = useState(false);
+  const [guestError, setGuestError] = useState<string | null>(null);
 
   const handleGoogle = async () => {
-    form.clearErrors("root");
+    if (guestLoading) return;
+    setGuestError(null);
     setOauthLoading(true);
     try {
       await signIn("google", { callbackUrl });
@@ -89,11 +33,8 @@ export default function SignInPage() {
     }
   };
 
-  const onSubmit = form.handleSubmit(handleCredentialsSignIn);
-  const isSubmitting = form.formState.isSubmitting;
   const isGoogleLoading = oauthLoading;
-  const isLoading = isSubmitting || isGoogleLoading;
-  const rootError = form.formState.errors.root?.message ?? null;
+  const isLoading = isGoogleLoading || guestLoading;
 
   return (
     <div className="relative isolate overflow-hidden py-16">
@@ -111,12 +52,11 @@ export default function SignInPage() {
             </span>
             <div className="space-y-4">
               <h1 className="text-3xl font-semibold tracking-tight sm:text-4xl">
-                하나의 계정으로 팀의 모든 워크플로우에 접속하세요
+                로그인하고 워크스페이스로 돌아오세요
               </h1>
               <p className="text-base leading-relaxed text-muted-foreground">
-                Google OAuth와 이메일/비밀번호 로그인을 동시에 지원합니다.
-                안정적인 세션 관리와 세련된 UI로 고객에게 최고의 경험을
-                제공하세요.
+                Google 계정으로 로그인하거나, 게스트 모드로 즉시 워크스페이스를
+                체험해보세요.
               </p>
             </div>
           </div>
@@ -126,8 +66,8 @@ export default function SignInPage() {
               description="OAuth 2.0 기반 소셜 로그인으로 빠른 진입"
             />
             <FeatureItem
-              title="Credentials"
-              description="이메일/비밀번호 로그인과 회원가입 API 완비"
+              title="Guest Mode"
+              description="회원가입 없이 게스트 계정으로 즉시 시작"
             />
             <FeatureItem
               title="보안 강화"
@@ -140,76 +80,21 @@ export default function SignInPage() {
           <CardHeader className="space-y-1 pb-6">
             <CardTitle className="text-2xl font-semibold">로그인</CardTitle>
             <p className="text-sm text-muted-foreground">
-              계정을 입력하고 바로 워크스페이스로 이동하세요.
+              게스트 모드로 바로 시작하거나 Google 계정으로 로그인할 수 있어요.
             </p>
           </CardHeader>
           <CardContent className="space-y-5">
-            {registered && (
-              <AuthAlert tone="success">
-                회원가입이 완료되었습니다. 이제 로그인해주세요.
-              </AuthAlert>
-            )}
-            {rootError && <AuthAlert tone="error">{rootError}</AuthAlert>}
+            {guestError && <AuthAlert tone="error">{guestError}</AuthAlert>}
 
-            <Form {...form}>
-              <form onSubmit={onSubmit} className="space-y-4" noValidate>
-                <FormField
-                  control={form.control}
-                  name="email"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>이메일</FormLabel>
-                      <FormControl>
-                        <Input
-                          type="email"
-                          placeholder="name@example.com"
-                          autoComplete="email"
-                          {...field}
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                <FormField
-                  control={form.control}
-                  name="password"
-                  render={({ field }) => (
-                    <FormItem>
-                      <div className="flex items-center justify-between text-sm">
-                        <FormLabel>비밀번호</FormLabel>
-                        <Link
-                          href="/auth/signup"
-                          className="text-xs text-primary hover:text-primary/80"
-                        >
-                          계정이 없으신가요?
-                        </Link>
-                      </div>
-                      <FormControl>
-                        <Input
-                          type="password"
-                          autoComplete="current-password"
-                          {...field}
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                <Button type="submit" className="w-full" disabled={isLoading}>
-                  {isSubmitting ? (
-                    <span className="flex items-center justify-center gap-2">
-                      <Loader2 className="size-4 animate-spin" />
-                      로그인 중...
-                    </span>
-                  ) : (
-                    "이메일로 로그인"
-                  )}
-                </Button>
-              </form>
-            </Form>
+            <StartGuestButton
+              className="w-full"
+              size="lg"
+              callbackUrl={callbackUrl}
+              onError={setGuestError}
+              onSuccess={() => setGuestError(null)}
+              onLoadingChange={setGuestLoading}
+              disabled={isGoogleLoading}
+            />
 
             <div className="relative py-2 text-center text-xs tracking-[0.3em] text-muted-foreground uppercase">
               <span className="absolute top-1/2 left-0 block h-px w-full -translate-y-1/2 bg-border" />

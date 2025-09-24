@@ -5,6 +5,7 @@ import {
   listWorkflows,
 } from "@/app/api/flow/workflows/_controllers/workflows";
 import { flowNodeTypeEnum } from "@/features/flow/db/schema";
+import { auth } from "@/features/auth/lib/auth";
 
 const nodeSchema = z.object({
   id: z.string().min(1).optional(),
@@ -39,7 +40,6 @@ const edgeSchema = z.object({
 const createWorkflowSchema = z.object({
   name: z.string().min(1, "이름을 입력해주세요."),
   description: z.string().optional().nullable(),
-  ownerId: z.string().optional().nullable(),
   nodes: z.array(nodeSchema).optional(),
   edges: z.array(edgeSchema).optional(),
 });
@@ -51,9 +51,27 @@ type CreateWorkflowPayload = z.infer<typeof createWorkflowSchema>;
 
 export async function GET(request: Request) {
   try {
+    const session = await auth();
+    const sessionUserId = session?.user?.id ?? null;
+
+    if (!sessionUserId) {
+      return NextResponse.json(
+        { message: "로그인이 필요합니다." },
+        { status: 401 },
+      );
+    }
+
     const { searchParams } = new URL(request.url);
     const ownerIdParam = searchParams.get("ownerId");
-    const ownerId = ownerIdParam ? ownerIdParam : undefined;
+
+    if (ownerIdParam && ownerIdParam !== sessionUserId) {
+      return NextResponse.json(
+        { message: "권한이 없습니다." },
+        { status: 403 },
+      );
+    }
+
+    const ownerId = ownerIdParam ?? sessionUserId;
 
     const workflows = await listWorkflows({ ownerId });
     const payload: WorkflowSummary[] = workflows;
@@ -70,6 +88,16 @@ export async function GET(request: Request) {
 
 export async function POST(request: Request) {
   try {
+    const session = await auth();
+    const sessionUserId = session?.user?.id ?? null;
+
+    if (!sessionUserId) {
+      return NextResponse.json(
+        { message: "로그인이 필요합니다." },
+        { status: 401 },
+      );
+    }
+
     const body = (await request.json().catch(() => null)) as unknown;
     const parsed = createWorkflowSchema.safeParse(body);
 
@@ -79,13 +107,13 @@ export async function POST(request: Request) {
       return NextResponse.json({ message }, { status: 400 });
     }
 
-    const data: CreateWorkflowPayload = parsed.data;
+    const { name, description, nodes, edges } = parsed.data;
     const workflow = await createWorkflow({
-      ...data,
-      description: data.description ?? null,
-      ownerId: data.ownerId ?? null,
-      nodes: data.nodes,
-      edges: data.edges,
+      name,
+      ownerId: sessionUserId,
+      description: description ?? null,
+      nodes,
+      edges,
     });
 
     const payload: WorkflowDetail = workflow;

@@ -6,6 +6,7 @@ import {
   updateWorkflow,
 } from "@/app/api/flow/workflows/_controllers/workflows";
 import { flowNodeTypeEnum } from "@/features/flow/db/schema";
+import { auth } from "@/features/auth/lib/auth";
 
 const nodeSchema = z.object({
   id: z.string().min(1).optional(),
@@ -40,7 +41,6 @@ const edgeSchema = z.object({
 const updateWorkflowSchema = z.object({
   name: z.string().min(1).optional(),
   description: z.string().optional().nullable(),
-  ownerId: z.string().optional().nullable(),
   nodes: z.array(nodeSchema).optional(),
   edges: z.array(edgeSchema).optional(),
 });
@@ -59,6 +59,15 @@ type Params = {
 
 export async function GET(_: Request, { params }: Params) {
   try {
+    const session = await auth();
+    const sessionUserId = session?.user?.id ?? null;
+    if (!sessionUserId) {
+      return NextResponse.json(
+        { message: "로그인이 필요합니다." },
+        { status: 401 },
+      );
+    }
+
     const { workflowId } = await params;
     const workflow = await getWorkflowById(workflowId);
 
@@ -66,6 +75,13 @@ export async function GET(_: Request, { params }: Params) {
       return NextResponse.json(
         { message: "워크플로우를 찾을 수 없습니다." },
         { status: 404 },
+      );
+    }
+
+    if (workflow.ownerId !== sessionUserId) {
+      return NextResponse.json(
+        { message: "권한이 없습니다." },
+        { status: 403 },
       );
     }
 
@@ -82,6 +98,15 @@ export async function GET(_: Request, { params }: Params) {
 
 export async function PATCH(request: Request, { params }: Params) {
   try {
+    const session = await auth();
+    const sessionUserId = session?.user?.id ?? null;
+    if (!sessionUserId) {
+      return NextResponse.json(
+        { message: "로그인이 필요합니다." },
+        { status: 401 },
+      );
+    }
+
     const body = (await request.json().catch(() => null)) as unknown;
     const parsed = updateWorkflowSchema.safeParse(body);
 
@@ -92,6 +117,22 @@ export async function PATCH(request: Request, { params }: Params) {
     }
 
     const { workflowId } = await params;
+    const current = await getWorkflowById(workflowId);
+
+    if (!current) {
+      return NextResponse.json(
+        { message: "워크플로우를 찾을 수 없습니다." },
+        { status: 404 },
+      );
+    }
+
+    if (current.ownerId !== sessionUserId) {
+      return NextResponse.json(
+        { message: "권한이 없습니다." },
+        { status: 403 },
+      );
+    }
+
     const data: UpdateWorkflowPayload = parsed.data;
     const updated = await updateWorkflow(workflowId, data);
 
@@ -115,7 +156,32 @@ export async function PATCH(request: Request, { params }: Params) {
 
 export async function DELETE(_: Request, { params }: Params) {
   try {
+    const session = await auth();
+    const sessionUserId = session?.user?.id ?? null;
+    if (!sessionUserId) {
+      return NextResponse.json(
+        { message: "로그인이 필요합니다." },
+        { status: 401 },
+      );
+    }
+
     const { workflowId } = await params;
+    const current = await getWorkflowById(workflowId);
+
+    if (!current) {
+      return NextResponse.json(
+        { message: "워크플로우를 찾을 수 없습니다." },
+        { status: 404 },
+      );
+    }
+
+    if (current.ownerId !== sessionUserId) {
+      return NextResponse.json(
+        { message: "권한이 없습니다." },
+        { status: 403 },
+      );
+    }
+
     const deleted = await deleteWorkflow(workflowId);
 
     if (!deleted) {
