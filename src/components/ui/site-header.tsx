@@ -22,7 +22,7 @@ function Logo() {
       href="/"
       className="text-lg font-semibold tracking-tight text-foreground"
     >
-      Next Boilerplate
+      Lang Flow
     </Link>
   );
 }
