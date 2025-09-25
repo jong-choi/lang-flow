@@ -1,5 +1,6 @@
 import { type Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
+import { MainHeader } from "@/app/_components/header";
 import { AppProvider } from "@/app/_providers/app-provider";
 import { ReactQueryProvider } from "@/lib/react-query-provider";
 import "@/styles/globals.css";
@@ -33,6 +34,7 @@ export default function RootLayout({
           <AppProvider>
             <div className="flex min-h-screen flex-col bg-background">
               <main className="flex-1 bg-gradient-to-b from-background via-background to-background/60">
+                <MainHeader />
                 {children}
               </main>
             </div>

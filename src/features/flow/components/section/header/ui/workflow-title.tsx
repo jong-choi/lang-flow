@@ -1,6 +1,11 @@
 "use client";
 
 import { useState } from "react";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { useFlowGeneratorStore } from "@/features/flow/providers/flow-store-provider";
 
 export const WorkflowTitle = () => {
@@ -33,12 +38,19 @@ export const WorkflowTitle = () => {
   }
 
   return (
-    <button
-      onClick={() => setEditing(true)}
-      className="text-base font-semibold text-gray-900 hover:underline"
-      data-testid="flow-name-button"
-    >
-      {name}
-    </button>
+    <Tooltip>
+      <TooltipTrigger asChild>
+        <button
+          onClick={() => setEditing(true)}
+          className="text-base font-semibold text-gray-900 hover:underline"
+          data-testid="flow-name-button"
+        >
+          {name}
+        </button>
+      </TooltipTrigger>
+      <TooltipContent>
+        <p>클릭하여 수정</p>
+      </TooltipContent>
+    </Tooltip>
   );
 };

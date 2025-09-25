@@ -10,16 +10,15 @@ export type FlowHeaderProps = {
 
 export function FlowHeader({ children }: FlowHeaderProps) {
   return (
-    <header className="flex w-full items-center justify-between gap-3 border-b border-gray-100 bg-white/60 px-4 py-2 backdrop-blur-sm">
-      <div className="flex items-center gap-4">
-        <div className="flex flex-col">
-          <WorkflowTitle />
-          <span className="text-xs text-gray-500">Workflow settings</span>
+    <header className="flex w-full items-center justify-center gap-3 border-b border-gray-100 bg-white/60 px-4 py-2 backdrop-blur-sm">
+      <div className="flex w-full max-w-6xl justify-between">
+        <div className="flex items-center gap-4">
+          <div className="flex flex-col">
+            <WorkflowTitle />
+          </div>
         </div>
+        <HeaderActions />
       </div>
-
-      <HeaderActions />
-
       {children}
     </header>
   );

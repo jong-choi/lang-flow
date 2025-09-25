@@ -1,6 +1,10 @@
 import Link from "next/link";
 
-const NAV_LINKS = [{ href: "/", label: "Home" }];
+const NAV_LINKS = [
+  { href: "/", label: "홈" },
+  { href: "/flow/generate", label: "만들기" },
+  { href: "/flow/sharing", label: "공유하기" },
+];
 
 function HeaderContainer({ children }: { children: React.ReactNode }) {
   return (
