@@ -26,14 +26,14 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
+    <html lang="ko">
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
         <ReactQueryProvider>
           <AppProvider>
             <div className="flex min-h-screen flex-col bg-background">
-              <main className="flex-1 bg-gradient-to-b from-background via-background to-background/60">
+              <main className="flex min-h-0 flex-1 flex-col bg-gradient-to-b from-background via-background to-background/60">
                 <MainHeader />
                 {children}
               </main>

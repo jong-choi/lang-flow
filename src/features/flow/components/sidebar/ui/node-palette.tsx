@@ -3,7 +3,7 @@
 /**
  * 사이드바에서 표시할 노드 팔레트.
  */
-import { useCallback } from "react";
+import { useCallback, useEffect, useState } from "react";
 import type { DragEvent, FC } from "react";
 import {
   SHARED_STYLES,
@@ -49,7 +49,17 @@ const PaletteItem: FC<PaletteItemProps> = ({
 };
 
 export const SidebarNodePalette: FC = () => {
+  const [init, setInit] = useState(() => false);
+  useEffect(() => setInit(true), []);
+
   const setType = useFlowGeneratorStore.use.setDraggingType();
+
+  const hasInputNode = useFlowGeneratorStore.use.canvasNodes((canvasNodes) =>
+    canvasNodes.some((canvasNode) => canvasNode.type === "inputNode"),
+  );
+  const hasOutputNode = useFlowGeneratorStore.use.canvasNodes((canvasNodes) =>
+    canvasNodes.some((canvasNode) => canvasNode.type === "outputNode"),
+  );
 
   const handleDragStart = useCallback(
     (event: DragEvent, nodeType: FlowNodeType) => {
@@ -59,11 +69,26 @@ export const SidebarNodePalette: FC = () => {
     [setType],
   );
 
+  const filteredSidebarItems = sidebarItems.filter((sidebarItem) => {
+    if (sidebarItem.type === "inputNode") {
+      return !hasInputNode;
+    }
+    if (sidebarItem.type === "outputNode") {
+      return !hasOutputNode;
+    }
+    return true;
+  });
+
   return (
     <div className="space-y-4">
-      {sidebarItems.map((item) => (
-        <PaletteItem key={item.type} {...item} onDragStart={handleDragStart} />
-      ))}
+      {init &&
+        filteredSidebarItems.map((sidebarItem) => (
+          <PaletteItem
+            key={sidebarItem.type}
+            {...sidebarItem}
+            onDragStart={handleDragStart}
+          />
+        ))}
     </div>
   );
 };
