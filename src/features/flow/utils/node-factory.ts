@@ -4,7 +4,7 @@
 import { generateSlug } from "random-word-slugs";
 import { DEFAULT_CHAT_MODEL } from "@/features/flow/constants/chat-models";
 import { nodeTypeConfigs } from "@/features/flow/constants/node-config";
-import type { FlowNodeType, NodeData } from "@/features/flow/types/nodes";
+import type { FlowNodeType, NodeData } from "@/features/flow/types/graph";
 
 export const getId = () => {
   const randomName = generateSlug(2, {

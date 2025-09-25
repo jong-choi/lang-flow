@@ -1,15 +1,15 @@
+import { listWorkflows } from "@/app/api/flow/workflows/_controllers/workflows";
 import { auth } from "@/features/auth/lib/auth";
 import { WorkflowSharingPageContent } from "@/features/flow/components/sharing/business/workflow-sharing-page-content";
 import type { ShareableWorkflowOption } from "@/features/flow/components/sharing/form/workflow-share-form";
 import { listSharedWorkflows } from "@/features/flow/services/workflow-sharing-service";
-import { listWorkflows } from "@/app/api/flow/workflows/_controllers/workflows";
 
 export default async function WorkflowSharingPage() {
   const session = await auth();
   const viewerId = session?.user?.id ?? null;
 
   const [shares, workflows] = await Promise.all([
-    listSharedWorkflows(viewerId ?? undefined),
+    listSharedWorkflows(),
     viewerId
       ? listWorkflows({ userId: viewerId, ownedOnly: true })
       : Promise.resolve([]),
@@ -33,4 +33,3 @@ export default async function WorkflowSharingPage() {
     </div>
   );
 }
-

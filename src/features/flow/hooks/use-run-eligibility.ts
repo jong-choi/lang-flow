@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo } from "react";
-import type { SchemaEdge, SchemaNode } from "@/features/flow/types/nodes";
+import type { SchemaEdge, SchemaNode } from "@/features/flow/types/graph";
 import {
   buildAdjacency,
   forwardReachable,

@@ -3,7 +3,7 @@ import type {
   FlowNodeType,
   SchemaEdge,
   SchemaNode,
-} from "@/features/flow/types/nodes";
+} from "@/features/flow/types/graph";
 import {
   buildAdjacency,
   computeLevels,

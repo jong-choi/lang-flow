@@ -1,4 +1,4 @@
-import type { WorkflowShareSummary } from "@/features/flow/types/workflow-sharing";
+import Image from "next/image";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -10,6 +10,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import type { WorkflowShareSummary } from "@/features/flow/types/workflow-sharing";
 
 const formatCredits = (value: number) => {
   if (!value) return "무료";
@@ -76,14 +77,16 @@ export function WorkflowShareCard({
       <CardFooter className="flex flex-col gap-4 border-t pt-6">
         <div className="flex items-center gap-3">
           {share.owner.image ? (
-            <img
+            <Image
               src={share.owner.image}
               alt={share.owner.name ?? share.owner.id}
               className="size-10 rounded-full border object-cover"
+              width={40}
+              height={40}
             />
           ) : (
             <div
-              className="flex size-10 items-center justify-center rounded-full border bg-muted text-sm font-semibold uppercase text-muted-foreground"
+              className="flex size-10 items-center justify-center rounded-full border bg-muted text-sm font-semibold text-muted-foreground uppercase"
               aria-hidden="true"
             >
               {ownerInitial || "?"}
@@ -93,7 +96,7 @@ export function WorkflowShareCard({
             <span className="text-sm font-medium text-foreground">
               {share.owner.name ?? "이름 미정"}
             </span>
-            <span className="text-xs text-muted-foreground line-clamp-2">
+            <span className="line-clamp-2 text-xs text-muted-foreground">
               {share.workflowDescription ?? "설명이 없습니다."}
             </span>
           </div>

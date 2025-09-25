@@ -3,58 +3,20 @@ import { z } from "zod";
 import {
   createWorkflow,
   listWorkflows,
-  type WorkflowListItem,
 } from "@/app/api/flow/workflows/_controllers/workflows";
-import { flowNodeTypeEnum } from "@/features/flow/db/schema";
 import { auth } from "@/features/auth/lib/auth";
+import type { WorkflowSummary } from "@/features/flow/types/workflow";
+import {
+  workflowEdgePayloadSchema,
+  workflowMetadataSchema,
+  workflowNodePayloadSchema,
+} from "@/features/flow/types/workflow-api";
+import { deserializeWorkflowDetail } from "@/features/flow/utils/workflow-transformers";
 
-const nodeSchema = z.object({
-  id: z.string().min(1).optional(),
-  type: z.enum(flowNodeTypeEnum.enumValues),
-  posX: z.number().optional(),
-  posY: z.number().optional(),
-  data: z
-    .record(
-      z.string(),
-      z.union([
-        z.string(),
-        z.number(),
-        z.boolean(),
-        z.null(),
-        z.object({}).loose(),
-      ]),
-    )
-    .optional()
-    .nullable(),
+const createWorkflowSchema = workflowMetadataSchema.extend({
+  nodes: z.array(workflowNodePayloadSchema).optional(),
+  edges: z.array(workflowEdgePayloadSchema).optional(),
 });
-
-const edgeSchema = z.object({
-  id: z.string().min(1).optional(),
-  sourceId: z.string().min(1),
-  targetId: z.string().min(1),
-  sourceHandle: z.string().min(1).optional().nullable(),
-  targetHandle: z.string().min(1).optional().nullable(),
-  label: z.string().optional().nullable(),
-  order: z.number().int().optional().nullable(),
-});
-
-const createWorkflowSchema = z.object({
-  name: z.string().min(1, "이름을 입력해주세요."),
-  description: z.string().optional().nullable(),
-  nodes: z.array(nodeSchema).optional(),
-  edges: z.array(edgeSchema).optional(),
-});
-
-type WorkflowSummary = WorkflowListItem & {
-  ownership: "owner" | "licensed";
-};
-
-type WorkflowDetailBase = Awaited<ReturnType<typeof createWorkflow>>;
-type WorkflowDetail = WorkflowDetailBase & {
-  isOwner: boolean;
-  isLicensed: boolean;
-  ownership: "owner" | "licensed";
-};
 
 export async function GET(request: Request) {
   try {
@@ -128,12 +90,12 @@ export async function POST(request: Request) {
       edges,
     });
 
-    const payload: WorkflowDetail = {
+    const payload = deserializeWorkflowDetail({
       ...workflow,
       isOwner: true,
       isLicensed: false,
       ownership: "owner",
-    };
+    });
 
     return NextResponse.json({ workflow: payload }, { status: 201 });
   } catch (error) {

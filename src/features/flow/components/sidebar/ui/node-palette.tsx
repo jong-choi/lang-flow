@@ -11,10 +11,8 @@ import {
   sidebarItems,
 } from "@/features/flow/constants/node-config";
 import { useFlowGeneratorStore } from "@/features/flow/providers/flow-store-provider";
-import type {
-  FlowNodeType,
-  SidebarItemConfig,
-} from "@/features/flow/types/nodes";
+import type { FlowNodeType } from "@/features/flow/types/graph";
+import type { SidebarItemConfig } from "@/features/flow/types/node-ui";
 
 interface PaletteItemProps extends SidebarItemConfig {
   onDragStart: (event: DragEvent, nodeType: FlowNodeType) => void;

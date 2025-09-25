@@ -1,4 +1,4 @@
-import type { SchemaEdge, SchemaNode } from "@/features/flow/types/nodes";
+import type { SchemaEdge, SchemaNode } from "@/features/flow/types/graph";
 
 export function buildSnapshot(nodes: SchemaNode[], edges: SchemaEdge[]) {
   const nodePayload = nodes.map((node) => ({

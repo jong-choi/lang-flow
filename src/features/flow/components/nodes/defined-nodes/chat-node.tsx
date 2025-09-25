@@ -10,14 +10,17 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { GenericNode } from "@/features/flow/components/nodes/generic-node";
-import { CHAT_MODELS, DEFAULT_CHAT_MODEL } from "@/features/flow/constants/chat-models";
+import {
+  CHAT_MODELS,
+  DEFAULT_CHAT_MODEL,
+} from "@/features/flow/constants/chat-models";
 import { useFlowGeneratorStore } from "@/features/flow/providers/flow-store-provider";
 import type {
   NodeData,
-  NodeProps,
   SchemaEdge,
   SchemaNode,
-} from "@/features/flow/types/nodes";
+} from "@/features/flow/types/graph";
+import type { NodeProps } from "@/features/flow/types/node-ui";
 
 export const ChatNode: React.FC<NodeProps> = ({ data, id }) => {
   const { setNodes } = useReactFlow<SchemaNode, SchemaEdge>();

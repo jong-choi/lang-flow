@@ -5,17 +5,17 @@ import {
   Background,
   type Connection,
   Controls,
+  type IsValidConnection,
   MiniMap,
   type OnConnect,
   type OnEdgesChange,
   type OnNodesChange,
-  type IsValidConnection,
   ReactFlow,
 } from "@xyflow/react";
 import { edgeTypes } from "@/features/flow/components/nodes/custom-edge";
 import { nodeTypes } from "@/features/flow/components/nodes/node-type-map";
 import { TemplateGroupsOverlay } from "@/features/flow/components/section/flow/ui/template-groups-overlay";
-import type { SchemaEdge, SchemaNode } from "@/features/flow/types/nodes";
+import type { SchemaEdge, SchemaNode } from "@/features/flow/types/graph";
 import type { TemplateGroup } from "@/features/flow/utils/canvas";
 
 export interface FlowGraphViewProps {

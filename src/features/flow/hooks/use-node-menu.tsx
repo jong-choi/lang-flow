@@ -4,7 +4,7 @@
  * 노드 우측 상단 메뉴에서 제공하는 편집, 복제, 연결 추가, 삭제 동작을 캡슐화한 훅.
  */
 import { useCallback, useState } from "react";
-import { type Edge, useReactFlow } from "@xyflow/react";
+import { useReactFlow } from "@xyflow/react";
 import { type NodeEditFormValues } from "@/features/flow/components/nodes/ui/edit-dialog";
 import { nodeTypeConfigs } from "@/features/flow/constants/node-config";
 import { useFlowGeneratorStore } from "@/features/flow/providers/flow-store-provider";
@@ -12,7 +12,7 @@ import type {
   NodeData,
   SchemaEdge,
   SchemaNode,
-} from "@/features/flow/types/nodes";
+} from "@/features/flow/types/graph";
 import { createNodeData, getId } from "@/features/flow/utils/node-factory";
 
 export const useNodeMenu = (id: string) => {
@@ -143,7 +143,7 @@ export const useNodeMenu = (id: string) => {
         data: createNodeData("messageNode"),
       };
 
-      const newEdge: Edge = {
+      const newEdge: SchemaEdge = {
         id: `${id}-${newNodeId}`,
         source: id,
         target: newNodeId,

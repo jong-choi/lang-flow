@@ -4,7 +4,7 @@ import {
   getWorkflowShareDetail,
   requestWorkflowLicense,
 } from "@/features/flow/services/workflow-sharing-service";
-import { workflowLicenseRequestSchema } from "@/features/flow/utils/workflow-sharing-schemas";
+import { workflowLicenseRequestSchema } from "@/features/flow/types/workflow-sharing";
 
 interface RouteContext {
   params: { workflowId: string };
@@ -26,10 +26,8 @@ export async function GET(_request: Request, context: RouteContext) {
     }
     return NextResponse.json({ share: detail });
   } catch (error) {
-    return NextResponse.json(
-      { message: "워크플로우 정보를 불러오지 못했습니다." },
-      { status: 500 },
-    );
+    const message = error instanceof Error ? error.message : String(error);
+    return NextResponse.json({ message }, { status: 500 });
   }
 }
 
@@ -38,7 +36,10 @@ export async function POST(request: Request, context: RouteContext) {
     const session = await auth();
     const userId = session?.user?.id;
     if (!userId) {
-      return NextResponse.json({ message: "로그인이 필요합니다." }, { status: 401 });
+      return NextResponse.json(
+        { message: "로그인이 필요합니다." },
+        { status: 401 },
+      );
     }
 
     const json = await request.json().catch(() => null);
@@ -58,14 +59,13 @@ export async function POST(request: Request, context: RouteContext) {
       return NextResponse.json({ license }, { status: 201 });
     } catch (error) {
       const message =
-        error instanceof Error ? error.message : "라이선스 요청에 실패했습니다.";
+        error instanceof Error
+          ? error.message
+          : "라이선스 요청에 실패했습니다.";
       return NextResponse.json({ message }, { status: 400 });
     }
   } catch (error) {
-    return NextResponse.json(
-      { message: "라이선스 요청을 처리하지 못했습니다." },
-      { status: 500 },
-    );
+    const message = error instanceof Error ? error.message : String(error);
+    return NextResponse.json({ message }, { status: 500 });
   }
 }
-

@@ -13,8 +13,10 @@ import {
 } from "@/components/ui/dialog";
 import { WorkflowShareForm } from "@/features/flow/components/sharing/form/workflow-share-form";
 import type { ShareableWorkflowOption } from "@/features/flow/components/sharing/form/workflow-share-form";
-import type { WorkflowShareDetail } from "@/features/flow/types/workflow-sharing";
-import type { WorkflowShareFormSchema } from "@/features/flow/utils/workflow-sharing-schemas";
+import type {
+  WorkflowShareDetail,
+  WorkflowShareFormValues,
+} from "@/features/flow/types/workflow-sharing";
 import { api } from "@/lib/api-client";
 
 interface WorkflowShareRegisterDialogProps {
@@ -52,7 +54,7 @@ export function WorkflowShareRegisterDialog({
     }
   }, [open]);
 
-  const handleSubmit = async (values: WorkflowShareFormSchema) => {
+  const handleSubmit = async (values: WorkflowShareFormValues) => {
     try {
       setSubmitting(true);
       const response = await api.post<CreateShareResponse>(
@@ -64,7 +66,9 @@ export function WorkflowShareRegisterDialog({
       onOpenChange(false);
     } catch (error) {
       const message =
-        error instanceof Error ? error.message : "워크플로우 등록에 실패했습니다.";
+        error instanceof Error
+          ? error.message
+          : "워크플로우 등록에 실패했습니다.";
       toast.error(message);
     } finally {
       setSubmitting(false);
@@ -89,7 +93,8 @@ export function WorkflowShareRegisterDialog({
             <DialogHeader>
               <DialogTitle>공유할 워크플로우 선택</DialogTitle>
               <DialogDescription>
-                공유하고 싶은 워크플로우를 선택하세요. 선택 후 추가 정보를 입력합니다.
+                공유하고 싶은 워크플로우를 선택하세요. 선택 후 추가 정보를
+                입력합니다.
               </DialogDescription>
             </DialogHeader>
             {hasWorkflow ? (
@@ -101,8 +106,10 @@ export function WorkflowShareRegisterDialog({
                     className="w-full rounded-xl border bg-muted/10 p-4 text-left transition hover:bg-muted"
                     onClick={() => handleSelect(workflow)}
                   >
-                    <div className="font-semibold text-foreground">{workflow.name}</div>
-                    <div className="mt-1 text-sm text-muted-foreground line-clamp-2">
+                    <div className="font-semibold text-foreground">
+                      {workflow.name}
+                    </div>
+                    <div className="mt-1 line-clamp-2 text-sm text-muted-foreground">
                       {workflow.description ?? "워크플로우 설명이 없습니다."}
                     </div>
                   </button>
@@ -110,7 +117,8 @@ export function WorkflowShareRegisterDialog({
               </div>
             ) : (
               <div className="rounded-xl border border-dashed bg-muted/20 p-6 text-center text-sm text-muted-foreground">
-                공유 가능한 워크플로우가 없습니다. 먼저 워크플로우를 생성해주세요.
+                공유 가능한 워크플로우가 없습니다. 먼저 워크플로우를
+                생성해주세요.
               </div>
             )}
             <DialogFooter>

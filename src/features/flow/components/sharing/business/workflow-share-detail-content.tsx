@@ -9,7 +9,7 @@ import { WorkflowLicenseRequestDialog } from "@/features/flow/components/sharing
 import { WorkflowShareHero } from "@/features/flow/components/sharing/ui/workflow-share-hero";
 import { WorkflowShareSection } from "@/features/flow/components/sharing/ui/workflow-share-section";
 import type {
-  WorkflowLicenseRequestRecord,
+  WorkflowLicenseRequest,
   WorkflowShareDetail,
 } from "@/features/flow/types/workflow-sharing";
 
@@ -28,7 +28,7 @@ export function WorkflowShareDetailContent({
   const isOwner = share.viewerContext?.isOwner ?? share.owner.id === viewerId;
   const licenseStatus = share.viewerContext?.licenseStatus;
 
-  const handleLicenseSuccess = (license: WorkflowLicenseRequestRecord) => {
+  const handleLicenseSuccess = (license: WorkflowLicenseRequest) => {
     if (license.status === "pending") {
       router.refresh();
     }
@@ -76,7 +76,8 @@ export function WorkflowShareDetailContent({
       >
         <div className="space-y-3 text-sm text-muted-foreground">
           <p className="whitespace-pre-line">
-            {share.workflowDescription ?? "워크플로우 설명이 아직 작성되지 않았습니다."}
+            {share.workflowDescription ??
+              "워크플로우 설명이 아직 작성되지 않았습니다."}
           </p>
           <div className="flex flex-wrap gap-2">
             {share.tags.map((tag) => (

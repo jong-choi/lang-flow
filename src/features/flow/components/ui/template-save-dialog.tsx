@@ -30,7 +30,7 @@ import {
   deserializeWorkflowDetail,
   serializeEdgeForApi,
   serializeNodeForApi,
-  toTemplateSummary,
+  toWorkflowSummary,
 } from "@/features/flow/utils/workflow-transformers";
 
 const templateSchema = z.object({
@@ -104,7 +104,7 @@ export const TemplateSaveDialog = () => {
         const payload = await response.json();
         const detail = deserializeWorkflowDetail(payload.workflow);
         cacheTemplateDetail(detail);
-        upsertTemplate(toTemplateSummary(payload.workflow));
+        upsertTemplate(toWorkflowSummary(payload.workflow));
         toast.success("템플릿이 저장되었습니다.");
         setTemplateModalOpen(false);
         void fetchTemplates();

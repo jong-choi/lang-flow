@@ -1,13 +1,10 @@
 import type { StateCreator } from "zustand";
 import type {
-  WorkflowTemplateDetail,
-  WorkflowTemplateSummary,
-} from "@/features/flow/types/nodes";
-import {
-  type WorkflowApiDetail,
-  deserializeWorkflowDetail,
-  toTemplateSummary,
-} from "@/features/flow/utils/workflow-transformers";
+  WorkflowDetail,
+  WorkflowSummary,
+} from "@/features/flow/types/workflow";
+import { deserializeWorkflowDetail, toWorkflowSummary } from "@/features/flow/utils/workflow-transformers";
+import type { WorkflowApiDetail } from "@/features/flow/types/workflow-api";
 
 interface WorkflowListResponse {
   workflows: WorkflowApiDetail[];
@@ -18,17 +15,17 @@ interface WorkflowDetailResponse {
 }
 
 export interface TemplateSlice {
-  templates: WorkflowTemplateSummary[];
-  templateDetails: Record<string, WorkflowTemplateDetail>;
+  templates: WorkflowSummary[];
+  templateDetails: Record<string, WorkflowDetail>;
   isLoadingTemplates: boolean;
   hasFetchedTemplates: boolean;
   draggingTemplateId: string | undefined;
   fetchTemplates: () => Promise<void>;
-  ensureTemplateDetail: (id: string) => Promise<WorkflowTemplateDetail | null>;
+  ensureTemplateDetail: (id: string) => Promise<WorkflowDetail | null>;
   setDraggingTemplateId: (id: string | undefined) => void;
-  upsertTemplate: (template: WorkflowTemplateSummary) => void;
+  upsertTemplate: (template: WorkflowSummary) => void;
   removeTemplate: (id: string) => void;
-  cacheTemplateDetail: (detail: WorkflowTemplateDetail) => void;
+  cacheTemplateDetail: (detail: WorkflowDetail) => void;
 }
 
 export const createTemplateSlice: StateCreator<TemplateSlice> = (set, get) => ({
@@ -45,7 +42,7 @@ export const createTemplateSlice: StateCreator<TemplateSlice> = (set, get) => ({
         throw new Error(`워크플로우 목록 조회 실패: ${response.status}`);
       }
       const payload = (await response.json()) as WorkflowListResponse;
-      const summaries = payload.workflows.map(toTemplateSummary);
+      const summaries = payload.workflows.map(toWorkflowSummary);
       set({
         templates: summaries,
         isLoadingTemplates: false,
@@ -82,7 +79,7 @@ export const createTemplateSlice: StateCreator<TemplateSlice> = (set, get) => ({
           templateDetails: { ...prev.templateDetails, [id]: detail },
           templates: prev.templates.some((item) => item.id === id)
             ? prev.templates
-            : prev.templates.concat(toTemplateSummary(payload.workflow)),
+            : prev.templates.concat(toWorkflowSummary(payload.workflow)),
         };
       });
       return detail;

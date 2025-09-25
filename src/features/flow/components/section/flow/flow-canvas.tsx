@@ -5,9 +5,9 @@ import type { DragEvent } from "react";
 import { toast } from "sonner";
 import { useShallow } from "zustand/react/shallow";
 import {
-  addEdge,
   type Connection,
   type IsValidConnection,
+  addEdge,
   reconnectEdge,
   useEdgesState,
   useNodesState,
@@ -22,11 +22,8 @@ import { useFlowExecution } from "@/features/flow/hooks/use-flow-execution";
 import { useIsValidConnection } from "@/features/flow/hooks/use-is-valid-connection";
 import { useRunEligibility } from "@/features/flow/hooks/use-run-eligibility";
 import { useFlowGeneratorStore } from "@/features/flow/providers/flow-store-provider";
-import type {
-  SchemaEdge,
-  SchemaNode,
-  WorkflowTemplateDetail,
-} from "@/features/flow/types/nodes";
+import type { SchemaEdge, SchemaNode } from "@/features/flow/types/graph";
+import type { WorkflowDetail } from "@/features/flow/types/workflow";
 import {
   type TemplateGroup,
   buildNewNode,
@@ -107,7 +104,7 @@ export const FlowCanvas = () => {
   const isValidConnection = useCallback<IsValidConnection<SchemaEdge>>(
     (candidate: Parameters<IsValidConnection<SchemaEdge>>[0]) => {
       const normalized: Connection =
-        'id' in candidate
+        "id" in candidate
           ? {
               source: candidate.source,
               sourceHandle: candidate.sourceHandle ?? null,
@@ -121,7 +118,6 @@ export const FlowCanvas = () => {
     [validateConnection],
   );
 
-
   const onConnect = useCallback(
     (connectionParams: Connection) => {
       if (isValidConnection(connectionParams)) {
@@ -132,10 +128,7 @@ export const FlowCanvas = () => {
   );
 
   const insertTemplate = useCallback(
-    (
-      template: WorkflowTemplateDetail,
-      dropPosition: { x: number; y: number },
-    ) => {
+    (template: WorkflowDetail, dropPosition: { x: number; y: number }) => {
       const insertion = calculateTemplateInsertion(template, dropPosition, {
         generateNodeId: getId,
         generateEdgeId: createRandomEdgeId,
@@ -167,7 +160,9 @@ export const FlowCanvas = () => {
         return;
       }
       edgeReconnectSuccessful.current = true;
-      setEdges((existingEdges) => reconnectEdge(oldEdge, newConnection, existingEdges));
+      setEdges((existingEdges) =>
+        reconnectEdge(oldEdge, newConnection, existingEdges),
+      );
     },
     [setEdges, isValidConnection],
   );

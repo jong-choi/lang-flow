@@ -2,10 +2,6 @@
 
 import React from "react";
 import { AlertCircle, RotateCw } from "lucide-react";
-import {
-  createBasicMenuItems,
-  createFullMenuItems,
-} from "@/features/flow/utils/node-menu-items";
 import { CustomHandle } from "@/features/flow/components/nodes/ui/custom-handle";
 import { EditDialog } from "@/features/flow/components/nodes/ui/edit-dialog";
 import { NodeContainer } from "@/features/flow/components/nodes/ui/node-container";
@@ -14,12 +10,16 @@ import { nodeConfigs } from "@/features/flow/constants/node-config";
 import { useConnectionLimits } from "@/features/flow/hooks/use-connection-limits";
 import { useNodeMenu } from "@/features/flow/hooks/use-node-menu";
 import { useFlowGeneratorStore } from "@/features/flow/providers/flow-store-provider";
+import type { FlowNodeType } from "@/features/flow/types/graph";
 import type {
-  FlowNodeType,
   HandleDefinition,
   MenuType,
   NodeProps,
-} from "@/features/flow/types/nodes";
+} from "@/features/flow/types/node-ui";
+import {
+  createBasicMenuItems,
+  createFullMenuItems,
+} from "@/features/flow/utils/node-menu-items";
 import { RUN_STATUS } from "@/features/flow/utils/run-status";
 
 interface GenericNodeProps extends NodeProps {

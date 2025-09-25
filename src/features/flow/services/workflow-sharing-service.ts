@@ -1,18 +1,18 @@
-import { and, desc, eq, or, sql } from "drizzle-orm";
-import { db } from "@/lib/db";
-import { users } from "@/lib/db/schema";
+import { and, desc, eq, sql } from "drizzle-orm";
 import {
   workflowLicenseRequests,
   workflowShares,
   workflows,
 } from "@/features/flow/db/schema";
 import type {
-  WorkflowLicenseRequestRecord,
+  WorkflowLicenseRequest,
+  WorkflowLicenseRequestFormValues,
   WorkflowShareDetail,
-  WorkflowShareFormInput,
+  WorkflowShareFormValues,
   WorkflowShareSummary,
-  WorkflowLicenseRequestInput,
 } from "@/features/flow/types/workflow-sharing";
+import { db } from "@/lib/db";
+import { users } from "@/lib/db/schema";
 
 const toStringArray = (value: unknown): string[] => {
   if (!Array.isArray(value)) return [];
@@ -21,9 +21,9 @@ const toStringArray = (value: unknown): string[] => {
 
 const licenseCountExpr = sql<number>`coalesce(count(distinct ${workflowLicenseRequests.id}), 0)`;
 
-export const listSharedWorkflows = async (
-  _viewerId?: string,
-): Promise<WorkflowShareSummary[]> => {
+export const listSharedWorkflows = async (): Promise<
+  WorkflowShareSummary[]
+> => {
   const rows = await db
     .select({
       share: workflowShares,
@@ -100,7 +100,7 @@ export const getWorkflowShareDetail = async (
     .from(workflowLicenseRequests)
     .where(eq(workflowLicenseRequests.shareId, row.share.id));
 
-  let viewerRequest: WorkflowLicenseRequestRecord | undefined;
+  let viewerRequest: WorkflowLicenseRequest | undefined;
   if (viewerId && !isOwner) {
     const [match] = await db
       .select()
@@ -143,7 +143,7 @@ export const getWorkflowShareDetail = async (
 export const createWorkflowShare = async (
   workflowId: string,
   ownerId: string,
-  input: WorkflowShareFormInput,
+  input: WorkflowShareFormValues,
 ): Promise<WorkflowShareDetail | null> => {
   const [workflow] = await db
     .select({ id: workflows.id, ownerId: workflows.ownerId })
@@ -178,7 +178,7 @@ export const createWorkflowShare = async (
 export const requestWorkflowLicense = async (
   workflowId: string,
   requesterId: string,
-  input: WorkflowLicenseRequestInput = {},
+  input: WorkflowLicenseRequestFormValues = {},
 ) => {
   const [share] = await db
     .select()

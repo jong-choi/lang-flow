@@ -1,7 +1,7 @@
 import { useCallback } from "react";
 import { toast } from "sonner";
 import type { Edge, IsValidConnection } from "@xyflow/react";
-import type { SchemaNode } from "@/features/flow/types/nodes";
+import type { SchemaNode } from "@/features/flow/types/graph";
 
 export const useIsValidConnection = (
   nodes: SchemaNode[],

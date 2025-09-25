@@ -14,8 +14,10 @@ import {
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import type { WorkflowShareFormSchema } from "@/features/flow/utils/workflow-sharing-schemas";
-import { workflowShareFormSchema } from "@/features/flow/utils/workflow-sharing-schemas";
+import {
+  type WorkflowShareFormValues,
+  workflowShareFormSchema,
+} from "@/features/flow/types/workflow-sharing";
 
 export interface ShareableWorkflowOption {
   id: string;
@@ -25,10 +27,10 @@ export interface ShareableWorkflowOption {
 
 export interface WorkflowShareFormProps {
   formId?: string;
-  defaultValues?: Partial<WorkflowShareFormSchema>;
+  defaultValues?: Partial<WorkflowShareFormValues>;
   workflow: ShareableWorkflowOption;
   isSubmitting?: boolean;
-  onSubmit: (values: WorkflowShareFormSchema) => Promise<void> | void;
+  onSubmit: (values: WorkflowShareFormValues) => Promise<void> | void;
   onCancel?: () => void;
   onBack?: () => void;
 }
@@ -48,7 +50,7 @@ export function WorkflowShareForm({
   onCancel,
   onBack,
 }: WorkflowShareFormProps) {
-  const form = useForm<WorkflowShareFormSchema>({
+  const form = useForm<WorkflowShareFormValues>({
     resolver: zodResolver(workflowShareFormSchema),
     defaultValues: {
       workflowId: workflow.id,
@@ -74,12 +76,20 @@ export function WorkflowShareForm({
   return (
     <Form {...form}>
       <form id={formId} className="space-y-6" onSubmit={handleSubmit}>
-        <input type="hidden" value={workflow.id} {...form.register("workflowId")} />
+        <input
+          type="hidden"
+          value={workflow.id}
+          {...form.register("workflowId")}
+        />
         <div className="space-y-3">
-          <p className="text-sm font-semibold text-muted-foreground">선택한 워크플로우</p>
+          <p className="text-sm font-semibold text-muted-foreground">
+            선택한 워크플로우
+          </p>
           <div className="rounded-xl border bg-muted/20 p-4">
-            <h3 className="text-base font-semibold text-foreground">{workflow.name}</h3>
-            <p className="mt-2 text-sm text-muted-foreground whitespace-pre-line">
+            <h3 className="text-base font-semibold text-foreground">
+              {workflow.name}
+            </h3>
+            <p className="mt-2 text-sm whitespace-pre-line text-muted-foreground">
               {workflow.description ?? "워크플로우 설명이 없습니다."}
             </p>
           </div>
@@ -90,9 +100,16 @@ export function WorkflowShareForm({
             <Button type="button" variant="ghost" onClick={onBack}>
               이전 단계
             </Button>
-          ) : <span />}
+          ) : (
+            <span />
+          )}
           {onCancel ? (
-            <Button type="button" variant="outline" onClick={onCancel} disabled={isSubmitting}>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={onCancel}
+              disabled={isSubmitting}
+            >
               취소
             </Button>
           ) : null}
@@ -146,7 +163,9 @@ export function WorkflowShareForm({
                   step={1}
                   placeholder="0"
                   value={field.value ?? 0}
-                  onChange={(event) => field.onChange(Number(event.target.value))}
+                  onChange={(event) =>
+                    field.onChange(Number(event.target.value))
+                  }
                 />
               </FormControl>
               <FormMessage />

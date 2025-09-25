@@ -3,7 +3,7 @@ import type {
   FlowNodeType,
   SchemaEdge,
   SchemaNode,
-} from "@/features/flow/types/nodes";
+} from "@/features/flow/types/graph";
 import { createNodeData } from "@/features/flow/utils/node-factory";
 import { buildSnapshot } from "@/features/flow/utils/snapshot";
 

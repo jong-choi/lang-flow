@@ -59,7 +59,7 @@ export const flowNodes = pgTable("flow_nodes", {
   posY: doublePrecision("pos_y").notNull().default(0),
   // 노드 개별 데이터(JSON)
   // prettier-ignore
-  data: jsonb("data").$type<Record<string, string | number | boolean | null | object>>(),
+  data: jsonb("data").$type<Record<string, string | number | boolean | null | Record<string, unknown>>>(),
   createdAt: timestamp("created_at", { mode: "date" }).notNull().defaultNow(),
   updatedAt: timestamp("updated_at", { mode: "date" })
     .notNull()
@@ -115,11 +115,9 @@ export const workflowShares = pgTable(
       .defaultNow()
       .$onUpdate(() => new Date()),
   },
-  (table) => ({
-    workflowUnique: uniqueIndex("workflow_shares_workflow_unique").on(
-      table.workflowId,
-    ),
-  }),
+  (table) => [
+    uniqueIndex("workflow_shares_workflow_unique").on(table.workflowId),
+  ],
 );
 
 // 라이선스 요청(승인 전 상태 기록)
@@ -148,11 +146,12 @@ export const workflowLicenseRequests = pgTable(
       .defaultNow()
       .$onUpdate(() => new Date()),
   },
-  (table) => ({
-    shareRequesterUnique: uniqueIndex(
-      "workflow_license_requests_unique",
-    ).on(table.shareId, table.requesterId),
-  }),
+  (table) => [
+    uniqueIndex("workflow_license_requests_unique").on(
+      table.shareId,
+      table.requesterId,
+    ),
+  ],
 );
 
 export const workflowLicenses = pgTable(

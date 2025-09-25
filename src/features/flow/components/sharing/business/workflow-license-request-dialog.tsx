@@ -2,8 +2,8 @@
 
 import { useState } from "react";
 import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
 import { toast } from "sonner";
+import { zodResolver } from "@hookform/resolvers/zod";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -22,11 +22,11 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { Textarea } from "@/components/ui/textarea";
-import type { WorkflowLicenseRequestRecord } from "@/features/flow/types/workflow-sharing";
 import {
+  type WorkflowLicenseRequest,
+  type WorkflowLicenseRequestFormValues,
   workflowLicenseRequestSchema,
-  type WorkflowLicenseRequestSchema,
-} from "@/features/flow/utils/workflow-sharing-schemas";
+} from "@/features/flow/types/workflow-sharing";
 import { api } from "@/lib/api-client";
 
 interface WorkflowLicenseRequestDialogProps {
@@ -34,11 +34,11 @@ interface WorkflowLicenseRequestDialogProps {
   onOpenChange: (open: boolean) => void;
   workflowId: string;
   workflowTitle: string;
-  onSuccess?: (license: WorkflowLicenseRequestRecord) => void;
+  onSuccess?: (license: WorkflowLicenseRequest) => void;
 }
 
 interface LicenseRequestResponse {
-  license: WorkflowLicenseRequestRecord;
+  license: WorkflowLicenseRequest;
 }
 
 export function WorkflowLicenseRequestDialog({
@@ -49,7 +49,7 @@ export function WorkflowLicenseRequestDialog({
   onSuccess,
 }: WorkflowLicenseRequestDialogProps) {
   const [submitting, setSubmitting] = useState(false);
-  const form = useForm<WorkflowLicenseRequestSchema>({
+  const form = useForm<WorkflowLicenseRequestFormValues>({
     resolver: zodResolver(workflowLicenseRequestSchema),
     defaultValues: {
       message: "해당 워크플로우를 사용하고 싶습니다.",
@@ -68,7 +68,9 @@ export function WorkflowLicenseRequestDialog({
       onOpenChange(false);
     } catch (error) {
       const message =
-        error instanceof Error ? error.message : "라이선스 요청에 실패했습니다.";
+        error instanceof Error
+          ? error.message
+          : "라이선스 요청에 실패했습니다.";
       toast.error(message);
     } finally {
       setSubmitting(false);
@@ -119,7 +121,11 @@ export function WorkflowLicenseRequestDialog({
           >
             취소
           </Button>
-          <Button type="submit" form="workflow-license-request" disabled={submitting}>
+          <Button
+            type="submit"
+            form="workflow-license-request"
+            disabled={submitting}
+          >
             {submitting ? "전송 중..." : "요청 보내기"}
           </Button>
         </DialogFooter>

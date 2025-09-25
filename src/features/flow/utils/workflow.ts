@@ -1,4 +1,4 @@
-import type { WorkflowTemplateSummary } from "@/features/flow/types/nodes";
+import type { WorkflowSummary } from "@/features/flow/types/workflow";
 
 interface RunEligibilityState {
   ok: boolean;
@@ -19,9 +19,9 @@ export interface RunGateState {
 }
 
 export const filterTemplatesByQuery = (
-  templates: WorkflowTemplateSummary[],
+  templates: WorkflowSummary[],
   query: string,
-): WorkflowTemplateSummary[] => {
+): WorkflowSummary[] => {
   const keyword = query.trim().toLowerCase();
 
   if (!keyword) {
@@ -38,9 +38,8 @@ export const filterTemplatesByQuery = (
   });
 };
 
-export const shouldFetchTemplates = (
-  templates: WorkflowTemplateSummary[],
-): boolean => templates.length === 0;
+export const shouldFetchTemplates = (templates: WorkflowSummary[]): boolean =>
+  templates.length === 0;
 
 export const createRunGateState = ({
   runEligibility,

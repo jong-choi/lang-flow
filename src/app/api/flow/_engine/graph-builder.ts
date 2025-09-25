@@ -17,9 +17,8 @@ import { outputNode } from "@/app/api/flow/_engine/nodes/output-node";
 import type {
   FlowState,
   LangGraphNodeType,
-  ReactFlowEdge,
-  ReactFlowNode,
-} from "@/features/flow/types/nodes";
+} from "@/features/flow/types/execution";
+import type { ReactFlowEdge, ReactFlowNode } from "@/features/flow/types/graph";
 
 // LangGraph 상태 어노테이션 정의
 export const FlowStateAnnotation = Annotation.Root({

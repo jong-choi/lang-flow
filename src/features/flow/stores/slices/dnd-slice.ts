@@ -1,5 +1,5 @@
 import type { StateCreator } from "zustand";
-import type { FlowNodeType } from "@/features/flow/types/nodes";
+import type { FlowNodeType } from "@/features/flow/types/graph";
 
 export interface DnDSlice {
   draggingType: FlowNodeType | undefined;

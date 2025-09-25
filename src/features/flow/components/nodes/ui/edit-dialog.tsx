@@ -35,7 +35,7 @@ import {
   CHAT_MODEL_VALUES,
   DEFAULT_CHAT_MODEL,
 } from "@/features/flow/constants/chat-models";
-import type { NodeData } from "@/features/flow/types/nodes";
+import type { NodeData } from "@/features/flow/types/graph";
 
 const DEFAULT_MESSAGE_TEMPLATE = "기본 메시지: {input}";
 

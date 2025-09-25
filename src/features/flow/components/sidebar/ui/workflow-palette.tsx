@@ -17,7 +17,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { useFlowGeneratorStore } from "@/features/flow/providers/flow-store-provider";
-import type { WorkflowTemplateSummary } from "@/features/flow/types/nodes";
+import type { WorkflowSummary } from "@/features/flow/types/workflow";
 import {
   filterTemplatesByQuery,
   shouldFetchTemplates,
@@ -48,7 +48,7 @@ export const WorkflowPalette = () => {
   }, [query, templates]);
 
   const handleDragStart = useCallback(
-    (event: React.DragEvent, template: WorkflowTemplateSummary) => {
+    (event: React.DragEvent, template: WorkflowSummary) => {
       setDraggingTemplateId(template.id);
       event.dataTransfer.effectAllowed = "copy";
       event.dataTransfer.setData("application/workflow-template", template.id);
@@ -61,7 +61,7 @@ export const WorkflowPalette = () => {
   }, [setDraggingTemplateId]);
 
   const handleNavigate = useCallback(
-    (template: WorkflowTemplateSummary) => {
+    (template: WorkflowSummary) => {
       setConfirmTemplateAction({ template, action: "move" });
       setOpenMenuId(null);
     },
@@ -69,7 +69,7 @@ export const WorkflowPalette = () => {
   );
 
   const handleRemoveLicense = useCallback(
-    async (template: WorkflowTemplateSummary) => {
+    async (template: WorkflowSummary) => {
       if (pendingLicenseId) return;
       setPendingLicenseId(template.id);
       try {
@@ -179,14 +179,17 @@ export const WorkflowPalette = () => {
                     >
                       <DropdownMenuTrigger asChild>
                         <button
-                          className="inline-flex items-center rounded-md border border-slate-200 p-2 text-slate-500 transition hover:border-violet-200 hover:text-violet-600 focus:outline-none focus:ring-2 focus:ring-violet-200 dark:border-slate-700 dark:text-slate-300 dark:hover:border-violet-400 dark:hover:text-violet-200"
+                          className="inline-flex items-center rounded-md border border-slate-200 p-2 text-slate-500 transition hover:border-violet-200 hover:text-violet-600 focus:ring-2 focus:ring-violet-200 focus:outline-none dark:border-slate-700 dark:text-slate-300 dark:hover:border-violet-400 dark:hover:text-violet-200"
                           aria-label={`${template.name} 메뉴 열기`}
                           type="button"
                         >
                           <MoreVertical className="size-4" />
                         </button>
                       </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end" className="min-w-[160px]">
+                      <DropdownMenuContent
+                        align="end"
+                        className="min-w-[160px]"
+                      >
                         <DropdownMenuItem
                           onClick={() => handleNavigate(template)}
                         >

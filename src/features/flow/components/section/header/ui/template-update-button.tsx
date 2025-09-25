@@ -8,7 +8,7 @@ import {
   deserializeWorkflowDetail,
   serializeEdgeForApi,
   serializeNodeForApi,
-  toTemplateSummary,
+  toWorkflowSummary,
 } from "@/features/flow/utils/workflow-transformers";
 import { cn } from "@/utils/cn";
 
@@ -32,7 +32,7 @@ export const TemplateUpdateButton = ({
   const [isUpdating, setIsUpdating] = useState(false);
 
   const disabled = disabledProp || !canRun || isUpdating;
-  const title = !canRun ? runDisabledReason ?? undefined : undefined;
+  const title = !canRun ? (runDisabledReason ?? undefined) : undefined;
 
   const handleUpdate = useCallback(async () => {
     if (disabled) return;
@@ -70,7 +70,7 @@ export const TemplateUpdateButton = ({
       const payload = await response.json();
       const detail = deserializeWorkflowDetail(payload.workflow);
       cacheTemplateDetail(detail);
-      upsertTemplate(toTemplateSummary(payload.workflow));
+      upsertTemplate(toWorkflowSummary(payload.workflow));
       toast.success("워크플로우가 업데이트되었습니다.");
       void fetchTemplates();
     } catch (error) {

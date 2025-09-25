@@ -1,5 +1,5 @@
 import { Copy, Edit, Plus, Trash2 } from "lucide-react";
-import type { MenuItem } from "@/features/flow/types/nodes";
+import type { MenuItem } from "@/features/flow/types/node-ui";
 
 export const createBasicMenuItems = (handleDelete: () => void): MenuItem[] => [
   {

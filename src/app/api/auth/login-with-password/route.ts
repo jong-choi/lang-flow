@@ -1,11 +1,11 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
-import { createSessionForUser } from "@/features/auth/lib/session";
 import { verifyUserPassword } from "@/features/auth/lib/password-auth";
+import { createSessionForUser } from "@/features/auth/lib/session";
 import {
   type SignInFormValues,
   signInSchema,
-} from "@/features/auth/types/forms";
+} from "@/features/auth/types/sign-in";
 
 export const runtime = "nodejs";
 

@@ -2,18 +2,18 @@
 
 import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
+import { Button } from "@/components/ui/button";
+import { WorkflowLicenseRequestDialog } from "@/features/flow/components/sharing/business/workflow-license-request-dialog";
+import { WorkflowShareRegisterDialog } from "@/features/flow/components/sharing/business/workflow-share-register-dialog";
+import type { ShareableWorkflowOption } from "@/features/flow/components/sharing/form/workflow-share-form";
 import { WorkflowShareCard } from "@/features/flow/components/sharing/ui/workflow-share-card";
 import { WorkflowShareEmptyState } from "@/features/flow/components/sharing/ui/workflow-share-empty-state";
 import { WorkflowShareGrid } from "@/features/flow/components/sharing/ui/workflow-share-grid";
-import { WorkflowLicenseRequestDialog } from "@/features/flow/components/sharing/business/workflow-license-request-dialog";
-import { WorkflowShareRegisterDialog } from "@/features/flow/components/sharing/business/workflow-share-register-dialog";
 import type {
-  WorkflowLicenseRequestRecord,
+  WorkflowLicenseRequest,
   WorkflowShareDetail,
   WorkflowShareSummary,
 } from "@/features/flow/types/workflow-sharing";
-import type { ShareableWorkflowOption } from "@/features/flow/components/sharing/form/workflow-share-form";
-import { Button } from "@/components/ui/button";
 
 interface WorkflowSharingPageContentProps {
   initialShares: WorkflowShareSummary[];
@@ -44,17 +44,15 @@ export function WorkflowSharingPageContent({
   const [shares, setShares] = useState(initialShares);
   const [registerOpen, setRegisterOpen] = useState(false);
   const [licenseOpen, setLicenseOpen] = useState(false);
-  const [selectedShare, setSelectedShare] = useState<WorkflowShareSummary | null>(
-    null,
-  );
+  const [selectedShare, setSelectedShare] =
+    useState<WorkflowShareSummary | null>(null);
 
   const [workflowPool, setWorkflowPool] = useState(shareableWorkflows);
 
   const availableWorkflows = useMemo(
     () =>
       workflowPool.filter(
-        (workflow) =>
-          !shares.some((share) => share.workflowId === workflow.id),
+        (workflow) => !shares.some((share) => share.workflowId === workflow.id),
       ),
     [shares, workflowPool],
   );
@@ -92,7 +90,7 @@ export function WorkflowSharingPageContent({
     router.refresh();
   };
 
-  const handleLicenseSuccess = (license: WorkflowLicenseRequestRecord) => {
+  const handleLicenseSuccess = (license: WorkflowLicenseRequest) => {
     setShares((prev) =>
       prev.map((item) =>
         item.workflowId === license.workflowId
@@ -111,9 +109,12 @@ export function WorkflowSharingPageContent({
     <div className="space-y-8">
       <header className="flex flex-col gap-4 rounded-3xl border bg-background p-6 shadow-sm md:flex-row md:items-center md:justify-between">
         <div className="space-y-2">
-          <h1 className="text-2xl font-bold text-foreground">워크플로우 공유 마켓</h1>
+          <h1 className="text-2xl font-bold text-foreground">
+            워크플로우 공유 마켓
+          </h1>
           <p className="text-sm text-muted-foreground">
-            검증된 워크플로우를 공유하고 다른 팀의 노하우를 라이선스로 활용해보세요.
+            검증된 워크플로우를 공유하고 다른 팀의 노하우를 라이선스로
+            활용해보세요.
           </p>
         </div>
         <Button onClick={openRegister} disabled={!canRegister}>

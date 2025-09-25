@@ -5,7 +5,8 @@ import { MultiInputSingleOutputNode } from "@/features/flow/components/nodes/def
 import { OutputNode } from "@/features/flow/components/nodes/defined-nodes/output-node";
 import { SearchNode } from "@/features/flow/components/nodes/defined-nodes/search-node";
 import { SingleInputMultiOutputNode } from "@/features/flow/components/nodes/defined-nodes/single-input-multi-output-node";
-import type { FlowNodeType, NodeProps } from "@/features/flow/types/nodes";
+import type { FlowNodeType } from "@/features/flow/types/graph";
+import type { NodeProps } from "@/features/flow/types/node-ui";
 
 export const nodeTypes: Record<FlowNodeType, React.FC<NodeProps>> = {
   inputNode: InputNode,
