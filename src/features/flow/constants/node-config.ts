@@ -88,14 +88,14 @@ export const nodeConfigs: Record<FlowNodeType, NodeConfig> = {
 export const nodeTypeConfigs: Record<FlowNodeType, NodeTypeConfig> = {
   inputNode: {
     emoji: "📥",
-    job: "입력",
-    label: "입력 노드",
+    job: "시작",
+    label: "시작 노드",
     skipDialog: true,
   },
   outputNode: {
     emoji: "📤",
-    job: "출력",
-    label: "출력 노드",
+    job: "종료",
+    label: "종료 노드",
     skipDialog: true,
   },
   chatNode: {
@@ -110,8 +110,8 @@ export const nodeTypeConfigs: Record<FlowNodeType, NodeTypeConfig> = {
   },
   messageNode: {
     emoji: "💭",
-    job: "메시지",
-    label: "메시지 노드",
+    job: "프롬프트",
+    label: "프롬프트 노드",
     showInResults: true,
   },
   singleInputMultiOutput: {

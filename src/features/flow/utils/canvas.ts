@@ -54,6 +54,11 @@ const INITIAL_NODE_BLUEPRINTS: Array<
     type: "inputNode",
     position: { x: 250, y: 25 },
   },
+  {
+    id: "2",
+    type: "outputNode",
+    position: { x: 500, y: 25 },
+  },
 ];
 
 const DEFAULT_NODE_RUN_STATUS: SchemaNode["data"]["runStatus"] = "idle";

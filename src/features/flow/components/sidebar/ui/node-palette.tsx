@@ -50,6 +50,15 @@ const PaletteItem: FC<PaletteItemProps> = ({
 
 export const SidebarNodePalette: FC = () => {
   const setType = useFlowGeneratorStore.use.setDraggingType();
+  const nodeLoaded = useFlowGeneratorStore.use.canvasNodes((canvasNodes) =>
+    canvasNodes.some((canvasNode) => Boolean(canvasNode)),
+  );
+  const hasInputNode = useFlowGeneratorStore.use.canvasNodes((canvasNodes) =>
+    canvasNodes.some((canvasNode) => canvasNode.type === "inputNode"),
+  );
+  const hasOutputNode = useFlowGeneratorStore.use.canvasNodes((canvasNodes) =>
+    canvasNodes.some((canvasNode) => canvasNode.type === "outputNode"),
+  );
 
   const handleDragStart = useCallback(
     (event: DragEvent, nodeType: FlowNodeType) => {
@@ -59,11 +68,26 @@ export const SidebarNodePalette: FC = () => {
     [setType],
   );
 
+  const filteredSidebarItems = sidebarItems.filter((sidebarItem) => {
+    if (sidebarItem.type === "inputNode") {
+      return !hasInputNode;
+    }
+    if (sidebarItem.type === "outputNode") {
+      return !hasOutputNode;
+    }
+    return true;
+  });
+
   return (
     <div className="space-y-4">
-      {sidebarItems.map((item) => (
-        <PaletteItem key={item.type} {...item} onDragStart={handleDragStart} />
-      ))}
+      {nodeLoaded &&
+        filteredSidebarItems.map((sidebarItem) => (
+          <PaletteItem
+            key={sidebarItem.type}
+            {...sidebarItem}
+            onDragStart={handleDragStart}
+          />
+        ))}
     </div>
   );
 };
