@@ -2,6 +2,7 @@ import Link from "next/link";
 import { CircleUserRound } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { LogoutButton } from "@/features/auth/components/logout-button";
+import { UserCreditBadge } from "@/features/auth/components/user-credit-badge";
 import { auth } from "@/features/auth/lib/auth";
 
 export async function AuthControls() {
@@ -9,7 +10,6 @@ export async function AuthControls() {
 
   if (session?.user) {
     const isGuest = session.user.email?.startsWith("guest@") ?? false;
-
     return (
       <div className="flex items-center gap-3">
         <div className="flex items-center gap-2 truncate">
@@ -40,6 +40,7 @@ export async function AuthControls() {
             )}
           </div>
         </div>
+        <UserCreditBadge userId={session.user.id} />
         {isGuest && (
           <Button variant="default" size="sm" asChild>
             <Link href="/upgrade">Google 연동</Link>
