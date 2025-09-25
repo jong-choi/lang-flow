@@ -1,5 +1,11 @@
-import { and, desc, eq, sql } from "drizzle-orm";
-import { workflowLicenses, workflowShares, workflows } from "@/features/flow/db/schema";
+import { and, desc, eq, isNull, sql } from "drizzle-orm";
+import {
+  flowEdges,
+  flowNodes,
+  workflowLicenses,
+  workflowShares,
+  workflows,
+} from "@/features/flow/db/schema";
 import type {
   WorkflowShareDetail,
   WorkflowShareFormValues,
@@ -7,6 +13,10 @@ import type {
 } from "@/features/flow/types/workflow-sharing";
 import { db } from "@/lib/db";
 import { users } from "@/lib/db/schema";
+import {
+  mapRowToSchemaEdge,
+  mapRowToSchemaNode,
+} from "@/features/flow/utils/workflow-transformers";
 
 const toStringArray = (value: unknown): string[] => {
   if (!Array.isArray(value)) return [];
@@ -94,6 +104,53 @@ export const getWorkflowShareDetail = async (
     .from(workflowLicenses)
     .where(eq(workflowLicenses.workflowId, row.share.workflowId));
 
+  const [rawNodes, rawEdges] = await Promise.all([
+    db
+      .select({
+        id: flowNodes.id,
+        type: flowNodes.type,
+        posX: flowNodes.posX,
+        posY: flowNodes.posY,
+        data: flowNodes.data,
+      })
+      .from(flowNodes)
+      .where(
+        and(
+          eq(flowNodes.workflowId, row.share.workflowId),
+          isNull(flowNodes.deletedAt),
+        ),
+      ),
+    db
+      .select({
+        id: flowEdges.id,
+        sourceId: flowEdges.sourceId,
+        targetId: flowEdges.targetId,
+        sourceHandle: flowEdges.sourceHandle,
+        targetHandle: flowEdges.targetHandle,
+        label: flowEdges.label,
+      })
+      .from(flowEdges)
+      .where(
+        and(
+          eq(flowEdges.workflowId, row.share.workflowId),
+          isNull(flowEdges.deletedAt),
+        ),
+      ),
+  ]);
+
+  const nodes = rawNodes.map((node) =>
+    mapRowToSchemaNode({
+      ...node,
+      workflowId: row.share.workflowId,
+    }),
+  );
+  const edges = rawEdges.map((edge) =>
+    mapRowToSchemaEdge({
+      ...edge,
+      workflowId: row.share.workflowId,
+    }),
+  );
+
   let hasLicense = false;
   if (viewerId && !isOwner) {
     const [match] = await db
@@ -125,6 +182,8 @@ export const getWorkflowShareDetail = async (
     },
     createdAt: row.share.createdAt,
     updatedAt: row.share.updatedAt,
+    nodes,
+    edges,
     viewerContext: viewerId
       ? {
           isOwner,

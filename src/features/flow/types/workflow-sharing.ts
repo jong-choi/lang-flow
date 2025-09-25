@@ -1,6 +1,7 @@
 import type { InferSelectModel } from "drizzle-orm";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
+import type { SchemaEdge, SchemaNode } from "@/features/flow/types/graph";
 import { workflowShares } from "@/features/flow/db/schema";
 
 export type WorkflowShare = InferSelectModel<typeof workflowShares>;
@@ -60,5 +61,7 @@ export interface WorkflowShareViewerContext {
 }
 
 export interface WorkflowShareDetail extends WorkflowShareSummary {
+  nodes: SchemaNode[];
+  edges: SchemaEdge[];
   viewerContext?: WorkflowShareViewerContext;
 }
