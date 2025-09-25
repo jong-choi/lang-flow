@@ -10,6 +10,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { WorkflowSharePurchaseDialog } from "@/features/flow/components/sharing/business/workflow-share-purchase-dialog";
 import { WorkflowShareHero } from "@/features/flow/components/sharing/ui/workflow-share-hero";
+import { WorkflowGraphPreview } from "@/features/flow/components/sharing/ui/workflow-graph-preview";
 import { WorkflowShareSection } from "@/features/flow/components/sharing/ui/workflow-share-section";
 import type { WorkflowShareDetail } from "@/features/flow/types/workflow-sharing";
 import { api } from "@/lib/api-client";
@@ -169,17 +170,29 @@ export function WorkflowShareDetailContent({
         title="워크플로우 설명"
         description="워크플로우 세부 설명"
       >
-        <div className="space-y-3 text-sm text-muted-foreground">
-          <p className="whitespace-pre-line">
-            {shareState.workflowDescription ??
-              "워크플로우 설명이 아직 작성되지 않았습니다."}
-          </p>
-          <div className="flex flex-wrap gap-2">
-            {shareState.tags.map((tag) => (
-              <Badge key={`${shareState.shareId}-${tag}`} variant="outline">
-                #{tag}
-              </Badge>
-            ))}
+        <div className="space-y-6">
+          <div className="space-y-3 text-sm text-muted-foreground">
+            <p className="whitespace-pre-line">
+              {shareState.workflowDescription ??
+                "워크플로우 설명이 아직 작성되지 않았습니다."}
+            </p>
+            <div className="flex flex-wrap gap-2">
+              {shareState.tags.map((tag) => (
+                <Badge key={`${shareState.shareId}-${tag}`} variant="outline">
+                  #{tag}
+                </Badge>
+              ))}
+            </div>
+          </div>
+
+          <div className="space-y-2">
+            <h3 className="text-sm font-semibold text-foreground">
+              워크플로우 구조 미리보기
+            </h3>
+            <WorkflowGraphPreview
+              nodes={shareState.nodes}
+              edges={shareState.edges}
+            />
           </div>
         </div>
       </WorkflowShareSection>
