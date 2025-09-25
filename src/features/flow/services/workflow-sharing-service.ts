@@ -1,12 +1,6 @@
 import { and, desc, eq, sql } from "drizzle-orm";
-import {
-  workflowLicenseRequests,
-  workflowShares,
-  workflows,
-} from "@/features/flow/db/schema";
+import { workflowLicenses, workflowShares, workflows } from "@/features/flow/db/schema";
 import type {
-  WorkflowLicenseRequest,
-  WorkflowLicenseRequestFormValues,
   WorkflowShareDetail,
   WorkflowShareFormValues,
   WorkflowShareSummary,
@@ -19,7 +13,7 @@ const toStringArray = (value: unknown): string[] => {
   return value.filter((item): item is string => typeof item === "string");
 };
 
-const licenseCountExpr = sql<number>`coalesce(count(distinct ${workflowLicenseRequests.id}), 0)`;
+const userCountExpr = sql<number>`coalesce(count(distinct ${workflowLicenses.userId}), 0)`;
 
 export const listSharedWorkflows = async (): Promise<
   WorkflowShareSummary[]
@@ -37,14 +31,14 @@ export const listSharedWorkflows = async (): Promise<
         name: users.name,
         image: users.image,
       },
-      licenseCount: licenseCountExpr,
+      userCount: userCountExpr,
     })
     .from(workflowShares)
     .innerJoin(workflows, eq(workflowShares.workflowId, workflows.id))
     .leftJoin(users, eq(workflowShares.ownerId, users.id))
     .leftJoin(
-      workflowLicenseRequests,
-      eq(workflowLicenseRequests.shareId, workflowShares.id),
+      workflowLicenses,
+      eq(workflowLicenses.workflowId, workflowShares.workflowId),
     )
     .groupBy(workflowShares.id, workflows.id, users.id)
     .orderBy(desc(workflowShares.updatedAt));
@@ -57,7 +51,7 @@ export const listSharedWorkflows = async (): Promise<
     summary: row.share.summary,
     priceInCredits: row.share.priceInCredits,
     tags: toStringArray(row.share.tags),
-    licenseCount: Number(row.licenseCount ?? 0),
+    userCount: Number(row.userCount ?? 0),
     owner: {
       id: row.share.ownerId,
       name: row.owner?.name ?? null,
@@ -95,24 +89,24 @@ export const getWorkflowShareDetail = async (
   if (!row) return null;
 
   const isOwner = viewerId ? row.share.ownerId === viewerId : false;
-  const [{ licenseCount }] = await db
-    .select({ licenseCount: licenseCountExpr })
-    .from(workflowLicenseRequests)
-    .where(eq(workflowLicenseRequests.shareId, row.share.id));
+  const [{ userCount }] = await db
+    .select({ userCount: userCountExpr })
+    .from(workflowLicenses)
+    .where(eq(workflowLicenses.workflowId, row.share.workflowId));
 
-  let viewerRequest: WorkflowLicenseRequest | undefined;
+  let hasLicense = false;
   if (viewerId && !isOwner) {
     const [match] = await db
-      .select()
-      .from(workflowLicenseRequests)
+      .select({ userId: workflowLicenses.userId })
+      .from(workflowLicenses)
       .where(
         and(
-          eq(workflowLicenseRequests.shareId, row.share.id),
-          eq(workflowLicenseRequests.requesterId, viewerId),
+          eq(workflowLicenses.workflowId, row.share.workflowId),
+          eq(workflowLicenses.userId, viewerId),
         ),
       )
       .limit(1);
-    viewerRequest = match;
+    hasLicense = Boolean(match);
   }
 
   return {
@@ -123,7 +117,7 @@ export const getWorkflowShareDetail = async (
     summary: row.share.summary,
     priceInCredits: row.share.priceInCredits,
     tags: toStringArray(row.share.tags),
-    licenseCount: Number(licenseCount ?? 0),
+    userCount: Number(userCount ?? 0),
     owner: {
       id: row.share.ownerId,
       name: row.owner?.name ?? null,
@@ -134,7 +128,7 @@ export const getWorkflowShareDetail = async (
     viewerContext: viewerId
       ? {
           isOwner,
-          licenseStatus: viewerRequest?.status,
+          hasLicense,
         }
       : undefined,
   };
@@ -173,44 +167,4 @@ export const createWorkflowShare = async (
     .returning();
 
   return getWorkflowShareDetail(share.workflowId, ownerId);
-};
-
-export const requestWorkflowLicense = async (
-  workflowId: string,
-  requesterId: string,
-  input: WorkflowLicenseRequestFormValues = {},
-) => {
-  const [share] = await db
-    .select()
-    .from(workflowShares)
-    .where(eq(workflowShares.workflowId, workflowId))
-    .limit(1);
-  if (!share) throw new Error("공유된 워크플로우가 존재하지 않습니다.");
-  if (share.ownerId === requesterId)
-    throw new Error("내 워크플로우는 라이선스가 필요하지 않습니다.");
-
-  const [existing] = await db
-    .select()
-    .from(workflowLicenseRequests)
-    .where(
-      and(
-        eq(workflowLicenseRequests.shareId, share.id),
-        eq(workflowLicenseRequests.requesterId, requesterId),
-      ),
-    )
-    .limit(1);
-  if (existing) return existing;
-
-  const [created] = await db
-    .insert(workflowLicenseRequests)
-    .values({
-      workflowId,
-      shareId: share.id,
-      requesterId,
-      status: "pending",
-      message: input.message ?? null,
-    })
-    .returning();
-
-  return created;
 };

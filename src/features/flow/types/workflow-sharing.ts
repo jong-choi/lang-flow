@@ -1,21 +1,9 @@
-import type { InferInsertModel, InferSelectModel } from "drizzle-orm";
+import type { InferSelectModel } from "drizzle-orm";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
-import {
-  workflowLicenseRequests,
-  workflowShares,
-} from "@/features/flow/db/schema";
+import { workflowShares } from "@/features/flow/db/schema";
 
 export type WorkflowShare = InferSelectModel<typeof workflowShares>;
-
-type WorkflowLicenseRequestInsert = InferInsertModel<
-  typeof workflowLicenseRequests
->;
-export type WorkflowLicenseRequest = InferSelectModel<
-  typeof workflowLicenseRequests
->;
-
-export type WorkflowLicenseRequestStatus = WorkflowLicenseRequest["status"];
 
 const shareInsertSchema = createInsertSchema(workflowShares, {
   workflowId: (schema) => schema.min(1, "워크플로우 ID가 필요합니다."),
@@ -44,23 +32,7 @@ const shareFormSchema = shareInsertSchema
 // 최종 스키마 = 변환 없이 그대로 사용
 export const workflowShareFormSchema = shareFormSchema;
 
-const licenseRequestInsertSchema = createInsertSchema(workflowLicenseRequests, {
-  message: (schema) => schema.max(500).optional().nullable(),
-});
-
-export const workflowLicenseRequestSchema = z
-  .object({
-    message: licenseRequestInsertSchema.shape.message.optional().nullable(),
-  })
-  .transform((value) => ({
-    message: value.message ?? undefined,
-  })) satisfies z.ZodType<WorkflowLicenseRequestFormValues>;
-
 export type WorkflowShareFormValues = z.infer<typeof workflowShareFormSchema>;
-
-export type WorkflowLicenseRequestFormValues = {
-  message?: WorkflowLicenseRequestInsert["message"];
-};
 
 export interface WorkflowShareOwner {
   id: string;
@@ -76,7 +48,7 @@ export interface WorkflowShareSummary {
   summary: string;
   priceInCredits: number;
   tags: string[];
-  licenseCount: number;
+  userCount: number;
   owner: WorkflowShareOwner;
   createdAt: Date;
   updatedAt: Date;
@@ -84,7 +56,7 @@ export interface WorkflowShareSummary {
 
 export interface WorkflowShareViewerContext {
   isOwner: boolean;
-  licenseStatus?: WorkflowLicenseRequestStatus;
+  hasLicense: boolean;
 }
 
 export interface WorkflowShareDetail extends WorkflowShareSummary {

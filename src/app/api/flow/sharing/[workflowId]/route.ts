@@ -1,10 +1,18 @@
 import { NextResponse } from "next/server";
-import { auth } from "@/features/auth/lib/auth";
+import { and, eq } from "drizzle-orm";
 import {
-  getWorkflowShareDetail,
-  requestWorkflowLicense,
-} from "@/features/flow/services/workflow-sharing-service";
-import { workflowLicenseRequestSchema } from "@/features/flow/types/workflow-sharing";
+  CreditOperationError,
+  type CreditSummary,
+  InsufficientCreditError,
+  InvalidCreditAmountError,
+  chargeCredit,
+  consumeCredit,
+} from "@/app/api/credit/_controllers/credit";
+import { grantWorkflowLicense } from "@/app/api/flow/workflows/_controllers/workflows";
+import { auth } from "@/features/auth/lib/auth";
+import { workflowLicenses, workflowShares } from "@/features/flow/db/schema";
+import { getWorkflowShareDetail } from "@/features/flow/services/workflow-sharing-service";
+import { db } from "@/lib/db";
 
 interface RouteContext {
   params: { workflowId: string };
@@ -31,7 +39,7 @@ export async function GET(_request: Request, context: RouteContext) {
   }
 }
 
-export async function POST(request: Request, context: RouteContext) {
+export async function POST(_request: Request, context: RouteContext) {
   try {
     const session = await auth();
     const userId = session?.user?.id;
@@ -42,26 +50,136 @@ export async function POST(request: Request, context: RouteContext) {
       );
     }
 
-    const json = await request.json().catch(() => null);
-    const parsed = workflowLicenseRequestSchema.safeParse(json);
-    if (!parsed.success) {
-      const message =
-        parsed.error.issues[0]?.message ?? "요청 본문을 확인해주세요.";
-      return NextResponse.json({ message }, { status: 400 });
-    }
-
     try {
-      const license = await requestWorkflowLicense(
-        context.params.workflowId,
-        userId,
-        parsed.data,
+      const workflowId = context.params.workflowId;
+      const [share] = await db
+        .select({
+          ownerId: workflowShares.ownerId,
+          price: workflowShares.priceInCredits,
+        })
+        .from(workflowShares)
+        .where(eq(workflowShares.workflowId, workflowId))
+        .limit(1);
+
+      if (!share) {
+        return NextResponse.json(
+          { message: "공유된 워크플로우를 찾을 수 없습니다." },
+          { status: 404 },
+        );
+      }
+
+      if (share.ownerId === userId) {
+        return NextResponse.json(
+          { message: "이미 보유한 워크플로우입니다." },
+          { status: 400 },
+        );
+      }
+
+      const [existing] = await db
+        .select({ userId: workflowLicenses.userId })
+        .from(workflowLicenses)
+        .where(
+          and(
+            eq(workflowLicenses.workflowId, workflowId),
+            eq(workflowLicenses.userId, userId),
+          ),
+        )
+        .limit(1);
+
+      if (existing) {
+        const detail = await getWorkflowShareDetail(workflowId, userId);
+        if (!detail) {
+          return NextResponse.json(
+            { message: "워크플로우 정보를 불러오지 못했습니다." },
+            { status: 500 },
+          );
+        }
+        return NextResponse.json({ share: detail }, { status: 200 });
+      }
+
+      const price = share.price ?? 0;
+      let creditSummary: CreditSummary | undefined;
+
+      if (price > 0) {
+        const creditResult = await consumeCredit({
+          userId,
+          amount: price,
+          description: `워크플로우(${workflowId}) 구매`,
+        });
+        creditSummary = creditResult.summary;
+      }
+
+      let granted = false;
+      try {
+        granted = await grantWorkflowLicense({ workflowId, userId });
+      } catch (error) {
+        if (price > 0) {
+          await chargeCredit({
+            userId,
+            amount: price,
+            description: `워크플로우(${workflowId}) 구매 실패 환불`,
+          }).catch((refundError) => {
+            console.error(
+              "워크플로우 구매 실패 환불에 실패했습니다.",
+              refundError,
+            );
+          });
+        }
+        throw error;
+      }
+
+      if (!granted) {
+        if (price > 0) {
+          await chargeCredit({
+            userId,
+            amount: price,
+            description: `워크플로우(${workflowId}) 중복 구매 환불`,
+          }).catch((refundError) => {
+            console.error(
+              "워크플로우 중복 구매 환불에 실패했습니다.",
+              refundError,
+            );
+          });
+        }
+
+        const detail = await getWorkflowShareDetail(workflowId, userId);
+        if (!detail) {
+          return NextResponse.json(
+            { message: "워크플로우 정보를 불러오지 못했습니다." },
+            { status: 500 },
+          );
+        }
+        return NextResponse.json({ share: detail }, { status: 200 });
+      }
+
+      const detail = await getWorkflowShareDetail(workflowId, userId);
+
+      if (!detail) {
+        return NextResponse.json(
+          { message: "워크플로우 정보를 불러오지 못했습니다." },
+          { status: 500 },
+        );
+      }
+
+      return NextResponse.json(
+        {
+          share: detail,
+          credit: creditSummary,
+        },
+        { status: 200 },
       );
-      return NextResponse.json({ license }, { status: 201 });
     } catch (error) {
+      if (
+        error instanceof InvalidCreditAmountError ||
+        error instanceof InsufficientCreditError ||
+        error instanceof CreditOperationError
+      ) {
+        return NextResponse.json({ message: error.message }, { status: 400 });
+      }
       const message =
         error instanceof Error
           ? error.message
-          : "라이선스 요청에 실패했습니다.";
+          : "워크플로우를 구매하지 못했습니다.";
       return NextResponse.json({ message }, { status: 400 });
     }
   } catch (error) {

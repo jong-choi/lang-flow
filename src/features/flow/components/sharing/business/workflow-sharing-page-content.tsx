@@ -3,14 +3,12 @@
 import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
-import { WorkflowLicenseRequestDialog } from "@/features/flow/components/sharing/business/workflow-license-request-dialog";
 import { WorkflowShareRegisterDialog } from "@/features/flow/components/sharing/business/workflow-share-register-dialog";
 import type { ShareableWorkflowOption } from "@/features/flow/components/sharing/form/workflow-share-form";
 import { WorkflowShareCard } from "@/features/flow/components/sharing/ui/workflow-share-card";
 import { WorkflowShareEmptyState } from "@/features/flow/components/sharing/ui/workflow-share-empty-state";
 import { WorkflowShareGrid } from "@/features/flow/components/sharing/ui/workflow-share-grid";
 import type {
-  WorkflowLicenseRequest,
   WorkflowShareDetail,
   WorkflowShareSummary,
 } from "@/features/flow/types/workflow-sharing";
@@ -29,7 +27,7 @@ const detailToSummary = (share: WorkflowShareDetail): WorkflowShareSummary => ({
   summary: share.summary,
   priceInCredits: share.priceInCredits,
   tags: share.tags,
-  licenseCount: share.licenseCount,
+  userCount: share.userCount,
   owner: share.owner,
   createdAt: share.createdAt,
   updatedAt: share.updatedAt,
@@ -43,9 +41,6 @@ export function WorkflowSharingPageContent({
   const router = useRouter();
   const [shares, setShares] = useState(initialShares);
   const [registerOpen, setRegisterOpen] = useState(false);
-  const [licenseOpen, setLicenseOpen] = useState(false);
-  const [selectedShare, setSelectedShare] =
-    useState<WorkflowShareSummary | null>(null);
 
   const [workflowPool, setWorkflowPool] = useState(shareableWorkflows);
 
@@ -62,15 +57,6 @@ export function WorkflowSharingPageContent({
   const openRegister = () => {
     if (!viewerId) return;
     setRegisterOpen(true);
-  };
-
-  const openLicenseDialog = (share: WorkflowShareSummary) => {
-    if (!viewerId) {
-      router.push("/auth/signin?redirect=/flow/sharing");
-      return;
-    }
-    setSelectedShare(share);
-    setLicenseOpen(true);
   };
 
   const handleRegisterSuccess = (detail: WorkflowShareDetail) => {
@@ -90,17 +76,6 @@ export function WorkflowSharingPageContent({
     router.refresh();
   };
 
-  const handleLicenseSuccess = (license: WorkflowLicenseRequest) => {
-    setShares((prev) =>
-      prev.map((item) =>
-        item.workflowId === license.workflowId
-          ? { ...item, licenseCount: item.licenseCount + 1 }
-          : item,
-      ),
-    );
-    router.refresh();
-  };
-
   const handleNavigateDetail = (share: WorkflowShareSummary) => {
     router.push(`/flow/sharing/${share.workflowId}`);
   };
@@ -113,7 +88,7 @@ export function WorkflowSharingPageContent({
             워크플로우 공유 마켓
           </h1>
           <p className="text-sm text-muted-foreground">
-            검증된 워크플로우를 공유하고 다른 팀의 노하우를 라이선스로
+            검증된 워크플로우를 공유하고 다른 팀의 노하우를 크레딧으로
             활용해보세요.
           </p>
         </div>
@@ -130,7 +105,7 @@ export function WorkflowSharingPageContent({
               share={share}
               isOwner={share.owner.id === viewerId}
               onDetail={handleNavigateDetail}
-              onLicense={openLicenseDialog}
+              onActivate={handleNavigateDetail}
             />
           ))}
         </WorkflowShareGrid>
@@ -140,7 +115,7 @@ export function WorkflowSharingPageContent({
           actionLabel="워크플로우 등록하기"
           description={
             canRegister
-              ? "첫 번째 공유를 등록하면 다른 사용자가 라이선스를 요청할 수 있어요."
+              ? "첫 번째 공유를 등록하면 다른 사용자가 워크플로우를 활성화할 수 있어요."
               : viewerId
                 ? "등록 가능한 워크플로우가 없습니다. 먼저 워크플로우를 생성해주세요."
                 : "로그인 후 워크플로우를 공유할 수 있습니다."
@@ -153,14 +128,6 @@ export function WorkflowSharingPageContent({
         onOpenChange={setRegisterOpen}
         workflows={availableWorkflows}
         onSuccess={handleRegisterSuccess}
-      />
-
-      <WorkflowLicenseRequestDialog
-        open={licenseOpen}
-        onOpenChange={setLicenseOpen}
-        workflowId={selectedShare?.workflowId ?? ""}
-        workflowTitle={selectedShare?.workflowName ?? ""}
-        onSuccess={handleLicenseSuccess}
       />
     </div>
   );
