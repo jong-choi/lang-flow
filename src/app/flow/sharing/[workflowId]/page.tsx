@@ -4,7 +4,7 @@ import { WorkflowShareDetailContent } from "@/features/flow/components/sharing/b
 import { getWorkflowShareDetail } from "@/features/flow/services/workflow-sharing-service";
 
 interface WorkflowShareDetailPageProps {
-  params: { workflowId: string };
+  params: Promise<{ workflowId: string }>;
 }
 
 export default async function WorkflowShareDetailPage({
@@ -14,7 +14,7 @@ export default async function WorkflowShareDetailPage({
   const viewerId = session?.user?.id ?? null;
 
   const detail = await getWorkflowShareDetail(
-    params.workflowId,
+    (await params).workflowId,
     viewerId ?? undefined,
   );
   if (!detail) notFound();
@@ -25,4 +25,3 @@ export default async function WorkflowShareDetailPage({
     </div>
   );
 }
-

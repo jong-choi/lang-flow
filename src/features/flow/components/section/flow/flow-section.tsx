@@ -11,8 +11,10 @@ export const FlowSection = () => {
     <>
       <div className="flex min-h-0 flex-1">
         <FlowSidebar />
-        <div className="flex flex-1 flex-col">
-          <FlowRunToolbar />
+        <div className="flex min-h-0 flex-1 flex-col">
+          <div className="shrink-0">
+            <FlowRunToolbar />
+          </div>
           <ReactFlowProvider>
             <FlowCanvas />
           </ReactFlowProvider>
@@ -22,5 +24,3 @@ export const FlowSection = () => {
     </>
   );
 };
-
-export const FlowBuilder = FlowSection;

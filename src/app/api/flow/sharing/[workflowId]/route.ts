@@ -1,8 +1,8 @@
 import { NextResponse } from "next/server";
 import { and, eq } from "drizzle-orm";
 import {
-  CreditOperationError,
   type CreditHistoryItem,
+  CreditOperationError,
   type CreditSummary,
   InsufficientCreditError,
   InvalidCreditAmountError,
@@ -19,15 +19,16 @@ import { getWorkflowShareDetail } from "@/features/flow/services/workflow-sharin
 import { db } from "@/lib/db";
 
 interface RouteContext {
-  params: { workflowId: string };
+  params: Promise<{ workflowId: string }>;
 }
 
 export async function GET(_request: Request, context: RouteContext) {
   try {
     const session = await auth();
     const viewerId = session?.user?.id ?? null;
+
     const detail = await getWorkflowShareDetail(
-      context.params.workflowId,
+      (await context.params).workflowId,
       viewerId ?? undefined,
     );
     if (!detail) {
@@ -55,7 +56,7 @@ export async function POST(_request: Request, context: RouteContext) {
     }
 
     try {
-      const workflowId = context.params.workflowId;
+      const workflowId = (await context.params).workflowId;
       const [share] = await db
         .select({
           ownerId: workflowShares.ownerId,
