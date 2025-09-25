@@ -1,4 +1,3 @@
-import Image from "next/image";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -20,24 +19,22 @@ const formatCredits = (value: number) => {
 export interface WorkflowShareCardProps {
   share: WorkflowShareSummary;
   onDetail?: (share: WorkflowShareSummary) => void;
-  onLicense?: (share: WorkflowShareSummary) => void;
-  disabledLicense?: boolean;
+  onActivate?: (share: WorkflowShareSummary) => void;
   isOwner?: boolean;
 }
 
 export function WorkflowShareCard({
   share,
   onDetail,
-  onLicense,
-  disabledLicense = false,
+  onActivate,
   isOwner = false,
 }: WorkflowShareCardProps) {
   const handleDetail = () => {
     if (onDetail) onDetail(share);
   };
 
-  const handleLicense = () => {
-    if (onLicense) onLicense(share);
+  const handleActivate = () => {
+    if (onActivate) onActivate(share);
   };
 
   const ownerInitial = share.owner.name?.charAt(0) ?? "";
@@ -71,13 +68,14 @@ export function WorkflowShareCard({
         ) : null}
         <div className="flex items-center justify-between text-sm text-muted-foreground">
           <span>{formatCredits(share.priceInCredits)}</span>
-          <span>{`라이선스 ${share.licenseCount}건`}</span>
+          <span>{`사용자수 ${share.userCount}명`}</span>
         </div>
       </CardContent>
       <CardFooter className="flex flex-col gap-4 border-t pt-6">
         <div className="flex items-center gap-3">
           {share.owner.image ? (
-            <Image
+            // eslint-disable-next-line @next/next/no-img-element
+            <img
               src={share.owner.image}
               alt={share.owner.name ?? share.owner.id}
               className="size-10 rounded-full border object-cover"
@@ -105,10 +103,8 @@ export function WorkflowShareCard({
           <Button variant="outline" onClick={handleDetail}>
             자세히 보기
           </Button>
-          {!isOwner && onLicense ? (
-            <Button onClick={handleLicense} disabled={disabledLicense}>
-              라이선스 요청
-            </Button>
+          {!isOwner && onActivate ? (
+            <Button onClick={handleActivate}>활성화 하기</Button>
           ) : null}
         </div>
       </CardFooter>
