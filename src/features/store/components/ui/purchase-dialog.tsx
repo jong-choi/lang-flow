@@ -2,15 +2,27 @@
 
 import { useEffect, useMemo, useRef } from "react";
 import { Check, CreditCard, Crown, ShoppingCart, X } from "lucide-react";
+import { useSession } from "next-auth/react";
+import { useQuery } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { useStoreStore } from "@/features/store/providers/store-store-provider";
 import { selectPurchaseTemplates } from "@/features/store/stores/slices/purchase-slice";
-
-const CURRENT_CREDITS = 15;
+import { api } from "@/lib/api-client";
 
 export function PurchaseDialog() {
+  const { data: session } = useSession();
+  const userId = session?.user?.id ?? null;
+  const creditQuery = useQuery({
+    queryKey: ["credit", "summary", userId],
+    enabled: !!userId,
+    queryFn: async () =>
+      api.get<{ credit: { balance: number } }>("/api/credit", {
+        params: { userId: userId },
+      }),
+  });
+  const currentCredits = creditQuery.data?.credit.balance ?? 0;
   const purchaseDialog = useStoreStore.use.purchaseDialog();
   const templates = useStoreStore.use.templates();
   const markTemplatePurchased = useStoreStore.use.markTemplatePurchased();
@@ -30,7 +42,7 @@ export function PurchaseDialog() {
     () => purchaseTemplates.reduce((sum, template) => sum + template.price, 0),
     [purchaseTemplates],
   );
-  const isAffordable = CURRENT_CREDITS >= totalPrice;
+  const isAffordable = currentCredits >= totalPrice;
   const isOpen = purchaseDialog.isOpen && purchaseTemplates.length > 0;
   const isProcessing = purchaseDialog.status === "processing";
   const isCompleted = purchaseDialog.status === "completed";
@@ -164,7 +176,7 @@ export function PurchaseDialog() {
           <Card className="mb-6 space-y-3 p-4">
             <div className="flex items-center justify-between">
               <span className="text-muted-foreground">보유 크레딧:</span>
-              <span className="font-medium">{CURRENT_CREDITS} 크레딧</span>
+              <span className="font-medium">{currentCredits} 크레딧</span>
             </div>
             <div className="flex items-center justify-between">
               <span className="text-muted-foreground">구매 금액:</span>
@@ -176,7 +188,7 @@ export function PurchaseDialog() {
               <span
                 className={`font-bold ${isAffordable ? "text-green-600" : "text-red-600"}`}
               >
-                {CURRENT_CREDITS - totalPrice} 크레딧
+                {currentCredits - totalPrice} 크레딧
               </span>
             </div>
           </Card>
@@ -188,7 +200,7 @@ export function PurchaseDialog() {
                 <span className="text-sm font-medium">크레딧이 부족합니다</span>
               </div>
               <p className="mt-1 text-sm text-red-600">
-                {totalPrice - CURRENT_CREDITS}개의 크레딧이 더 필요합니다.
+                {totalPrice - currentCredits}개의 크레딧이 더 필요합니다.
               </p>
             </Card>
           )}

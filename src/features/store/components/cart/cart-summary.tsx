@@ -1,14 +1,28 @@
+"use client";
+
 import { useMemo } from "react";
 import Link from "next/link";
 import { CreditCard } from "lucide-react";
+import { useSession } from "next-auth/react";
+import { useQuery } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { useStoreStore } from "@/features/store/providers/store-store-provider";
 import { buildCartSnapshot } from "@/features/store/stores/slices/cart-slice";
-
-const CURRENT_CREDITS = 15;
+import { api } from "@/lib/api-client";
 
 export function CartSummary() {
+  const { data: session } = useSession();
+  const userId = session?.user?.id ?? null;
+  const creditQuery = useQuery({
+    queryKey: ["credit", "summary", userId],
+    enabled: !!userId,
+    queryFn: async () =>
+      api.get<{ credit: { balance: number } }>("/api/credit", {
+        params: { userId: userId },
+      }),
+  });
+  const currentCredits = creditQuery.data?.credit.balance ?? 0;
   const cartItems = useStoreStore.use.cartItems();
   const templates = useStoreStore.use.templates();
   const cartSnapshot = useMemo(
@@ -16,8 +30,7 @@ export function CartSummary() {
     [cartItems, templates],
   );
   const openPurchaseDialog = useStoreStore.use.openPurchaseDialog();
-
-  const isAffordable = CURRENT_CREDITS >= cartSnapshot.totalPrice;
+  const isAffordable = currentCredits >= cartSnapshot.totalPrice;
 
   const handleCheckout = () => {
     const templateIds = cartSnapshot.items.map((item) => item.templateId);
@@ -49,14 +62,14 @@ export function CartSummary() {
       <div className="mb-6 space-y-2 rounded-lg bg-muted p-4 text-sm">
         <div className="flex justify-between">
           <span className="text-muted-foreground">보유 크레딧:</span>
-          <span className="font-medium">{CURRENT_CREDITS} 크레딧</span>
+          <span className="font-medium">{currentCredits} 크레딧</span>
         </div>
         <div className="flex justify-between">
           <span className="text-muted-foreground">결제 후 잔액:</span>
           <span
             className={`font-medium ${isAffordable ? "text-green-600" : "text-red-600"}`}
           >
-            {CURRENT_CREDITS - cartSnapshot.totalPrice} 크레딧
+            {currentCredits - cartSnapshot.totalPrice} 크레딧
           </span>
         </div>
       </div>
@@ -66,7 +79,7 @@ export function CartSummary() {
           <div className="space-y-1 text-sm text-red-600">
             <p className="font-medium">크레딧이 부족합니다</p>
             <p>
-              {cartSnapshot.totalPrice - CURRENT_CREDITS}
+              {cartSnapshot.totalPrice - currentCredits}
               개의 크레딧이 더 필요합니다.
             </p>
           </div>

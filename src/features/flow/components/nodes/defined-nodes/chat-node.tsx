@@ -46,17 +46,17 @@ export const ChatNode: React.FC<NodeProps> = ({ data, id }) => {
             return node;
           }
 
-          const nextData = {
+          const nextData: NodeData = {
             ...node.data,
             model: nextModel,
-          } satisfies NodeData;
+          };
 
           updatedData = nextData;
 
           return {
             ...node,
             data: nextData,
-          } satisfies SchemaNode;
+          };
         }),
       );
 

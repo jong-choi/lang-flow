@@ -63,8 +63,7 @@ export const createCartSlice: StateCreator<CartSlice> = (set) => ({
       );
 
       if (already) {
-        // 빈 객체 반환으로 업데이트 없도록
-        return {};
+        return state;
       }
 
       added = true;

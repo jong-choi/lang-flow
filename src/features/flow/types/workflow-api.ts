@@ -1,8 +1,14 @@
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 import { flowEdges, flowNodes, workflows } from "@/features/flow/db/schema";
-import type { FlowEdgeInsert, FlowNodeInsert } from "@/features/flow/types/graph";
-import type { WorkflowOwnership, WorkflowRow } from "@/features/flow/types/workflow";
+import type {
+  FlowEdgeInsert,
+  FlowNodeInsert,
+} from "@/features/flow/types/graph";
+import type {
+  WorkflowOwnership,
+  WorkflowRow,
+} from "@/features/flow/types/workflow";
 
 const nodeDataValueSchema = z.union([
   z.string(),

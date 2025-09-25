@@ -6,6 +6,8 @@ import type {
   WorkflowTemplate,
 } from "@/features/store/types";
 
+const CATEGORY_ALL = "전체";
+
 const defaultFilters: StoreFilters = {
   sortBy: "popular",
 };
@@ -50,7 +52,7 @@ export const filterTemplates = (
   searchQuery: string,
 ) => {
   return templates.filter((template) => {
-    if (filters.category && filters.category !== "전체") {
+    if (filters.category && filters.category !== CATEGORY_ALL) {
       if (template.category !== filters.category) {
         return false;
       }
