@@ -2,13 +2,17 @@ import { NextResponse } from "next/server";
 import { and, eq } from "drizzle-orm";
 import {
   CreditOperationError,
+  type CreditHistoryItem,
   type CreditSummary,
   InsufficientCreditError,
   InvalidCreditAmountError,
   chargeCredit,
   consumeCredit,
 } from "@/app/api/credit/_controllers/credit";
-import { grantWorkflowLicense } from "@/app/api/flow/workflows/_controllers/workflows";
+import {
+  grantWorkflowLicense,
+  revokeWorkflowLicense,
+} from "@/app/api/flow/workflows/_controllers/workflows";
 import { auth } from "@/features/auth/lib/auth";
 import { workflowLicenses, workflowShares } from "@/features/flow/db/schema";
 import { getWorkflowShareDetail } from "@/features/flow/services/workflow-sharing-service";
@@ -99,6 +103,7 @@ export async function POST(_request: Request, context: RouteContext) {
 
       const price = share.price ?? 0;
       let creditSummary: CreditSummary | undefined;
+      let creditHistoryType: CreditHistoryItem["type"] | undefined;
 
       if (price > 0) {
         const creditResult = await consumeCredit({
@@ -107,6 +112,7 @@ export async function POST(_request: Request, context: RouteContext) {
           description: `워크플로우(${workflowId}) 구매`,
         });
         creditSummary = creditResult.summary;
+        creditHistoryType = creditResult.history.type;
       }
 
       let granted = false;
@@ -150,6 +156,41 @@ export async function POST(_request: Request, context: RouteContext) {
           );
         }
         return NextResponse.json({ share: detail }, { status: 200 });
+      }
+
+      const shouldGrantSellerCredit =
+        price > 0 && creditHistoryType === "consume";
+
+      if (shouldGrantSellerCredit) {
+        try {
+          await chargeCredit({
+            userId: share.ownerId,
+            amount: price,
+            description: `워크플로우(${workflowId}) 판매 수익`,
+          });
+        } catch (sellerCreditError) {
+          await revokeWorkflowLicense({ workflowId, userId }).catch(
+            (revokeError) => {
+              console.error(
+                "워크플로우 판매 정산 실패 후 라이선스 회수에 실패했습니다.",
+                revokeError,
+              );
+            },
+          );
+
+          await chargeCredit({
+            userId,
+            amount: price,
+            description: `워크플로우(${workflowId}) 판매 정산 실패 환불`,
+          }).catch((refundError) => {
+            console.error(
+              "워크플로우 판매 정산 실패 환불에 실패했습니다.",
+              refundError,
+            );
+          });
+
+          throw sellerCreditError;
+        }
       }
 
       const detail = await getWorkflowShareDetail(workflowId, userId);
