@@ -2,10 +2,6 @@
 
 import React from "react";
 import { AlertCircle, RotateCw } from "lucide-react";
-import {
-  createBasicMenuItems,
-  createFullMenuItems,
-} from "@/features/flow/components/nodes/menu/node-menu-items";
 import { CustomHandle } from "@/features/flow/components/nodes/ui/custom-handle";
 import { EditDialog } from "@/features/flow/components/nodes/ui/edit-dialog";
 import { NodeContainer } from "@/features/flow/components/nodes/ui/node-container";
@@ -14,18 +10,23 @@ import { nodeConfigs } from "@/features/flow/constants/node-config";
 import { useConnectionLimits } from "@/features/flow/hooks/use-connection-limits";
 import { useNodeMenu } from "@/features/flow/hooks/use-node-menu";
 import { useFlowGeneratorStore } from "@/features/flow/providers/flow-store-provider";
+import type { FlowNodeType } from "@/features/flow/types/graph";
 import type {
-  FlowNodeType,
   HandleDefinition,
   MenuType,
   NodeProps,
-} from "@/features/flow/types/nodes";
+} from "@/features/flow/types/node-ui";
+import {
+  createBasicMenuItems,
+  createFullMenuItems,
+} from "@/features/flow/utils/node-menu-items";
 import { RUN_STATUS } from "@/features/flow/utils/run-status";
 
 interface GenericNodeProps extends NodeProps {
   nodeType: FlowNodeType;
   menuType: MenuType;
   handles: HandleDefinition[];
+  extraContent?: React.ReactNode;
 }
 
 export const GenericNode: React.FC<GenericNodeProps> = ({
@@ -34,6 +35,7 @@ export const GenericNode: React.FC<GenericNodeProps> = ({
   nodeType,
   menuType,
   handles,
+  extraContent,
 }) => {
   const requestNodeRetry = useFlowGeneratorStore.use.requestNodeRetry();
   const menu = useNodeMenu(id);
@@ -68,11 +70,12 @@ export const GenericNode: React.FC<GenericNodeProps> = ({
           />
         ))}
         <NodeContent data={data} config={config} />
+        {extraContent}
         {data.runStatus === RUN_STATUS.FAILED && (
-          <div className="absolute -bottom-2 left-1/2 -translate-x-1/2 flex items-center gap-1">
+          <div className="absolute -bottom-2 left-1/2 flex -translate-x-1/2 items-center gap-1">
             <AlertCircle className="h-4 w-4 text-red-600" />
             <button
-              className="px-2 h-6 text-xs rounded-md bg-red-50 border border-red-200 text-red-700 hover:bg-red-100"
+              className="h-6 rounded-md border border-red-200 bg-red-50 px-2 text-xs text-red-700 hover:bg-red-100"
               onClick={() => requestNodeRetry(id)}
             >
               <span className="inline-flex items-center gap-1">

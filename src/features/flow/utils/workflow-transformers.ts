@@ -1,47 +1,23 @@
 import type {
-  FlowInsertEdgeRow,
-  FlowInsertNodeRow,
+  FlowEdgeInsert,
+  FlowNodeInsert,
   NodeData,
   ReactFlowEdge,
   SchemaEdge,
   SchemaNode,
-  WorkflowTemplateDetail,
-  WorkflowTemplateSummary,
-} from "@/features/flow/types/nodes";
-
-interface WorkflowApiNode {
-  id: string;
-  type: FlowInsertNodeRow["type"];
-  posX?: number | null;
-  posY?: number | null;
-  data?: Record<string, unknown> | null;
-}
-
-interface WorkflowApiEdge {
-  id: string;
-  sourceId: string;
-  targetId: string;
-  sourceHandle?: string | null;
-  targetHandle?: string | null;
-  label?: string | null;
-  order?: number | null;
-}
-
-interface WorkflowApiDetail {
-  id: string;
-  name: string;
-  description?: string | null;
-  updatedAt?: string | null;
-  nodes?: WorkflowApiNode[];
-  edges?: WorkflowApiEdge[];
-}
+} from "@/features/flow/types/graph";
+import type {
+  WorkflowDetail,
+  WorkflowSummary,
+} from "@/features/flow/types/workflow";
+import type { WorkflowApiDetail } from "@/features/flow/types/workflow-api";
 
 const toNodeData = (value?: Record<string, unknown> | null): NodeData => {
   if (!value) return { label: "", emoji: "", job: "" };
   return value as NodeData;
 };
 
-export const mapRowToSchemaNode = (row: FlowInsertNodeRow): SchemaNode => ({
+export const mapRowToSchemaNode = (row: FlowNodeInsert): SchemaNode => ({
   id: row.id || "",
   type: row.type,
   position: {
@@ -51,7 +27,7 @@ export const mapRowToSchemaNode = (row: FlowInsertNodeRow): SchemaNode => ({
   data: toNodeData(row.data ?? undefined),
 });
 
-export const mapRowToSchemaEdge = (row: FlowInsertEdgeRow): SchemaEdge => ({
+export const mapRowToSchemaEdge = (row: FlowEdgeInsert): SchemaEdge => ({
   id: row.id || "",
   source: row.sourceId,
   target: row.targetId,
@@ -63,30 +39,45 @@ export const mapRowToSchemaEdge = (row: FlowInsertEdgeRow): SchemaEdge => ({
 
 export const deserializeWorkflowDetail = (
   detail: WorkflowApiDetail,
-): WorkflowTemplateDetail => ({
-  id: detail.id,
-  name: detail.name,
-  description: detail.description ?? null,
-  updatedAt: detail.updatedAt ?? null,
-  nodes: (detail.nodes ?? []).map((node) => ({
-    id: node.id,
-    type: node.type,
-    position: {
-      x: node.posX ?? 0,
-      y: node.posY ?? 0,
-    },
-    data: toNodeData(node.data ?? undefined),
-  })),
-  edges: (detail.edges ?? []).map((edge) => ({
-    id: edge.id,
-    source: edge.sourceId,
-    target: edge.targetId,
-    sourceHandle: edge.sourceHandle ?? undefined,
-    targetHandle: edge.targetHandle ?? undefined,
-    label: edge.label ?? undefined,
-    type: "custom",
-  })),
-});
+): WorkflowDetail => {
+  const fallbackOwnership =
+    detail.isOwner === true
+      ? "owner"
+      : detail.isLicensed === true
+        ? "licensed"
+        : "owner";
+  const ownership = detail.ownership ?? fallbackOwnership;
+  const isOwner = detail.isOwner ?? ownership === "owner";
+  const isLicensed = detail.isLicensed ?? ownership === "licensed";
+
+  return {
+    id: detail.id,
+    name: detail.name,
+    description: detail.description ?? null,
+    updatedAt: detail.updatedAt ?? null,
+    ownership,
+    isOwner,
+    isLicensed,
+    nodes: (detail.nodes ?? []).map((node) => ({
+      id: node.id ?? "",
+      type: node.type,
+      position: {
+        x: node.posX ?? 0,
+        y: node.posY ?? 0,
+      },
+      data: toNodeData(node.data ?? undefined),
+    })),
+    edges: (detail.edges ?? []).map((edge) => ({
+      id: edge.id ?? "",
+      source: edge.sourceId,
+      target: edge.targetId,
+      sourceHandle: edge.sourceHandle ?? undefined,
+      targetHandle: edge.targetHandle ?? undefined,
+      label: edge.label ?? undefined,
+      type: "custom",
+    })),
+  };
+};
 
 export const serializeNodeForApi = (node: SchemaNode) => ({
   id: node.id,
@@ -106,13 +97,26 @@ export const serializeEdgeForApi = (edge: ReactFlowEdge | SchemaEdge) => ({
   order: null,
 });
 
-export const toTemplateSummary = (
+export const toWorkflowSummary = (
   detail: WorkflowApiDetail,
-): WorkflowTemplateSummary => ({
-  id: detail.id,
-  name: detail.name,
-  description: detail.description ?? null,
-  updatedAt: detail.updatedAt ?? null,
-});
+): WorkflowSummary => {
+  const fallbackOwnership =
+    detail.isOwner === true
+      ? "owner"
+      : detail.isLicensed === true
+        ? "licensed"
+        : "owner";
+  const ownership = detail.ownership ?? fallbackOwnership;
+  const isOwner = detail.isOwner ?? ownership === "owner";
+  const isLicensed = detail.isLicensed ?? ownership === "licensed";
 
-export type { WorkflowApiDetail };
+  return {
+    id: detail.id,
+    name: detail.name,
+    description: detail.description ?? null,
+    updatedAt: detail.updatedAt ?? null,
+    ownership,
+    isOwner,
+    isLicensed,
+  };
+};

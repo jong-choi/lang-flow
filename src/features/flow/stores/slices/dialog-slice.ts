@@ -1,5 +1,5 @@
 import type { StateCreator } from "zustand";
-import type { NodeData } from "@/features/flow/types/nodes";
+import type { NodeData } from "@/features/flow/types/graph";
 
 export type NodeDialogTrigger =
   | "palette-drop"

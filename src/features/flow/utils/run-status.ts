@@ -1,4 +1,4 @@
-import type { SchemaNode } from "@/features/flow/types/nodes";
+import type { SchemaNode } from "@/features/flow/types/graph";
 
 export const RUN_STATUS = {
   IDLE: "idle",

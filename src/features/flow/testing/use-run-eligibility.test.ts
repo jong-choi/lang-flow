@@ -5,7 +5,7 @@ import type {
   FlowNodeType,
   SchemaEdge,
   SchemaNode,
-} from "@/features/flow/types/nodes";
+} from "@/features/flow/types/graph";
 import { createNodeData } from "@/features/flow/utils/node-factory";
 
 const makeNode = (id: string, type: FlowNodeType): SchemaNode => ({

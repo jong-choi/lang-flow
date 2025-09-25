@@ -1,13 +1,13 @@
 /**
  * 플로우 기능에서 공통으로 쓰이는 스타일과 노드 설정을 모아둔 상수 파일.
  */
+import type { FlowNodeType } from "@/features/flow/types/graph";
 import type {
   ConnectionLimits,
-  FlowNodeType,
   NodeConfig,
   NodeTypeConfig,
   SidebarItemConfig,
-} from "@/features/flow/types/nodes";
+} from "@/features/flow/types/node-ui";
 
 export const SHARED_STYLES = {
   nodeContainer:

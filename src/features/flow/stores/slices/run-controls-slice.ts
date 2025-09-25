@@ -23,34 +23,37 @@ export interface RunControlsSlice {
   consumeRetryRequest: () => void;
 }
 
-export const createRunControlsSlice: StateCreator<RunControlsSlice> = (set, get) => ({
+export const createRunControlsSlice: StateCreator<RunControlsSlice> = (
+  set,
+) => ({
   canRun: false,
   runDisabledReason: null,
   canRetry: false,
+
   setRunGate: (partial) => {
-    const state = get();
-    const updates: Partial<RunControlsSlice> = {};
+    set((state) => {
+      const updates: Partial<RunControlsSlice> = {};
 
-    if (partial.canRun !== undefined && partial.canRun !== state.canRun) {
-      updates.canRun = partial.canRun;
-    }
+      if (partial.canRun !== undefined && partial.canRun !== state.canRun) {
+        updates.canRun = partial.canRun;
+      }
 
-    if (
-      partial.runDisabledReason !== undefined &&
-      partial.runDisabledReason !== state.runDisabledReason
-    ) {
-      updates.runDisabledReason = partial.runDisabledReason;
-    }
+      if (
+        partial.runDisabledReason !== undefined &&
+        partial.runDisabledReason !== state.runDisabledReason
+      ) {
+        updates.runDisabledReason = partial.runDisabledReason;
+      }
 
-    if (partial.canRetry !== undefined && partial.canRetry !== state.canRetry) {
-      updates.canRetry = partial.canRetry;
-    }
+      if (
+        partial.canRetry !== undefined &&
+        partial.canRetry !== state.canRetry
+      ) {
+        updates.canRetry = partial.canRetry;
+      }
 
-    if (Object.keys(updates).length === 0) {
-      return;
-    }
-
-    set(updates);
+      return Object.keys(updates).length ? updates : {};
+    });
   },
 
   runRequest: null,

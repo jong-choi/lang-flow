@@ -5,9 +5,8 @@ import { useFlowGeneratorStore } from "@/features/flow/providers/flow-store-prov
 import type {
   FlowEvent,
   FlowExecutionRequest,
-  SchemaEdge,
-  SchemaNode,
-} from "@/features/flow/types/nodes";
+} from "@/features/flow/types/execution";
+import type { SchemaEdge, SchemaNode } from "@/features/flow/types/graph";
 import { computeLevels as computeLevelsGraph } from "@/features/flow/utils/graph";
 import {
   RUN_STATUS,

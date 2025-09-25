@@ -1,4 +1,4 @@
-import type { SchemaEdge, SchemaNode } from "@/features/flow/types/nodes";
+import type { SchemaEdge, SchemaNode } from "@/features/flow/types/graph";
 
 export type Adjacency = {
   outMap: Record<string, string[]>;

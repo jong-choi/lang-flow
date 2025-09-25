@@ -1,7 +1,7 @@
 "use client";
 
 import { Handle } from "@xyflow/react";
-import type { HandleDefinition } from "@/features/flow/types/nodes";
+import type { HandleDefinition } from "@/features/flow/types/node-ui";
 
 export const CustomHandle: React.FC<{
   definition: HandleDefinition;

@@ -1,11 +1,11 @@
 import { NextResponse } from "next/server";
-import { z } from "zod";
 import bcrypt from "bcryptjs";
 import { eq } from "drizzle-orm";
+import { z } from "zod";
 import {
   type SignUpFormValues,
   signUpSchema,
-} from "@/features/auth/types/forms";
+} from "@/features/auth/types/sign-up";
 import { db } from "@/lib/db";
 import { users } from "@/lib/db/schema";
 

@@ -1,5 +1,5 @@
 import type { StateCreator } from "zustand";
-import type { SchemaEdge, SchemaNode } from "@/features/flow/types/nodes";
+import type { SchemaEdge, SchemaNode } from "@/features/flow/types/graph";
 
 export type InitialGraphSlice = {
   initialNodes: SchemaNode[] | null;

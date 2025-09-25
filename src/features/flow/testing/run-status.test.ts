@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import type { SchemaNode } from "@/features/flow/types/nodes";
+import type { SchemaNode } from "@/features/flow/types/graph";
 import { createNodeData } from "@/features/flow/utils/node-factory";
 import {
   RUN_STATUS,

@@ -36,6 +36,55 @@
       "when": 1758598784041,
       "tag": "0004_optimal_praxagora",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1758598785041,
+      "tag": "0005_guest_upgrade",
+      "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1758695957817,
+      "tag": "0006_aspiring_miracleman",
+      "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1758698600906,
+      "tag": "0007_greedy_serpent_society",
+      "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1758698600907,
+      "tag": "0008_workflow_licenses",
+      "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1758701394685,
+      "tag": "0009_nice_william_stryker",
+      "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1758712538526,
+      "tag": "0010_happy_sunfire",
+      "breakpoints": true
+    },
+    {
+      "idx": 11,
+      "version": "7",
+      "when": 1758714691441,
+      "tag": "0011_wakeful_blizzard",
+      "breakpoints": true
     }
   ]
 }

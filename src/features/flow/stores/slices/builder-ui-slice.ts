@@ -1,9 +1,9 @@
 import type { StateCreator } from "zustand";
-import type { WorkflowTemplateSummary } from "@/features/flow/types/nodes";
+import type { WorkflowSummary } from "@/features/flow/types/workflow";
 
 export interface TemplateActionState {
-  template: WorkflowTemplateSummary;
-  action: "edit" | "delete";
+  template: WorkflowSummary;
+  action: "move" | "delete" | "edit";
 }
 
 export interface BuilderUiSlice {

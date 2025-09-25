@@ -5,10 +5,8 @@
  */
 import { useNodeConnections } from "@xyflow/react";
 import { connectionLimits } from "@/features/flow/constants/node-config";
-import type {
-  ConnectionStateMap,
-  FlowNodeType,
-} from "@/features/flow/types/nodes";
+import type { FlowNodeType } from "@/features/flow/types/graph";
+import type { ConnectionStateMap } from "@/features/flow/types/node-ui";
 
 export const useConnectionLimits = (nodeType: FlowNodeType, nodeId: string) => {
   const limits = connectionLimits[nodeType];

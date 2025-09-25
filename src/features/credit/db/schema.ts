@@ -48,13 +48,16 @@ export const creditsRelations = relations(credits, ({ many }) => ({
   histories: many(creditHistories),
 }));
 
-export const creditHistoriesRelations = relations(creditHistories, ({ one }) => ({
-  credit: one(credits, {
-    fields: [creditHistories.userId],
-    references: [credits.userId],
+export const creditHistoriesRelations = relations(
+  creditHistories,
+  ({ one }) => ({
+    credit: one(credits, {
+      fields: [creditHistories.userId],
+      references: [credits.userId],
+    }),
+    user: one(users, {
+      fields: [creditHistories.userId],
+      references: [users.id],
+    }),
   }),
-  user: one(users, {
-    fields: [creditHistories.userId],
-    references: [users.id],
-  }),
-}));
+);

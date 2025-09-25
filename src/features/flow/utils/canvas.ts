@@ -1,8 +1,5 @@
-import type {
-  SchemaEdge,
-  SchemaNode,
-  WorkflowTemplateDetail,
-} from "@/features/flow/types/nodes";
+import type { SchemaEdge, SchemaNode } from "@/features/flow/types/graph";
+import type { WorkflowDetail } from "@/features/flow/types/workflow";
 
 interface Position {
   x: number;
@@ -98,7 +95,7 @@ export const duplicateEdges = (edges: SchemaEdge[]): SchemaEdge[] =>
   edges.map((edge) => ({ ...edge }));
 
 export const calculateTemplateInsertion = (
-  template: WorkflowTemplateDetail,
+  template: WorkflowDetail,
   dropPosition: Position,
   generators: TemplateInsertionGenerators,
 ): TemplateInsertionResult | null => {

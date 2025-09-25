@@ -1,6 +1,6 @@
 import { Position } from "@xyflow/react";
 import { GenericNode } from "@/features/flow/components/nodes/generic-node";
-import type { NodeProps } from "@/features/flow/types/nodes";
+import type { NodeProps } from "@/features/flow/types/node-ui";
 
 export const MessageNode: React.FC<NodeProps> = ({ data, id }) => (
   <GenericNode
