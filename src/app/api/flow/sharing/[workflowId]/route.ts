@@ -1,19 +1,17 @@
 import { NextResponse } from "next/server";
 import { and, eq } from "drizzle-orm";
 import {
-  chargeCredit,
-  consumeCredit,
-  type CreditSummary,
   CreditOperationError,
+  type CreditSummary,
   InsufficientCreditError,
   InvalidCreditAmountError,
+  chargeCredit,
+  consumeCredit,
 } from "@/app/api/credit/_controllers/credit";
-import { auth } from "@/features/auth/lib/auth";
-import {
-  getWorkflowShareDetail,
-} from "@/features/flow/services/workflow-sharing-service";
-import { workflowLicenses, workflowShares } from "@/features/flow/db/schema";
 import { grantWorkflowLicense } from "@/app/api/flow/workflows/_controllers/workflows";
+import { auth } from "@/features/auth/lib/auth";
+import { workflowLicenses, workflowShares } from "@/features/flow/db/schema";
+import { getWorkflowShareDetail } from "@/features/flow/services/workflow-sharing-service";
 import { db } from "@/lib/db";
 
 interface RouteContext {
@@ -111,8 +109,9 @@ export async function POST(_request: Request, context: RouteContext) {
         creditSummary = creditResult.summary;
       }
 
+      let granted = false;
       try {
-        await grantWorkflowLicense({ workflowId, userId });
+        granted = await grantWorkflowLicense({ workflowId, userId });
       } catch (error) {
         if (price > 0) {
           await chargeCredit({
@@ -120,10 +119,37 @@ export async function POST(_request: Request, context: RouteContext) {
             amount: price,
             description: `워크플로우(${workflowId}) 구매 실패 환불`,
           }).catch((refundError) => {
-            console.error("워크플로우 구매 실패 환불에 실패했습니다.", refundError);
+            console.error(
+              "워크플로우 구매 실패 환불에 실패했습니다.",
+              refundError,
+            );
           });
         }
         throw error;
+      }
+
+      if (!granted) {
+        if (price > 0) {
+          await chargeCredit({
+            userId,
+            amount: price,
+            description: `워크플로우(${workflowId}) 중복 구매 환불`,
+          }).catch((refundError) => {
+            console.error(
+              "워크플로우 중복 구매 환불에 실패했습니다.",
+              refundError,
+            );
+          });
+        }
+
+        const detail = await getWorkflowShareDetail(workflowId, userId);
+        if (!detail) {
+          return NextResponse.json(
+            { message: "워크플로우 정보를 불러오지 못했습니다." },
+            { status: 500 },
+          );
+        }
+        return NextResponse.json({ share: detail }, { status: 200 });
       }
 
       const detail = await getWorkflowShareDetail(workflowId, userId);
