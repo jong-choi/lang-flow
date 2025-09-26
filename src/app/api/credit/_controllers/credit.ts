@@ -114,6 +114,82 @@ const toHistoryItem = (row: CreditHistoryRecord): CreditHistoryItem => ({
   createdAt: row.createdAt,
 });
 
+const DAILY_BONUS_DESCRIPTION = "출석 보상";
+
+const getStartOfDay = (date: Date) =>
+  new Date(date.getFullYear(), date.getMonth(), date.getDate());
+
+export const grantDailyAttendanceBonus = async ({
+  userId,
+  amount,
+  now = new Date(),
+}: {
+  userId: string;
+  amount: number;
+  now?: Date;
+}) => {
+  if (!Number.isFinite(amount) || amount <= 0) {
+    throw new InvalidCreditAmountError("보상 금액이 올바르지 않습니다.");
+  }
+
+  return db.transaction(async (transaction) => {
+    const credit = await ensureCreditRecord(transaction, userId);
+
+    const [existingBonus] = await transaction
+      .select({ createdAt: creditHistories.createdAt })
+      .from(creditHistories)
+      .where(
+        and(
+          eq(creditHistories.userId, userId),
+          eq(creditHistories.type, "charge"),
+          eq(creditHistories.description, DAILY_BONUS_DESCRIPTION),
+          gte(creditHistories.createdAt, getStartOfDay(now)),
+        ),
+      )
+      .orderBy(desc(creditHistories.createdAt))
+      .limit(1);
+
+    if (existingBonus) {
+      return {
+        summary: toSummary(credit),
+        history: null,
+        granted: false as const,
+      };
+    }
+
+    const [updated] = await transaction
+      .update(credits)
+      .set({
+        balance: sql`${credits.balance} + ${amount}`,
+        updatedAt: now,
+      })
+      .where(eq(credits.userId, userId))
+      .returning();
+
+    if (!updated) {
+      throw new Error("크레딧 잔액을 갱신하지 못했습니다.");
+    }
+
+    const [history] = await transaction
+      .insert(creditHistories)
+      .values({
+        userId,
+        type: "charge",
+        amount,
+        balanceAfter: updated.balance,
+        description: DAILY_BONUS_DESCRIPTION,
+        createdAt: now,
+      })
+      .returning();
+
+    return {
+      summary: toSummary(updated),
+      history: toHistoryItem(history),
+      granted: true as const,
+    };
+  });
+};
+
 export const getCreditSummary = async (
   userId: string,
 ): Promise<CreditSummary> => {

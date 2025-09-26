@@ -85,6 +85,20 @@
       "when": 1758714691441,
       "tag": "0011_wakeful_blizzard",
       "breakpoints": true
+    },
+    {
+      "idx": 12,
+      "version": "7",
+      "when": 1758826276745,
+      "tag": "0012_same_kang",
+      "breakpoints": true
+    },
+    {
+      "idx": 13,
+      "version": "7",
+      "when": 1758826393179,
+      "tag": "0013_low_warlock",
+      "breakpoints": true
     }
   ]
 }

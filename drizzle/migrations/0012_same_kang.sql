@@ -1,0 +1,1 @@
+ALTER TYPE "public"."credit_history_type" ADD VALUE 'attendance';
