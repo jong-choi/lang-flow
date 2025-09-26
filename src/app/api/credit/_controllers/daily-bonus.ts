@@ -1,18 +1,15 @@
 import { ensureCreditRecord } from "@/app/api/credit/_controllers/shared";
 import { isGrantedToday } from "@/app/api/credit/_utils/dates";
-import {
-  toCreditSummary,
-  toHistoryItem,
-} from "@/app/api/credit/_utils/mappers";
-import {
-  CHECK_IN_DESCRIPTION,
-  DAILY_CHECK_IN_CREDIT_AMOUNT,
-} from "@/features/credit/constants";
+import { toCreditSummary } from "@/app/api/credit/_utils/mappers";
 import { updateCreditBalance } from "@/features/credit/db/queries/credits";
 import {
   insertHistory,
   selectLastDailyCheckIn,
 } from "@/features/credit/db/queries/histories";
+import {
+  CHECK_IN_DESCRIPTION,
+  DAILY_CHECK_IN_CREDIT_AMOUNT,
+} from "@/features/credit/utils/constants";
 import { db } from "@/lib/db";
 
 export const grantDailyCheckInBonus = async ({
@@ -61,7 +58,7 @@ export const grantDailyCheckInBonus = async ({
 
     return {
       summary: toCreditSummary(updated),
-      history: toHistoryItem(history),
+      history: history,
       granted: true,
       lastCheckInAt: history.createdAt,
     };

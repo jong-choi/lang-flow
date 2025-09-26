@@ -1,28 +1,18 @@
 import { and, desc, eq, sql } from "drizzle-orm";
 import { creditHistories } from "@/features/credit/db/schema";
+import type {
+  CreditHistory,
+  CreditHistoryInsert,
+} from "@/features/credit/types/credit";
 import type { DBClient } from "@/lib/db";
 
-export const insertHistory = async (
+export const insertHistory: (
   client: DBClient,
-  input: {
-    userId: string;
-    type: "charge" | "consume" | "skip";
-    amount: number;
-    balanceAfter: number;
-    description: string | null;
-    createdAt?: Date;
-  },
-) => {
+  input: CreditHistoryInsert,
+) => Promise<CreditHistory> = async (client, input) => {
   const [history] = await client
     .insert(creditHistories)
-    .values({
-      userId: input.userId,
-      type: input.type,
-      amount: input.amount,
-      balanceAfter: input.balanceAfter,
-      description: input.description,
-      createdAt: input.createdAt,
-    })
+    .values(input)
     .returning();
   return history ?? null;
 };
@@ -47,12 +37,12 @@ export const selectLastDailyCheckIn = async (
   return row ?? null;
 };
 
-export const listHistories = async (
+export const listHistories: (
   client: DBClient,
   userId: string,
   limit: number,
   offset: number,
-) => {
+) => Promise<CreditHistory[]> = async (client, userId, limit, offset) => {
   return client
     .select()
     .from(creditHistories)

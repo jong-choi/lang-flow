@@ -7,7 +7,7 @@ import {
 } from "@/app/api/flow/workflows/_controllers/workflows";
 import { auth } from "@/features/auth/lib/auth";
 import {
-  type CreditHistoryItem,
+  type CreditHistory,
   type CreditSummary,
 } from "@/features/credit/types/credit";
 import {
@@ -84,7 +84,7 @@ export async function POST(_request: Request, context: RouteContext) {
 
       const price = share.priceInCredits ?? 0;
       let creditSummary: CreditSummary | undefined;
-      let creditHistoryType: CreditHistoryItem["type"] | undefined;
+      let creditHistoryType: CreditHistory["type"] | undefined;
 
       if (price > 0) {
         const creditResult = await consumeCredit({

@@ -1,8 +1,5 @@
 import { ensureCreditRecord } from "@/app/api/credit/_controllers/shared";
-import {
-  toCreditSummary,
-  toHistoryItem,
-} from "@/app/api/credit/_utils/mappers";
+import { toCreditSummary } from "@/app/api/credit/_utils/mappers";
 import { updateCreditBalanceWithGuard } from "@/features/credit/db/queries/credits";
 import { insertHistory } from "@/features/credit/db/queries/histories";
 import { db } from "@/lib/db";
@@ -37,7 +34,7 @@ export const consumeCredit = async ({
 
       return {
         summary: toCreditSummary(credit),
-        history: toHistoryItem(history),
+        history: history,
       };
     }
 
@@ -59,7 +56,7 @@ export const consumeCredit = async ({
 
     return {
       summary: toCreditSummary(updated),
-      history: toHistoryItem(history),
+      history: history,
     };
   });
 };

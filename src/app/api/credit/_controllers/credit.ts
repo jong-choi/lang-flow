@@ -1,29 +1,29 @@
 import { isGrantedToday } from "@/app/api/credit/_utils/dates";
-import {
-  toCreditSummary,
-  toHistoryItem,
-} from "@/app/api/credit/_utils/mappers";
+import { toCreditSummary } from "@/app/api/credit/_utils/mappers";
 import { coercePagination } from "@/app/api/credit/_utils/pagination";
 import {
-  CHECK_IN_DESCRIPTION,
-  DAILY_CHECK_IN_CREDIT_AMOUNT,
-} from "@/features/credit/constants";
-import {
-  countHistories,
   insertCreditIfAbsent,
-  insertHistory,
-  listHistories,
   selectCreditByUserId,
-  selectLastDailyCheckIn,
   updateConsumptionDisabled,
   updateCreditBalance,
   updateCreditBalanceWithGuard,
-} from "@/features/credit/db/queries/credit";
+} from "@/features/credit/db/queries/credits";
+import {
+  countHistories,
+  insertHistory,
+  listHistories,
+  selectLastDailyCheckIn,
+} from "@/features/credit/db/queries/histories";
 import type { credits } from "@/features/credit/db/schema";
 import type {
+  CreditHistory,
   CreditHistoryList,
   CreditSummary,
 } from "@/features/credit/types/credit";
+import {
+  CHECK_IN_DESCRIPTION,
+  DAILY_CHECK_IN_CREDIT_AMOUNT,
+} from "@/features/credit/utils/constants";
 import { type TransactionClient, db } from "@/lib/db";
 
 const ensureCreditRecord = async (
@@ -91,7 +91,7 @@ export const grantDailyCheckInBonus = async ({
 
     return {
       summary: toCreditSummary(updated),
-      history: toHistoryItem(history),
+      history: history,
       granted: true,
       lastCheckInAt: history.createdAt,
     };
@@ -169,7 +169,7 @@ export const chargeCredit = async ({
 
     return {
       summary: toCreditSummary(updated),
-      history: toHistoryItem(history),
+      history: history,
     };
   });
 };
@@ -204,7 +204,7 @@ export const consumeCredit = async ({
 
       return {
         summary: toCreditSummary(credit),
-        history: toHistoryItem(history),
+        history: history,
       };
     }
 
@@ -226,7 +226,7 @@ export const consumeCredit = async ({
 
     return {
       summary: toCreditSummary(updated),
-      history: toHistoryItem(history),
+      history: history,
     };
   });
 };
@@ -249,7 +249,7 @@ export const listCreditHistory = async ({
   const total = await countHistories(db, userId);
 
   return {
-    histories: histories.map((history) => toHistoryItem(history)),
+    histories: histories.map((history: CreditHistory) => history),
     pagination: {
       limit: safeLimit,
       offset: safeOffset,

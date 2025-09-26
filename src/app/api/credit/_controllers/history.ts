@@ -1,4 +1,3 @@
-import { toHistoryItem } from "@/app/api/credit/_utils/mappers";
 import { coercePagination } from "@/app/api/credit/_utils/pagination";
 import {
   countHistories,
@@ -25,7 +24,7 @@ export const listCreditHistory = async ({
   const total = await countHistories(db, userId);
 
   return {
-    histories: histories.map((history) => toHistoryItem(history)),
+    histories: histories.map((history) => history),
     pagination: {
       limit: safeLimit,
       offset: safeOffset,
