@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { grantDailyCheckInBonus } from "@/app/api/credit/_controllers/daily-bonus";
 import { auth } from "@/features/auth/lib/auth";
+import { creditDailyBonusResponseSchema } from "@/types/credit/credit-schemas";
 
 export async function POST() {
   const session = await auth();
@@ -15,16 +16,16 @@ export async function POST() {
 
   try {
     const result = await grantDailyCheckInBonus({ userId });
+    const responseBody = creditDailyBonusResponseSchema.parse({
+      credit: result.summary,
+      history: result.history,
+      granted: result.granted,
+      lastCheckInAt: result.lastCheckInAt ?? null,
+    });
 
-    return NextResponse.json(
-      {
-        credit: result.summary,
-        history: result.history,
-        granted: result.granted,
-        lastCheckInAt: result.lastCheckInAt ?? null,
-      },
-      { status: result.granted ? 201 : 200 },
-    );
+    return NextResponse.json(responseBody, {
+      status: result.granted ? 201 : 200,
+    });
   } catch (error) {
     console.error("체크인 보상 지급 실패", error);
     return NextResponse.json(
