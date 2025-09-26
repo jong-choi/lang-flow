@@ -4,11 +4,13 @@ import * as React from "react";
 import { CircleStar } from "lucide-react";
 import { toast } from "sonner";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { api } from "@/lib/api-client";
 import type {
   CreditDailyBonusResponse,
   CreditSummaryResponse,
-} from "@/types/credit/credit-schemas";
+  // 컴포넌트 분리예정
+  // eslint-disable-next-line import/no-restricted-paths
+} from "@/features/credit/types/credit-apis";
+import { api } from "@/lib/api-client";
 
 interface UserCreditBadgeProps {
   userId?: string;

@@ -3,7 +3,7 @@ import { chargeCredit } from "@/app/api/credit/_controllers/charge";
 import {
   creditChargeRequestSchema,
   creditChargeResponseSchema,
-} from "@/types/credit/credit-schemas";
+} from "@/features/credit/types/credit-apis";
 
 export async function POST(request: Request) {
   try {

@@ -4,7 +4,7 @@ import {
   creditHistories,
   creditHistoryTypeEnum,
   credits,
-} from "@/lib/db/schema";
+} from "@/features/credit/db/schema";
 
 const creditSelectSchema = createSelectSchema(credits);
 const creditHistorySelectSchema = createSelectSchema(creditHistories);

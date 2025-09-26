@@ -3,7 +3,7 @@ import { consumeCredit } from "@/app/api/credit/_controllers/consume";
 import {
   creditConsumeRequestSchema,
   creditConsumeResponseSchema,
-} from "@/types/credit/credit-schemas";
+} from "@/features/credit/types/credit-apis";
 
 export async function POST(request: Request) {
   try {

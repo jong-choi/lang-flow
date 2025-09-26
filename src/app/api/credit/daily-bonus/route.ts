@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { grantDailyCheckInBonus } from "@/app/api/credit/_controllers/daily-bonus";
 import { auth } from "@/features/auth/lib/auth";
-import { creditDailyBonusResponseSchema } from "@/types/credit/credit-schemas";
+import { creditDailyBonusResponseSchema } from "@/features/credit/types/credit-apis";
 
 export async function POST() {
   const session = await auth();
