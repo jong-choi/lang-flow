@@ -4,33 +4,26 @@ import { useMemo, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Loader2 } from "lucide-react";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { WorkflowSharePurchaseDialog } from "@/features/flow/components/sharing/business/workflow-share-purchase-dialog";
-import { WorkflowShareHero } from "@/features/flow/components/sharing/ui/workflow-share-hero";
 import { WorkflowGraphPreview } from "@/features/flow/components/sharing/ui/workflow-graph-preview";
+import { WorkflowShareHero } from "@/features/flow/components/sharing/ui/workflow-share-hero";
 import { WorkflowShareSection } from "@/features/flow/components/sharing/ui/workflow-share-section";
 import type { WorkflowShareDetail } from "@/features/flow/types/workflow-sharing";
 import { api } from "@/lib/api-client";
+import type { CreditSummaryResponse } from "@/types/credit/credit-schemas";
 
 interface WorkflowShareDetailContentProps {
   share: WorkflowShareDetail;
   viewerId?: string | null;
 }
 
-interface CreditSummaryResponse {
-  credit: {
-    balance: number;
-  };
-}
-
 interface PurchaseWorkflowShareResponse {
   share: WorkflowShareDetail;
-  credit?: {
-    balance: number;
-  };
+  credit?: CreditSummaryResponse["credit"];
 }
 
 export function WorkflowShareDetailContent({
@@ -63,7 +56,9 @@ export function WorkflowShareDetailContent({
   const handleDialogOpenChange = (open: boolean) => {
     if (isProcessingPurchase) return;
     if (open && !viewerId) {
-      router.push(`/auth/signin?redirect=/flow/sharing/${shareState.workflowId}`);
+      router.push(
+        `/auth/signin?redirect=/flow/sharing/${shareState.workflowId}`,
+      );
       return;
     }
     setPurchaseOpen(open);
@@ -76,7 +71,9 @@ export function WorkflowShareDetailContent({
     }
 
     if (!viewerId) {
-      router.push(`/auth/signin?redirect=/flow/sharing/${shareState.workflowId}`);
+      router.push(
+        `/auth/signin?redirect=/flow/sharing/${shareState.workflowId}`,
+      );
       return;
     }
 

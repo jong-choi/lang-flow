@@ -1,23 +1,17 @@
 import { NextResponse } from "next/server";
-import { z } from "zod";
+import { setConsumptionFlag } from "@/app/api/credit/_controllers/consumption-flag";
+import { getCreditSummary } from "@/app/api/credit/_controllers/summary";
 import {
-  getCreditSummary,
-  setConsumptionFlag,
-} from "@/app/api/credit/_controllers/credit";
-
-const getQuerySchema = z.object({
-  userId: z.string().min(1, "사용자 ID는 필수입니다."),
-});
-
-const updateFlagSchema = z.object({
-  userId: z.string().min(1, "사용자 ID는 필수입니다."),
-  isConsumptionDisabled: z.boolean(),
-});
+  creditConsumptionFlagRequestSchema,
+  creditConsumptionFlagResponseSchema,
+  creditSummaryQuerySchema,
+  creditSummaryResponseSchema,
+} from "@/types/credit/credit-schemas";
 
 export async function GET(request: Request) {
   try {
     const { searchParams } = new URL(request.url);
-    const parsed = getQuerySchema.safeParse({
+    const parsed = creditSummaryQuerySchema.safeParse({
       userId: searchParams.get("userId") ?? "",
     });
 
@@ -28,7 +22,10 @@ export async function GET(request: Request) {
     }
 
     const summary = await getCreditSummary(parsed.data.userId);
-    return NextResponse.json({ credit: summary });
+    const responseBody = creditSummaryResponseSchema.parse({
+      credit: summary,
+    });
+    return NextResponse.json(responseBody);
   } catch (error) {
     console.error("크레딧 조회 실패", error);
     return NextResponse.json(
@@ -40,8 +37,8 @@ export async function GET(request: Request) {
 
 export async function PATCH(request: Request) {
   try {
-    const body = (await request.json().catch(() => null)) as unknown;
-    const parsed = updateFlagSchema.safeParse(body);
+    const body = await request.json().catch(() => null);
+    const parsed = creditConsumptionFlagRequestSchema.safeParse(body);
 
     if (!parsed.success) {
       const message =
@@ -50,7 +47,10 @@ export async function PATCH(request: Request) {
     }
 
     const summary = await setConsumptionFlag(parsed.data);
-    return NextResponse.json({ credit: summary });
+    const responseBody = creditConsumptionFlagResponseSchema.parse({
+      credit: summary,
+    });
+    return NextResponse.json(responseBody);
   } catch (error) {
     console.error("크레딧 플래그 갱신 실패", error);
     return NextResponse.json(

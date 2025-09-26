@@ -2,31 +2,19 @@
 
 import * as React from "react";
 import { CircleStar } from "lucide-react";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { api } from "@/lib/api-client";
-
-interface CreditSummaryResponse {
-  credit: {
-    balance: number;
-  };
-}
-
-interface DailyBonusResponse {
-  credit: {
-    balance: number;
-  };
-  history?: {
-    amount: number;
-  } | null;
-  granted: boolean;
-}
+import type {
+  CreditDailyBonusResponse,
+  CreditSummaryResponse,
+} from "@/types/credit/credit-schemas";
 
 interface UserCreditBadgeProps {
-  userId: string;
+  userId?: string;
 }
 
-const creditQueryKey = (userId: string) => ["credit", "summary", userId];
+const creditQueryKey = (userId?: string) => ["credit", "summary", userId];
 
 export function UserCreditBadge({ userId }: UserCreditBadgeProps) {
   const queryClient = useQueryClient();
@@ -51,7 +39,7 @@ export function UserCreditBadge({ userId }: UserCreditBadgeProps) {
 
     const claimDailyBonus = async () => {
       try {
-        const response = await api.post<DailyBonusResponse>(
+        const response = await api.post<CreditDailyBonusResponse>(
           "/api/credit/daily-bonus",
         );
 

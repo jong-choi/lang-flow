@@ -1,191 +1,99 @@
-import { and, desc, eq, gte, sql } from "drizzle-orm";
+import { isGrantedToday } from "@/app/api/credit/_utils/dates";
+import { toCreditSummary } from "@/app/api/credit/_utils/mappers";
+import { coercePagination } from "@/app/api/credit/_utils/pagination";
 import {
-  creditHistories,
-  type creditHistoryTypeEnum,
-  credits,
-} from "@/features/credit/db/schema";
-import { db } from "@/lib/db";
-
-type TransactionClient = Parameters<Parameters<typeof db.transaction>[0]>[0];
-
-type CreditRecord = typeof credits.$inferSelect;
-type CreditHistoryRecord = typeof creditHistories.$inferSelect;
-
-export interface CreditSummary {
-  userId: string;
-  balance: number;
-  isConsumptionDisabled: boolean;
-  createdAt: Date | null;
-  updatedAt: Date | null;
-}
-
-export interface CreditHistoryItem {
-  id: string;
-  userId: string;
-  type: (typeof creditHistoryTypeEnum.enumValues)[number];
-  amount: number;
-  balanceAfter: number;
-  description: string | null;
-  createdAt: Date;
-}
-
-export interface CreditHistoryList {
-  histories: CreditHistoryItem[];
-  pagination: {
-    limit: number;
-    offset: number;
-    total: number;
-  };
-}
-
-export class CreditOperationError extends Error {}
-
-export class InvalidCreditAmountError extends CreditOperationError {
-  constructor(message = "크레딧 변동 금액이 올바르지 않습니다.") {
-    super(message);
-    this.name = "InvalidCreditAmountError";
-  }
-}
-
-export class InsufficientCreditError extends CreditOperationError {
-  constructor(message = "크레딧이 부족합니다.") {
-    super(message);
-    this.name = "InsufficientCreditError";
-  }
-}
-
-const toSummary = (row: CreditRecord): CreditSummary => ({
-  userId: row.userId,
-  balance: row.balance,
-  isConsumptionDisabled: row.isConsumptionDisabled,
-  createdAt: row.createdAt ?? null,
-  updatedAt: row.updatedAt ?? null,
-});
-
-const loadCreditForUpdate = async (
-  transaction: TransactionClient,
-  userId: string,
-) => {
-  const [credit] = await transaction
-    .select()
-    .from(credits)
-    .where(eq(credits.userId, userId))
-    .for("update");
-
-  return credit ?? null;
-};
+  insertCreditIfAbsent,
+  selectCreditByUserId,
+  updateConsumptionDisabled,
+  updateCreditBalance,
+  updateCreditBalanceWithGuard,
+} from "@/features/credit/db/queries/credits";
+import {
+  countHistories,
+  insertHistory,
+  listHistories,
+  selectLastDailyCheckIn,
+} from "@/features/credit/db/queries/histories";
+import type { credits } from "@/features/credit/db/schema";
+import type {
+  CreditHistory,
+  CreditHistoryList,
+  CreditSummary,
+} from "@/features/credit/types/credit";
+import {
+  CHECK_IN_DESCRIPTION,
+  DAILY_CHECK_IN_CREDIT_AMOUNT,
+} from "@/features/credit/utils/constants";
+import { type TransactionClient, db } from "@/lib/db";
 
 const ensureCreditRecord = async (
   transaction: TransactionClient,
   userId: string,
-): Promise<CreditRecord> => {
-  const existing = await loadCreditForUpdate(transaction, userId);
+): Promise<typeof credits.$inferSelect> => {
+  const existing = await selectCreditByUserId(transaction, userId, {
+    forUpdate: true,
+  });
+  if (existing) return existing;
 
-  if (existing) {
-    return existing;
-  }
+  const created = await insertCreditIfAbsent(transaction, userId);
+  if (created) return created;
 
-  const [created] = await transaction
-    .insert(credits)
-    .values({ userId })
-    .onConflictDoNothing()
-    .returning();
-
-  if (created) {
-    return created;
-  }
-
-  const reloaded = await loadCreditForUpdate(transaction, userId);
-
-  if (!reloaded) {
-    throw new Error("크레딧 정보를 생성하지 못했습니다.");
-  }
-
+  const reloaded = await selectCreditByUserId(transaction, userId, {
+    forUpdate: true,
+  });
+  if (!reloaded) throw new Error("크레딧 정보를 생성하지 못했습니다.");
   return reloaded;
 };
 
-const toHistoryItem = (row: CreditHistoryRecord): CreditHistoryItem => ({
-  id: row.id,
-  userId: row.userId,
-  type: row.type,
-  amount: row.amount,
-  balanceAfter: row.balanceAfter,
-  description: row.description ?? null,
-  createdAt: row.createdAt,
-});
-
-const DAILY_BONUS_DESCRIPTION = "출석 보상";
-
-const getStartOfDay = (date: Date) =>
-  new Date(date.getFullYear(), date.getMonth(), date.getDate());
-
-export const grantDailyAttendanceBonus = async ({
+export const grantDailyCheckInBonus = async ({
   userId,
-  amount,
   now = new Date(),
 }: {
   userId: string;
-  amount: number;
   now?: Date;
 }) => {
+  const amount = DAILY_CHECK_IN_CREDIT_AMOUNT;
   if (!Number.isFinite(amount) || amount <= 0) {
-    throw new InvalidCreditAmountError("보상 금액이 올바르지 않습니다.");
+    throw new Error("보상 금액이 올바르지 않습니다.");
   }
 
   return db.transaction(async (transaction) => {
     const credit = await ensureCreditRecord(transaction, userId);
 
-    const [existingBonus] = await transaction
-      .select({ createdAt: creditHistories.createdAt })
-      .from(creditHistories)
-      .where(
-        and(
-          eq(creditHistories.userId, userId),
-          eq(creditHistories.type, "charge"),
-          eq(creditHistories.description, DAILY_BONUS_DESCRIPTION),
-          gte(creditHistories.createdAt, getStartOfDay(now)),
-        ),
-      )
-      .orderBy(desc(creditHistories.createdAt))
-      .limit(1);
+    const lastCheckIn = await selectLastDailyCheckIn(
+      transaction,
+      userId,
+      CHECK_IN_DESCRIPTION,
+    );
+    const grantedToday = isGrantedToday(lastCheckIn?.createdAt, now);
 
-    if (existingBonus) {
+    if (grantedToday) {
       return {
-        summary: toSummary(credit),
+        summary: toCreditSummary(credit),
         history: null,
-        granted: false as const,
+        granted: false,
+        lastCheckInAt: lastCheckIn?.createdAt ?? null,
       };
     }
 
-    const [updated] = await transaction
-      .update(credits)
-      .set({
-        balance: sql`${credits.balance} + ${amount}`,
-        updatedAt: now,
-      })
-      .where(eq(credits.userId, userId))
-      .returning();
+    const updated = await updateCreditBalance(transaction, userId, amount, now);
+    if (!updated) throw new Error("크레딧 잔액을 갱신하지 못했습니다.");
 
-    if (!updated) {
-      throw new Error("크레딧 잔액을 갱신하지 못했습니다.");
-    }
-
-    const [history] = await transaction
-      .insert(creditHistories)
-      .values({
-        userId,
-        type: "charge",
-        amount,
-        balanceAfter: updated.balance,
-        description: DAILY_BONUS_DESCRIPTION,
-        createdAt: now,
-      })
-      .returning();
+    const history = await insertHistory(transaction, {
+      userId,
+      type: "charge",
+      amount,
+      balanceAfter: updated.balance,
+      description: CHECK_IN_DESCRIPTION,
+      createdAt: now,
+    });
+    if (!history) throw new Error("체크인 히스토리를 기록하지 못했습니다.");
 
     return {
-      summary: toSummary(updated),
-      history: toHistoryItem(history),
-      granted: true as const,
+      summary: toCreditSummary(updated),
+      history: history,
+      granted: true,
+      lastCheckInAt: history.createdAt,
     };
   });
 };
@@ -193,12 +101,7 @@ export const grantDailyAttendanceBonus = async ({
 export const getCreditSummary = async (
   userId: string,
 ): Promise<CreditSummary> => {
-  const [row] = await db
-    .select()
-    .from(credits)
-    .where(eq(credits.userId, userId))
-    .limit(1);
-
+  const row = await selectCreditByUserId(db, userId);
   if (!row) {
     return {
       userId,
@@ -208,8 +111,7 @@ export const getCreditSummary = async (
       updatedAt: null,
     } satisfies CreditSummary;
   }
-
-  return toSummary(row);
+  return toCreditSummary(row);
 };
 
 export const setConsumptionFlag = async ({
@@ -221,21 +123,14 @@ export const setConsumptionFlag = async ({
 }): Promise<CreditSummary> => {
   return db.transaction(async (transaction) => {
     await ensureCreditRecord(transaction, userId);
-
-    const [updated] = await transaction
-      .update(credits)
-      .set({
-        isConsumptionDisabled,
-        updatedAt: new Date(),
-      })
-      .where(eq(credits.userId, userId))
-      .returning();
-
-    if (!updated) {
-      throw new Error("크레딧 정보를 갱신하지 못했습니다.");
-    }
-
-    return toSummary(updated);
+    const updated = await updateConsumptionDisabled(
+      transaction,
+      userId,
+      isConsumptionDisabled,
+      new Date(),
+    );
+    if (!updated) throw new Error("크레딧 정보를 갱신하지 못했습니다.");
+    return toCreditSummary(updated);
   });
 };
 
@@ -249,41 +144,32 @@ export const chargeCredit = async ({
   description?: string | null;
 }) => {
   if (!Number.isFinite(amount) || amount <= 0) {
-    throw new InvalidCreditAmountError("충전 금액은 0보다 커야 합니다.");
+    throw new Error("충전 금액은 0보다 커야 합니다.");
   }
 
   return db.transaction(async (transaction) => {
     await ensureCreditRecord(transaction, userId);
 
-    const [updated] = await transaction
-      .update(credits)
-      .set({
-        balance: sql`${credits.balance} + ${amount}`,
-        updatedAt: new Date(),
-      })
-      .where(eq(credits.userId, userId))
-      .returning();
+    const updated = await updateCreditBalance(
+      transaction,
+      userId,
+      amount,
+      new Date(),
+    );
+    if (!updated) throw new Error("크레딧 잔액을 갱신하지 못했습니다.");
 
-    if (!updated) {
-      throw new Error("크레딧 잔액을 갱신하지 못했습니다.");
-    }
-
-    const updatedCredit = updated;
-
-    const [history] = await transaction
-      .insert(creditHistories)
-      .values({
-        userId,
-        type: "charge",
-        amount,
-        balanceAfter: updatedCredit.balance,
-        description: description ?? null,
-      })
-      .returning();
+    const history = await insertHistory(transaction, {
+      userId,
+      type: "charge",
+      amount,
+      balanceAfter: updated.balance,
+      description: description ?? null,
+    });
+    if (!history) throw new Error("크레딧 히스토리를 기록하지 못했습니다.");
 
     return {
-      summary: toSummary(updatedCredit),
-      history: toHistoryItem(history),
+      summary: toCreditSummary(updated),
+      history: history,
     };
   });
 };
@@ -300,59 +186,47 @@ export const consumeCredit = async ({
   skipConsumption?: boolean;
 }) => {
   if (!Number.isFinite(amount) || amount <= 0) {
-    throw new InvalidCreditAmountError("차감 금액은 0보다 커야 합니다.");
+    throw new Error("차감 금액은 0보다 커야 합니다.");
   }
 
   return db.transaction(async (transaction) => {
     const credit = await ensureCreditRecord(transaction, userId);
 
     if (skipConsumption || credit.isConsumptionDisabled) {
-      const [history] = await transaction
-        .insert(creditHistories)
-        .values({
-          userId,
-          type: "skip",
-          amount: 0,
-          balanceAfter: credit.balance,
-          description: description ?? null,
-        })
-        .returning();
+      const history = await insertHistory(transaction, {
+        userId,
+        type: "skip",
+        amount: 0,
+        balanceAfter: credit.balance,
+        description: description ?? null,
+      });
+      if (!history) throw new Error("크레딧 히스토리를 기록하지 못했습니다.");
 
       return {
-        summary: toSummary(credit),
-        history: toHistoryItem(history),
+        summary: toCreditSummary(credit),
+        history: history,
       };
     }
 
-    const [updated] = await transaction
-      .update(credits)
-      .set({
-        balance: sql`${credits.balance} - ${amount}`,
-        updatedAt: new Date(),
-      })
-      .where(and(eq(credits.userId, userId), gte(credits.balance, amount)))
-      .returning();
+    const updated = await updateCreditBalanceWithGuard(
+      transaction,
+      userId,
+      amount,
+    );
+    if (!updated) throw new Error("크레딧이 부족합니다.");
 
-    if (!updated) {
-      throw new InsufficientCreditError();
-    }
-
-    const updatedCredit = updated;
-
-    const [history] = await transaction
-      .insert(creditHistories)
-      .values({
-        userId,
-        type: "consume",
-        amount: -amount,
-        balanceAfter: updatedCredit.balance,
-        description: description ?? null,
-      })
-      .returning();
+    const history = await insertHistory(transaction, {
+      userId,
+      type: "consume",
+      amount: -amount,
+      balanceAfter: updated.balance,
+      description: description ?? null,
+    });
+    if (!history) throw new Error("크레딧 히스토리를 기록하지 못했습니다.");
 
     return {
-      summary: toSummary(updatedCredit),
-      history: toHistoryItem(history),
+      summary: toCreditSummary(updated),
+      history: history,
     };
   });
 };
@@ -366,28 +240,20 @@ export const listCreditHistory = async ({
   limit?: number;
   offset?: number;
 }): Promise<CreditHistoryList> => {
-  const safeLimit = Math.min(Math.max(Math.trunc(limit), 1), 100);
-  const safeOffset = Math.max(Math.trunc(offset), 0);
+  const { limit: safeLimit, offset: safeOffset } = coercePagination({
+    limit,
+    offset,
+  });
 
-  const histories = await db
-    .select()
-    .from(creditHistories)
-    .where(eq(creditHistories.userId, userId))
-    .orderBy(desc(creditHistories.createdAt))
-    .limit(safeLimit)
-    .offset(safeOffset);
-
-  const [totalRow] = await db
-    .select({ total: sql<number>`count(*)::int` })
-    .from(creditHistories)
-    .where(eq(creditHistories.userId, userId));
+  const histories = await listHistories(db, userId, safeLimit, safeOffset);
+  const total = await countHistories(db, userId);
 
   return {
-    histories: histories.map((history) => toHistoryItem(history)),
+    histories: histories.map((history: CreditHistory) => history),
     pagination: {
       limit: safeLimit,
       offset: safeOffset,
-      total: totalRow?.total ?? 0,
+      total,
     },
   };
 };

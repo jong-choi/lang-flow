@@ -9,3 +9,8 @@ if (!process.env.DATABASE_URL) {
 const client = postgres(process.env.DATABASE_URL!, { ssl: "require" });
 
 export const db = drizzle(client, { schema });
+
+export type TransactionClient = Parameters<
+  Parameters<typeof db.transaction>[0]
+>[0];
+export type DBClient = typeof db | TransactionClient;

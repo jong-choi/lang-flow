@@ -1,22 +1,20 @@
 import { NextResponse } from "next/server";
-import { and, eq } from "drizzle-orm";
-import {
-  type CreditHistoryItem,
-  CreditOperationError,
-  type CreditSummary,
-  InsufficientCreditError,
-  InvalidCreditAmountError,
-  chargeCredit,
-  consumeCredit,
-} from "@/app/api/credit/_controllers/credit";
+import { chargeCredit } from "@/app/api/credit/_controllers/charge";
+import { consumeCredit } from "@/app/api/credit/_controllers/consume";
 import {
   grantWorkflowLicense,
   revokeWorkflowLicense,
 } from "@/app/api/flow/workflows/_controllers/workflows";
 import { auth } from "@/features/auth/lib/auth";
-import { workflowLicenses, workflowShares } from "@/features/flow/db/schema";
+import {
+  type CreditHistory,
+  type CreditSummary,
+} from "@/features/credit/types/credit";
+import {
+  getShareOwnerAndPrice,
+  hasUserWorkflowLicense,
+} from "@/features/flow/services/workflow-purchase-service";
 import { getWorkflowShareDetail } from "@/features/flow/services/workflow-sharing-service";
-import { db } from "@/lib/db";
 
 interface RouteContext {
   params: Promise<{ workflowId: string }>;
@@ -57,15 +55,7 @@ export async function POST(_request: Request, context: RouteContext) {
 
     try {
       const workflowId = (await context.params).workflowId;
-      const [share] = await db
-        .select({
-          ownerId: workflowShares.ownerId,
-          price: workflowShares.priceInCredits,
-        })
-        .from(workflowShares)
-        .where(eq(workflowShares.workflowId, workflowId))
-        .limit(1);
-
+      const share = await getShareOwnerAndPrice(workflowId);
       if (!share) {
         return NextResponse.json(
           { message: "공유된 워크플로우를 찾을 수 없습니다." },
@@ -80,17 +70,7 @@ export async function POST(_request: Request, context: RouteContext) {
         );
       }
 
-      const [existing] = await db
-        .select({ userId: workflowLicenses.userId })
-        .from(workflowLicenses)
-        .where(
-          and(
-            eq(workflowLicenses.workflowId, workflowId),
-            eq(workflowLicenses.userId, userId),
-          ),
-        )
-        .limit(1);
-
+      const existing = await hasUserWorkflowLicense(workflowId, userId);
       if (existing) {
         const detail = await getWorkflowShareDetail(workflowId, userId);
         if (!detail) {
@@ -102,9 +82,9 @@ export async function POST(_request: Request, context: RouteContext) {
         return NextResponse.json({ share: detail }, { status: 200 });
       }
 
-      const price = share.price ?? 0;
+      const price = share.priceInCredits ?? 0;
       let creditSummary: CreditSummary | undefined;
-      let creditHistoryType: CreditHistoryItem["type"] | undefined;
+      let creditHistoryType: CreditHistory["type"] | undefined;
 
       if (price > 0) {
         const creditResult = await consumeCredit({
@@ -211,18 +191,17 @@ export async function POST(_request: Request, context: RouteContext) {
         { status: 200 },
       );
     } catch (error) {
-      if (
-        error instanceof InvalidCreditAmountError ||
-        error instanceof InsufficientCreditError ||
-        error instanceof CreditOperationError
-      ) {
-        return NextResponse.json({ message: error.message }, { status: 400 });
+      if (error instanceof Error) {
+        const msg = error.message || String(error);
+        if (/금액|크레딧/.test(msg)) {
+          return NextResponse.json({ message: msg }, { status: 400 });
+        }
+        return NextResponse.json({ message: msg }, { status: 400 });
       }
-      const message =
-        error instanceof Error
-          ? error.message
-          : "워크플로우를 구매하지 못했습니다.";
-      return NextResponse.json({ message }, { status: 400 });
+      return NextResponse.json(
+        { message: "워크플로우를 구매하지 못했습니다." },
+        { status: 400 },
+      );
     }
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
