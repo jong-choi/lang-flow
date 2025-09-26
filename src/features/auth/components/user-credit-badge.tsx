@@ -2,8 +2,8 @@
 
 import * as React from "react";
 import { CircleStar } from "lucide-react";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { api } from "@/lib/api-client";
 
 interface CreditSummaryResponse {
@@ -20,6 +20,7 @@ interface DailyBonusResponse {
     amount: number;
   } | null;
   granted: boolean;
+  lastCheckInAt?: string | Date | null;
 }
 
 interface UserCreditBadgeProps {

@@ -1,5 +1,9 @@
 import { and, desc, eq, gte, sql } from "drizzle-orm";
 import {
+  CHECK_IN_DESCRIPTION,
+  DAILY_CHECK_IN_CREDIT_AMOUNT,
+} from "@/features/credit/constants";
+import {
   creditHistories,
   type creditHistoryTypeEnum,
   credits,
@@ -114,20 +118,18 @@ const toHistoryItem = (row: CreditHistoryRecord): CreditHistoryItem => ({
   createdAt: row.createdAt,
 });
 
-const DAILY_BONUS_DESCRIPTION = "출석 보상";
-
 const getStartOfDay = (date: Date) =>
   new Date(date.getFullYear(), date.getMonth(), date.getDate());
 
-export const grantDailyAttendanceBonus = async ({
+export const grantDailyCheckInBonus = async ({
   userId,
-  amount,
   now = new Date(),
 }: {
   userId: string;
-  amount: number;
   now?: Date;
 }) => {
+  const amount = DAILY_CHECK_IN_CREDIT_AMOUNT;
+
   if (!Number.isFinite(amount) || amount <= 0) {
     throw new InvalidCreditAmountError("보상 금액이 올바르지 않습니다.");
   }
@@ -135,25 +137,29 @@ export const grantDailyAttendanceBonus = async ({
   return db.transaction(async (transaction) => {
     const credit = await ensureCreditRecord(transaction, userId);
 
-    const [existingBonus] = await transaction
+    const [lastCheckIn] = await transaction
       .select({ createdAt: creditHistories.createdAt })
       .from(creditHistories)
       .where(
         and(
           eq(creditHistories.userId, userId),
           eq(creditHistories.type, "charge"),
-          eq(creditHistories.description, DAILY_BONUS_DESCRIPTION),
-          gte(creditHistories.createdAt, getStartOfDay(now)),
+          eq(creditHistories.description, CHECK_IN_DESCRIPTION),
         ),
       )
       .orderBy(desc(creditHistories.createdAt))
       .limit(1);
 
-    if (existingBonus) {
+    const startOfToday = getStartOfDay(now);
+    const grantedToday =
+      lastCheckIn && lastCheckIn.createdAt >= startOfToday ? true : false;
+
+    if (grantedToday) {
       return {
         summary: toSummary(credit),
         history: null,
-        granted: false as const,
+        granted: false,
+        lastCheckInAt: lastCheckIn?.createdAt ?? null,
       };
     }
 
@@ -177,7 +183,7 @@ export const grantDailyAttendanceBonus = async ({
         type: "charge",
         amount,
         balanceAfter: updated.balance,
-        description: DAILY_BONUS_DESCRIPTION,
+        description: CHECK_IN_DESCRIPTION,
         createdAt: now,
       })
       .returning();
@@ -185,7 +191,8 @@ export const grantDailyAttendanceBonus = async ({
     return {
       summary: toSummary(updated),
       history: toHistoryItem(history),
-      granted: true as const,
+      granted: true,
+      lastCheckInAt: history.createdAt,
     };
   });
 };
