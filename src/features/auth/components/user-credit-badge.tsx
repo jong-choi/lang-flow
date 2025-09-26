@@ -24,10 +24,10 @@ interface DailyBonusResponse {
 }
 
 interface UserCreditBadgeProps {
-  userId: string;
+  userId?: string;
 }
 
-const creditQueryKey = (userId: string) => ["credit", "summary", userId];
+const creditQueryKey = (userId?: string) => ["credit", "summary", userId];
 
 export function UserCreditBadge({ userId }: UserCreditBadgeProps) {
   const queryClient = useQueryClient();

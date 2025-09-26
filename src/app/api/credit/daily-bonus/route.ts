@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { grantDailyCheckInBonus } from "@/app/api/credit/_controllers/credit";
+import { grantDailyCheckInBonus } from "@/app/api/credit/_controllers/daily-bonus";
 import { auth } from "@/features/auth/lib/auth";
 
 export async function POST() {

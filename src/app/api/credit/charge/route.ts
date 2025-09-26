@@ -1,9 +1,6 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
-import {
-  InvalidCreditAmountError,
-  chargeCredit,
-} from "@/app/api/credit/_controllers/credit";
+import { chargeCredit } from "@/app/api/credit/_controllers/charge";
 
 const chargeSchema = z.object({
   userId: z.string().min(1, "사용자 ID는 필수입니다."),
@@ -13,7 +10,7 @@ const chargeSchema = z.object({
 
 export async function POST(request: Request) {
   try {
-    const body = (await request.json().catch(() => null)) as unknown;
+    const body = await request.json().catch(() => null);
     const parsed = chargeSchema.safeParse(body);
 
     if (!parsed.success) {
@@ -29,8 +26,11 @@ export async function POST(request: Request) {
       history: result.history,
     });
   } catch (error) {
-    if (error instanceof InvalidCreditAmountError) {
-      return NextResponse.json({ message: error.message }, { status: 400 });
+    if (error instanceof Error) {
+      const message = error.message || String(error);
+      if (/금액/.test(message)) {
+        return NextResponse.json({ message }, { status: 400 });
+      }
     }
 
     console.error("크레딧 충전 실패", error);

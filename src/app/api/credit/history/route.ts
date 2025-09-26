@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
-import { listCreditHistory } from "@/app/api/credit/_controllers/credit";
+import { listCreditHistory } from "@/app/api/credit/_controllers/history";
 
 const historyQuerySchema = z.object({
   userId: z.string().min(1, "사용자 ID는 필수입니다."),

@@ -1,9 +1,7 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
-import {
-  getCreditSummary,
-  setConsumptionFlag,
-} from "@/app/api/credit/_controllers/credit";
+import { setConsumptionFlag } from "@/app/api/credit/_controllers/consumption-flag";
+import { getCreditSummary } from "@/app/api/credit/_controllers/summary";
 
 const getQuerySchema = z.object({
   userId: z.string().min(1, "사용자 ID는 필수입니다."),
@@ -40,7 +38,7 @@ export async function GET(request: Request) {
 
 export async function PATCH(request: Request) {
   try {
-    const body = (await request.json().catch(() => null)) as unknown;
+    const body = await request.json().catch(() => null);
     const parsed = updateFlagSchema.safeParse(body);
 
     if (!parsed.success) {
