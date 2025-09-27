@@ -24,6 +24,22 @@ export const authUserInsertSchema = createInsertSchema(users, {
       .nullable(),
 });
 
-export const authUserProfileSchema = z.object({
-  name: authUserInsertSchema.shape.name,
+export const authUserResponseSchema = z.object({
+  id: z.string(),
+  email: z.email(),
+  name: z.string().nullable(),
+  image: z.string().nullable(),
 });
+
+const authSessionSchema = z.object({
+  expires: z.string(),
+});
+export type AuthSession = z.infer<typeof authSessionSchema>;
+
+export const authSessionResponseSchema = z.object({
+  ok: z.literal(true),
+  user: authUserResponseSchema,
+  session: authSessionSchema,
+});
+
+export type AuthSessionResponse = z.infer<typeof authSessionResponseSchema>;

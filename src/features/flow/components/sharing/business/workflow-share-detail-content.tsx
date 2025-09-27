@@ -8,6 +8,8 @@ import { toast } from "sonner";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+// TODO: 컴포넌트 분리 예정
+// eslint-disable-next-line import/no-restricted-paths
 import type { CreditSummaryResponse } from "@/features/credit/types/credit-apis";
 import { WorkflowSharePurchaseDialog } from "@/features/flow/components/sharing/business/workflow-share-purchase-dialog";
 import { WorkflowGraphPreview } from "@/features/flow/components/sharing/ui/workflow-graph-preview";

@@ -1,72 +1,37 @@
 import { createSelectSchema } from "drizzle-zod";
 import { z } from "zod";
-import {
-  creditHistories,
-  creditHistoryTypeEnum,
-  credits,
-} from "@/features/credit/db/schema";
+import { creditHistories, credits } from "@/features/credit/db/schema";
 
-const creditSelectSchema = createSelectSchema(credits);
-const creditHistorySelectSchema = createSelectSchema(creditHistories);
-
-const creditHistoryTypeValues = creditHistoryTypeEnum.enumValues;
-
-const creditSummaryShape = creditSelectSchema.shape;
-const requiredUserIdMessage = "사용자 ID는 필수입니다.";
-
-const toNullableIsoString = (value: Date | null) =>
-  value ? value.toISOString() : null;
-
-const toIsoString = (value: Date) => value.toISOString();
-
-const buildPositiveIntSchema = (message: string) =>
-  z.number().int().min(1, message);
-
-export const userIdSchema = z.string().min(1, requiredUserIdMessage);
-
-export const nullableDateToIsoStringSchema = z
-  .date()
-  .nullable()
-  .transform((value) => toNullableIsoString(value));
-
-export const creditSummarySchema = z.object({
-  userId: creditSummaryShape.userId,
-  balance: creditSummaryShape.balance,
-  isConsumptionDisabled: creditSummaryShape.isConsumptionDisabled,
-  createdAt: creditSummaryShape.createdAt.nullable(),
-  updatedAt: creditSummaryShape.updatedAt.nullable(),
+const creditBaseSchema = createSelectSchema(credits).pick({
+  userId: true,
+  balance: true,
+  isConsumptionDisabled: true,
+  createdAt: true,
+  updatedAt: true,
 });
 
-export const creditSummaryDtoSchema = creditSummarySchema.transform((data) => ({
-  ...data,
-  createdAt: toNullableIsoString(data.createdAt),
-  updatedAt: toNullableIsoString(data.updatedAt),
+const creditHistoryBaseSchema = createSelectSchema(creditHistories);
+
+const userIdSchema = z.string().min(1, "사용자 ID는 필수입니다.");
+
+const creditSummaryDtoSchema = creditBaseSchema.transform((credit) => ({
+  ...credit,
+  createdAt: credit.createdAt.toISOString(),
+  updatedAt: credit.updatedAt.toISOString(),
 }));
 
-export const creditHistorySchema = creditHistorySelectSchema;
+const creditHistoryDtoSchema = creditHistoryBaseSchema.transform((history) => ({
+  ...history,
+  createdAt: history.createdAt.toISOString(),
+}));
 
-export const creditHistoryDtoSchema = creditHistorySchema.transform(
-  (history) => ({
-    ...history,
-    createdAt: toIsoString(history.createdAt),
-  }),
-);
-
-type CreditHistoryTypeLiteral = (typeof creditHistoryTypeValues)[number];
-
-export const creditHistoryTypeSchema = z.enum(
-  creditHistoryTypeValues as [
-    CreditHistoryTypeLiteral,
-    ...CreditHistoryTypeLiteral[],
-  ],
-);
-
-export const paginationSchema = z.object({
+const paginationSchema = z.object({
   limit: z.number().int().nonnegative(),
   offset: z.number().int().nonnegative(),
   total: z.number().int().nonnegative(),
 });
 
+// 크레딧 요약 조회
 export const creditSummaryQuerySchema = z.object({
   userId: userIdSchema,
 });
@@ -74,7 +39,9 @@ export const creditSummaryQuerySchema = z.object({
 export const creditSummaryResponseSchema = z.object({
   credit: creditSummaryDtoSchema,
 });
+export type CreditSummaryResponse = z.infer<typeof creditSummaryResponseSchema>;
 
+// 소비 가능 여부 플래그 변경
 export const creditConsumptionFlagRequestSchema = z.object({
   userId: userIdSchema,
   isConsumptionDisabled: z.boolean(),
@@ -82,34 +49,27 @@ export const creditConsumptionFlagRequestSchema = z.object({
 
 export const creditConsumptionFlagResponseSchema = creditSummaryResponseSchema;
 
+// 충전/차감 요청
 export const creditChargeRequestSchema = z.object({
   userId: userIdSchema,
-  amount: buildPositiveIntSchema("충전 금액은 1 이상이어야 합니다."),
+  amount: z.coerce.number().int().min(1, "충전 금액은 1 이상이어야 합니다."),
   description: z.string().optional().nullable(),
 });
 
 export const creditConsumeRequestSchema = z.object({
   userId: userIdSchema,
-  amount: buildPositiveIntSchema("차감 금액은 1 이상이어야 합니다."),
+  amount: z.coerce.number().int().min(1, "차감 금액은 1 이상이어야 합니다."),
   description: z.string().optional().nullable(),
   skipConsumption: z.boolean().optional(),
 });
 
-const creditMutationResponseSchema = z.object({
+// 공통 변동 응답
+export const creditMutationResponseSchema = z.object({
   credit: creditSummaryDtoSchema,
   history: creditHistoryDtoSchema,
 });
 
-export const creditChargeResponseSchema = creditMutationResponseSchema;
-export const creditConsumeResponseSchema = creditMutationResponseSchema;
-
-export const creditDailyBonusResponseSchema = z.object({
-  credit: creditSummaryDtoSchema,
-  history: creditHistoryDtoSchema.nullable(),
-  granted: z.boolean(),
-  lastCheckInAt: nullableDateToIsoStringSchema,
-});
-
+// 히스토리 목록
 export const creditHistoryQuerySchema = z.object({
   userId: userIdSchema,
   limit: z.coerce.number().int().min(1).max(100).optional(),
@@ -121,30 +81,17 @@ export const creditHistoryListResponseSchema = z.object({
   pagination: paginationSchema,
 });
 
-export type CreditSummaryInput = z.input<typeof creditSummarySchema>;
-export type CreditSummaryDto = z.output<typeof creditSummaryDtoSchema>;
-export type CreditSummaryQuery = z.infer<typeof creditSummaryQuerySchema>;
-export type CreditSummaryResponse = z.infer<typeof creditSummaryResponseSchema>;
-export type CreditConsumptionFlagRequest = z.infer<
-  typeof creditConsumptionFlagRequestSchema
->;
-export type CreditConsumptionFlagResponse = z.infer<
-  typeof creditConsumptionFlagResponseSchema
->;
-export type CreditChargeRequest = z.infer<typeof creditChargeRequestSchema>;
-export type CreditChargeResponse = z.infer<typeof creditChargeResponseSchema>;
-export type CreditConsumeRequest = z.infer<typeof creditConsumeRequestSchema>;
-export type CreditConsumeResponse = z.infer<typeof creditConsumeResponseSchema>;
+// 출석(데일리 보너스)
+export const creditDailyBonusResponseSchema = z.object({
+  credit: creditSummaryDtoSchema,
+  history: creditHistoryDtoSchema.nullable(),
+  granted: z.boolean(),
+  lastCheckInAt: z
+    .date()
+    .nullable()
+    .transform((date) => (date ? date.toISOString() : null)),
+});
+
 export type CreditDailyBonusResponse = z.infer<
   typeof creditDailyBonusResponseSchema
 >;
-
-export type CreditHistoryInput = z.input<typeof creditHistorySchema>;
-export type CreditHistoryDto = z.output<typeof creditHistoryDtoSchema>;
-export type CreditHistoryQuery = z.infer<typeof creditHistoryQuerySchema>;
-export type CreditHistoryListResponse = z.infer<
-  typeof creditHistoryListResponseSchema
->;
-
-export type CreditHistoryType = CreditHistoryTypeLiteral;
-export type Pagination = z.infer<typeof paginationSchema>;

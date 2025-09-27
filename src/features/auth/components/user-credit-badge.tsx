@@ -7,7 +7,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import type {
   CreditDailyBonusResponse,
   CreditSummaryResponse,
-  // 컴포넌트 분리예정
+  // TODO: 컴포넌트 분리예정
   // eslint-disable-next-line import/no-restricted-paths
 } from "@/features/credit/types/credit-apis";
 import { api } from "@/lib/api-client";

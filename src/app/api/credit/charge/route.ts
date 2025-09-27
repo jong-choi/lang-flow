@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { chargeCredit } from "@/app/api/credit/_controllers/charge";
 import {
   creditChargeRequestSchema,
-  creditChargeResponseSchema,
+  creditMutationResponseSchema,
 } from "@/features/credit/types/credit-apis";
 
 export async function POST(request: Request) {
@@ -18,7 +18,7 @@ export async function POST(request: Request) {
 
     const result = await chargeCredit(parsed.data);
 
-    const responseBody = creditChargeResponseSchema.parse({
+    const responseBody = creditMutationResponseSchema.parse({
       credit: result.summary,
       history: result.history,
     });
