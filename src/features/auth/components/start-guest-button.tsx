@@ -1,7 +1,7 @@
 "use client";
 
 import { type ComponentProps, useState } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -10,7 +10,6 @@ export type StartGuestButtonProps = Omit<
   ComponentProps<typeof Button>,
   "onClick" | "onError"
 > & {
-  callbackUrl?: string;
   onError?: (message: string | null) => void;
   onSuccess?: () => void;
   onLoadingChange?: (isLoading: boolean) => void;
@@ -20,7 +19,6 @@ export type StartGuestButtonProps = Omit<
 };
 
 export function StartGuestButton({
-  callbackUrl = "/",
   onError,
   onSuccess,
   onLoadingChange,
@@ -33,6 +31,8 @@ export function StartGuestButton({
 }: StartGuestButtonProps) {
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(false);
+  const searchParams = useSearchParams();
+  const callbackUrl = searchParams.get("callbackUrl") || "/";
 
   const setLoading = (value: boolean) => {
     setIsLoading(value);

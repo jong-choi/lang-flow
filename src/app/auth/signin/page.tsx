@@ -1,41 +1,11 @@
-"use client";
-
-import { useState } from "react";
-import { useSearchParams } from "next/navigation";
-import { Loader2 } from "lucide-react";
-import { signIn } from "next-auth/react";
-import { Button } from "@/components/ui/button";
+import { Suspense } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Divider, DividerLabel } from "@/components/ui/divider";
+import { GoogleLoginButton } from "@/features/auth/components/google-login-button";
 import { StartGuestButton } from "@/features/auth/components/start-guest-button";
-import { AuthAlert } from "@/features/auth/components/ui/auth-alert";
-import {
-  FeatureItem,
-  GoogleIcon,
-} from "@/features/auth/components/ui/auth-icons";
+import { FeatureItem } from "@/features/auth/components/ui/auth-icons";
 
-export default function SignInPage() {
-  const searchParams = useSearchParams();
-
-  const callbackUrl = searchParams.get("callbackUrl") || "/";
-
-  const [oauthLoading, setOauthLoading] = useState(false);
-  const [guestLoading, setGuestLoading] = useState(false);
-  const [guestError, setGuestError] = useState<string | null>(null);
-
-  const handleGoogle = async () => {
-    if (guestLoading) return;
-    setGuestError(null);
-    setOauthLoading(true);
-    try {
-      await signIn("google", { callbackUrl });
-    } finally {
-      setOauthLoading(false);
-    }
-  };
-
-  const isGoogleLoading = oauthLoading;
-  const isLoading = isGoogleLoading || guestLoading;
-
+export default async function SignInPage() {
   return (
     <div className="relative isolate overflow-hidden py-16">
       <div className="pointer-events-none absolute inset-0 -z-10 select-none">
@@ -83,43 +53,15 @@ export default function SignInPage() {
               게스트 모드로 바로 시작하거나 Google 계정으로 로그인할 수 있어요.
             </p>
           </CardHeader>
+
           <CardContent className="space-y-5">
-            {guestError && <AuthAlert tone="error">{guestError}</AuthAlert>}
-
-            <StartGuestButton
-              className="w-full"
-              size="lg"
-              callbackUrl={callbackUrl}
-              onError={setGuestError}
-              onSuccess={() => setGuestError(null)}
-              onLoadingChange={setGuestLoading}
-              disabled={isGoogleLoading}
-            />
-
-            <div className="relative py-2 text-center text-xs tracking-[0.3em] text-muted-foreground uppercase">
-              <span className="absolute top-1/2 left-0 block h-px w-full -translate-y-1/2 bg-border" />
-              <span className="relative bg-background px-3">
-                or continue with
-              </span>
-            </div>
-
-            <Button
-              type="button"
-              variant="outline"
-              onClick={handleGoogle}
-              disabled={isLoading}
-              className="w-full"
-            >
-              <span className="flex items-center justify-center gap-2">
-                {isGoogleLoading ? (
-                  <Loader2 className="size-4 animate-spin" />
-                ) : (
-                  <GoogleIcon className="size-4" />
-                )}
-                Google로 로그인
-              </span>
-            </Button>
-
+            <Suspense>
+              <StartGuestButton className="w-full" size="lg" />
+              <Divider>
+                <DividerLabel>or continue with</DividerLabel>
+              </Divider>
+              <GoogleLoginButton />
+            </Suspense>
             <p className="text-center text-xs text-muted-foreground">
               로그인 시 서비스 약관과 개인정보 처리방침에 동의하게 됩니다.
             </p>
