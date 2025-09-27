@@ -64,7 +64,7 @@ function determineNodeType(node: ReactFlowNode): LangGraphNodeType {
   ) {
     return "google_search";
   }
-  if (node.data.job === "메시지") {
+  if (node.data.job === "프롬프트" || node.data.job === "메시지") {
     return "message";
   }
   if (node.data.job === "분기") {
@@ -74,7 +74,7 @@ function determineNodeType(node: ReactFlowNode): LangGraphNodeType {
     return "merge";
   }
 
-  return "chat";
+  return "message";
 }
 
 // React Flow를 LangGraph로 변환
