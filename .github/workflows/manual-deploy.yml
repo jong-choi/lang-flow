@@ -77,10 +77,6 @@ jobs:
             git fetch --prune --depth=1 origin main
             git reset --hard origin/main
 
-            # Stop existing containers
-            echo "🛑 Stopping existing containers..."
-            docker compose -f compose.prod.yaml down || true
-
             # Build with no-cache and pull latest images
             echo "🏗️  Building with --no-cache (this may take longer)..."
             docker compose -f compose.prod.yaml build --no-cache --pull

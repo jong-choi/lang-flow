@@ -17,7 +17,7 @@ export function GoogleLoginButton() {
     setOauthLoading(true);
     try {
       await signIn("google", { callbackUrl });
-    } finally {
+    } catch {
       setOauthLoading(false);
     }
   };
