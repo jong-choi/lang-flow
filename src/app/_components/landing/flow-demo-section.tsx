@@ -1,32 +1,30 @@
 "use client";
 
 import { useCallback, useMemo, useRef } from "react";
-import { motion, useScroll, useTransform } from "motion/react";
+import { motion, useInView } from "motion/react";
 import {
   Background,
   ConnectionMode,
   type Edge,
   Handle,
-  MiniMap,
   type Node,
   type NodeProps,
   Position,
   ReactFlow,
 } from "@xyflow/react";
 import "@xyflow/react/dist/style.css";
+import { SectionBadge } from "@/app/_components/ui/section-badge";
+import { SectionHeading } from "@/app/_components/ui/section-heading";
 import type { SchemaNode } from "@/features/flow/types/graph";
 
 const FlowDemoNode = ({ data }: NodeProps<SchemaNode>) => {
   return (
-    <div
-      className={`relative rounded-xl bg-gradient-to-br px-6 py-4 shadow-lg ${data.gradient} border-2 border-white/50 backdrop-blur-sm`}
-    >
-      {/* 엣지 연결용 핸들 */}
+    <div className="relative rounded-xl border border-slate-200 bg-white/85 px-6 py-4 shadow-sm">
       <Handle type="target" position={Position.Left} />
       <Handle type="source" position={Position.Right} />
 
       <div className="flex items-center">
-        <div className="flex h-12 w-12 items-center justify-center rounded-full bg-white/80 text-xl shadow-inner">
+        <div className="flex h-12 w-12 items-center justify-center rounded-full bg-white text-xl shadow-inner">
           {data.emoji}
         </div>
         <div className="ml-3">
@@ -43,12 +41,7 @@ const nodeTypes = {
 
 export function FlowDemoSection() {
   const containerRef = useRef<HTMLElement>(null);
-  const { scrollYProgress } = useScroll({
-    target: containerRef,
-    offset: ["start end", "end start"],
-  });
-
-  const scale = useTransform(scrollYProgress, [0, 0.5, 1], [0.8, 1, 1]);
+  const isInView = useInView(containerRef, { amount: 0.25 });
 
   const nodes: Node[] = useMemo(
     () => [
@@ -59,7 +52,6 @@ export function FlowDemoSection() {
         data: {
           label: "사용자 입력",
           emoji: "👤",
-          gradient: "from-violet-100 to-violet-200",
         },
       },
       {
@@ -69,7 +61,6 @@ export function FlowDemoSection() {
         data: {
           label: "검색",
           emoji: "🔍",
-          gradient: "from-blue-100 to-blue-200",
         },
       },
       {
@@ -79,7 +70,6 @@ export function FlowDemoSection() {
         data: {
           label: "프롬프트",
           emoji: "💭",
-          gradient: "from-emerald-100 to-emerald-200",
         },
       },
       {
@@ -89,7 +79,6 @@ export function FlowDemoSection() {
         data: {
           label: "AI 응답 생성",
           emoji: "🤖",
-          gradient: "from-amber-100 to-amber-200",
         },
       },
       {
@@ -99,7 +88,6 @@ export function FlowDemoSection() {
         data: {
           label: "최종 결과",
           emoji: "✨",
-          gradient: "from-rose-100 to-rose-200",
         },
       },
     ],
@@ -112,39 +100,39 @@ export function FlowDemoSection() {
         id: "e1-2",
         source: "1",
         target: "2",
-        style: { stroke: "#8b5cf6", strokeWidth: 3 },
-        animated: true,
+        style: { stroke: "#8b5cf6", strokeWidth: 2 },
+        animated: isInView,
       },
       {
         id: "e1-3",
         source: "1",
         target: "3",
-        style: { stroke: "#06b6d4", strokeWidth: 3 },
-        animated: true,
+        style: { stroke: "#06b6d4", strokeWidth: 2 },
+        animated: isInView,
       },
       {
         id: "e2-4",
         source: "2",
         target: "4",
-        style: { stroke: "#10b981", strokeWidth: 3 },
-        animated: true,
+        style: { stroke: "#10b981", strokeWidth: 2 },
+        animated: isInView,
       },
       {
         id: "e3-4",
         source: "3",
         target: "4",
-        style: { stroke: "#f59e0b", strokeWidth: 3 },
-        animated: true,
+        style: { stroke: "#f59e0b", strokeWidth: 2 },
+        animated: isInView,
       },
       {
         id: "e4-5",
         source: "4",
         target: "5",
-        style: { stroke: "#ef4444", strokeWidth: 3 },
-        animated: true,
+        style: { stroke: "#ef4444", strokeWidth: 2 },
+        animated: isInView,
       },
     ],
-    [],
+    [isInView],
   );
 
   const onNodesChange = useCallback(() => {}, []);
@@ -156,34 +144,24 @@ export function FlowDemoSection() {
       className="bg-gradient-to-b from-white to-slate-50 py-24"
     >
       <div className="container mx-auto px-4">
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
-          transition={{ duration: 0.8 }}
-          className="mb-16 text-center"
-        >
-          <h2 className="mb-6 bg-gradient-to-r from-slate-900 via-violet-900 to-indigo-900 bg-clip-text text-5xl font-bold text-transparent md:text-6xl">
+        <div className="mb-16 space-y-6 text-center">
+          <SectionBadge className="mx-auto bg-violet-100/70 text-violet-700">
             시각적 워크플로우
-          </h2>
-          <p className="mx-auto max-w-3xl text-xl leading-relaxed text-slate-600">
-            복잡한 AI 로직을 직관적인 노드 연결로 구현하세요.
-            <br />
-            드래그 앤 드롭만으로 강력한 AI 파이프라인을 구축할 수 있습니다.
-          </p>
-        </motion.div>
+          </SectionBadge>
+          <SectionHeading
+            title="드래그 앤 드롭으로 완성하는 AI 파이프라인"
+            description="복잡한 AI 로직을 직관적인 노드 연결로 구현하세요. 드래그 앤 드롭만으로 강력한 AI 파이프라인을 구축할 수 있습니다."
+          />
+        </div>
 
         <motion.div
-          initial={{ opacity: 0, scale: 0.95 }}
-          whileInView={{ opacity: 1, scale: 1 }}
-          viewport={{ once: true }}
-          transition={{ duration: 1, delay: 0.2 }}
-          style={{ scale }}
+          initial={false}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true, amount: 0.3 }}
+          transition={{ duration: 0.45, ease: "easeOut" }}
           className="relative"
         >
-          <div className="relative h-[500px] w-full overflow-hidden rounded-2xl border border-violet-200/50 bg-gradient-to-br from-slate-50 to-violet-50 shadow-2xl backdrop-blur-sm">
-            <div className="absolute inset-0 bg-white/20 backdrop-blur-sm" />
-
+          <div className="relative h-[480px] w-full overflow-hidden rounded-2xl border border-slate-200 bg-white/90 shadow-lg">
             <ReactFlow
               nodes={nodes}
               edges={edges}
@@ -201,56 +179,53 @@ export function FlowDemoSection() {
               zoomActivationKeyCode={null}
               panActivationKeyCode={null}
               attributionPosition="bottom-left"
-              className="!bg-transparent"
+              className="!bg-slate-50"
             >
               <Background
                 color="#e2e8f0"
-                gap={20}
+                gap={24}
                 size={1}
-                className="opacity-30"
-              />
-              <MiniMap
-                className="!rounded-lg !border-violet-200 !bg-white/80 !shadow-lg !backdrop-blur-sm"
-                nodeColor="#8b5cf6"
-                maskColor="rgba(139, 92, 246, 0.1)"
+                className="opacity-40"
               />
             </ReactFlow>
           </div>
 
           <motion.div
-            className="absolute -top-4 -left-4 h-8 w-8 rounded-full bg-gradient-to-r from-violet-400 to-indigo-400 shadow-lg"
-            animate={{
-              y: [0, -10, 0],
-              rotate: [0, 180, 360],
-            }}
+            className="absolute -top-4 -left-4 h-8 w-8 rounded-full bg-[radial-gradient(circle_at_center,_rgba(129,140,248,0.6),_transparent_70%)]"
+            animate={
+              isInView
+                ? { y: [0, -10, 0], rotate: [0, 180, 360] }
+                : { y: 0, rotate: 0 }
+            }
             transition={{
               duration: 6,
-              repeat: Infinity,
+              repeat: isInView ? Infinity : 0,
               ease: "easeInOut",
             }}
           />
           <motion.div
-            className="absolute -right-4 -bottom-4 h-6 w-6 rounded-full bg-gradient-to-r from-emerald-400 to-cyan-400 shadow-lg"
-            animate={{
-              y: [0, 10, 0],
-              rotate: [360, 180, 0],
-            }}
+            className="absolute -right-4 -bottom-4 h-6 w-6 rounded-full bg-[radial-gradient(circle_at_center,_rgba(52,211,153,0.6),_transparent_70%)]"
+            animate={
+              isInView
+                ? { y: [0, 12, 0], rotate: [360, 180, 0] }
+                : { y: 0, rotate: 0 }
+            }
             transition={{
-              duration: 8,
-              repeat: Infinity,
+              duration: 7,
+              repeat: isInView ? Infinity : 0,
               ease: "easeInOut",
             }}
           />
         </motion.div>
 
         <motion.div
-          initial={{ opacity: 0, y: 20 }}
+          initial={{ opacity: 0, y: 24 }}
           whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
-          transition={{ duration: 0.8, delay: 0.4 }}
+          viewport={{ once: true, amount: 0.3 }}
+          transition={{ duration: 0.6, delay: 0.2, ease: "easeOut" }}
           className="mt-16 grid grid-cols-1 gap-6 md:grid-cols-3"
         >
-          <div className="rounded-xl border border-violet-200/50 bg-white/80 p-6 text-center shadow-lg backdrop-blur-sm">
+          <div className="rounded-xl border border-slate-200 bg-white/85 p-6 text-center shadow-sm">
             <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-gradient-to-r from-violet-500 to-indigo-500 text-xl font-bold text-white">
               1
             </div>
@@ -261,7 +236,7 @@ export function FlowDemoSection() {
               다양한 AI 컴포넌트를 캔버스에 드래그하여 배치하세요
             </p>
           </div>
-          <div className="rounded-xl border border-violet-200/50 bg-white/80 p-6 text-center shadow-lg backdrop-blur-sm">
+          <div className="rounded-xl border border-slate-200 bg-white/85 p-6 text-center shadow-sm">
             <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-gradient-to-r from-emerald-500 to-cyan-500 text-xl font-bold text-white">
               2
             </div>
@@ -272,7 +247,7 @@ export function FlowDemoSection() {
               노드들을 연결하여 데이터 플로우를 정의하세요
             </p>
           </div>
-          <div className="rounded-xl border border-violet-200/50 bg-white/80 p-6 text-center shadow-lg backdrop-blur-sm">
+          <div className="rounded-xl border border-slate-200 bg-white/85 p-6 text-center shadow-sm">
             <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-gradient-to-r from-amber-500 to-orange-500 text-xl font-bold text-white">
               3
             </div>
