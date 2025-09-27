@@ -1,8 +1,8 @@
+import { eq } from "drizzle-orm";
 import Credentials from "next-auth/providers/credentials";
 import Google from "next-auth/providers/google";
 import { type AuthConfig } from "@auth/core";
 import { DrizzleAdapter } from "@auth/drizzle-adapter";
-import { eq } from "drizzle-orm";
 import {
   accounts,
   sessions,
@@ -18,10 +18,7 @@ type GoogleProfile = {
   picture?: string;
 };
 
-async function syncUserFromGoogleProfile(
-  userId: string,
-  profile: unknown,
-) {
+async function syncUserFromGoogleProfile(userId: string, profile: unknown) {
   if (!userId) return;
 
   const safeProfile = (profile ?? {}) as GoogleProfile;
@@ -51,7 +48,10 @@ async function syncUserFromGoogleProfile(
     updates.image = safeProfile.picture.trim();
   }
 
-  if (typeof safeProfile.email === "string" && safeProfile.email.includes("@")) {
+  if (
+    typeof safeProfile.email === "string" &&
+    safeProfile.email.includes("@")
+  ) {
     if (
       existing.email?.startsWith("guest@") ||
       existing.email === safeProfile.email
@@ -69,6 +69,7 @@ async function syncUserFromGoogleProfile(
 }
 
 export const authConfig: AuthConfig = {
+  trustHost: true,
   adapter: DrizzleAdapter(db, {
     usersTable: users,
     accountsTable: accounts,
