@@ -1,13 +1,11 @@
 import { NextResponse } from "next/server";
-import bcrypt from "bcryptjs";
-import { eq } from "drizzle-orm";
 import { z } from "zod";
+import { signUp } from "@/app/api/auth/_controllers/sign-up";
+import { AuthError } from "@/app/api/auth/_utils/errors";
 import {
-  type SignUpFormValues,
+  signUpResponseSchema,
   signUpSchema,
 } from "@/features/auth/types/sign-up";
-import { db } from "@/lib/db";
-import { users } from "@/lib/db/schema";
 
 export async function POST(request: Request) {
   try {
@@ -24,32 +22,19 @@ export async function POST(request: Request) {
       return NextResponse.json({ message }, { status: 400 });
     }
 
-    const { email, name, password } = parsed.data satisfies SignUpFormValues;
+    const created = await signUp(parsed.data);
+    const responseBody = signUpResponseSchema.parse(created);
 
-    const existing = await db
-      .select()
-      .from(users)
-      .where(eq(users.email, email))
-      .limit(1);
-    if (existing.length > 0) {
+    return NextResponse.json(responseBody, { status: 201 });
+  } catch (error) {
+    if (error instanceof AuthError) {
       return NextResponse.json(
-        { message: "이미 사용 중인 이메일입니다" },
-        { status: 409 },
+        { message: error.message },
+        { status: error.status },
       );
     }
 
-    const hashedPassword = await bcrypt.hash(password, 10);
-    const [created] = await db
-      .insert(users)
-      .values({ email, name: name ?? null, hashedPassword })
-      .returning({ id: users.id, email: users.email });
-
-    return NextResponse.json(
-      { id: created.id, email: created.email },
-      { status: 201 },
-    );
-  } catch (err) {
-    console.error("회원가입 오류", err);
+    console.error("회원가입 오류", error);
     return NextResponse.json({ message: "서버 내부 오류" }, { status: 500 });
   }
 }

@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { signInSchema } from "@/features/auth/types/sign-in";
+import { authUserResponseSchema } from "@/features/auth/types/user";
 
 const nameSchema = z
   .string()
@@ -12,3 +13,10 @@ export const signUpSchema = signInSchema.extend({
 });
 
 export type SignUpFormValues = z.infer<typeof signUpSchema>;
+
+export const signUpResponseSchema = authUserResponseSchema.pick({
+  id: true,
+  email: true,
+});
+
+export type SignUpResponse = z.infer<typeof signUpResponseSchema>;

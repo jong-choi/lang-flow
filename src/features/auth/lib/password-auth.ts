@@ -1,20 +1,14 @@
 import bcrypt from "bcryptjs";
-import { eq } from "drizzle-orm";
 import type { AuthConfig } from "@auth/core";
+import { selectUserByEmail } from "@/features/auth/db/queries/users";
+import type { AuthUser } from "@/features/auth/types/user";
 import { db } from "@/lib/db";
-import { users } from "@/lib/db/schema";
-
-type UserRecord = typeof users.$inferSelect;
 
 export const verifyUserPassword = async (
   email: string,
   password: string,
-): Promise<UserRecord | null> => {
-  const [user] = await db
-    .select()
-    .from(users)
-    .where(eq(users.email, email))
-    .limit(1);
+): Promise<AuthUser | null> => {
+  const user = await selectUserByEmail(db, email);
 
   if (!user || !user.hashedPassword) return null;
 

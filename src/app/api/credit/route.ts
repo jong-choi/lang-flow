@@ -6,7 +6,7 @@ import {
   creditConsumptionFlagResponseSchema,
   creditSummaryQuerySchema,
   creditSummaryResponseSchema,
-} from "@/types/credit/credit-schemas";
+} from "@/features/credit/types/credit-apis";
 
 export async function GET(request: Request) {
   try {

@@ -3,7 +3,7 @@ import { listCreditHistory } from "@/app/api/credit/_controllers/history";
 import {
   creditHistoryListResponseSchema,
   creditHistoryQuerySchema,
-} from "@/types/credit/credit-schemas";
+} from "@/features/credit/types/credit-apis";
 
 export async function GET(request: Request) {
   try {
