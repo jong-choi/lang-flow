@@ -1,0 +1,28 @@
+services:
+  workflow-app:
+    container_name: workflow-app
+    build:
+      context: .
+      dockerfile: prod.Dockerfile
+      args:
+        DATABASE_URL: ${DATABASE_URL}
+        NEXT_PUBLIC_AMPLITUDE_API_KEY: ${NEXT_PUBLIC_AMPLITUDE_API_KEY}
+        NEXTAUTH_URL: ${NEXTAUTH_URL}
+        AUTH_SECRET: ${AUTH_SECRET}
+        AUTH_GOOGLE_ID: ${AUTH_GOOGLE_ID}
+        AUTH_GOOGLE_SECRET: ${AUTH_GOOGLE_SECRET}
+        GOOGLE_SEARCH_API_KEY: ${GOOGLE_SEARCH_API_KEY}
+        GOOGLE_SEARCH_CX: ${GOOGLE_SEARCH_CX}
+        GOOGLE_AI_API_KEY: ${GOOGLE_AI_API_KEY}
+
+    restart: always
+
+    ports:
+      - 3036:3000
+
+    networks:
+      - npm-network
+
+networks:
+  npm-network:
+    external: true
