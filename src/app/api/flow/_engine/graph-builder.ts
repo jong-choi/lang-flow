@@ -64,7 +64,7 @@ function determineNodeType(node: ReactFlowNode): LangGraphNodeType {
   ) {
     return "google_search";
   }
-  if (node.data.job === "메시지") {
+  if (node.data.job === "프롬프트" || node.data.job === "메시지") {
     return "message";
   }
   if (node.data.job === "분기") {
@@ -74,7 +74,7 @@ function determineNodeType(node: ReactFlowNode): LangGraphNodeType {
     return "merge";
   }
 
-  return "chat";
+  return "message";
 }
 
 // React Flow를 LangGraph로 변환
@@ -194,37 +194,4 @@ export function buildGraphFromFlow(
 
   const compiled = graph.compile({ checkpointer });
   return { graph: compiled, typeMap };
-}
-
-// 그래프 실행 및 스트리밍
-export async function* executeGraph(
-  compiledGraph: ReturnType<typeof StateGraph.prototype.compile>,
-  prompt: string,
-  sessionId: string,
-) {
-  const config = {
-    configurable: { thread_id: sessionId },
-    streamMode: "values" as const,
-  };
-
-  const initialState: FlowState = {
-    messages: [],
-    prompt,
-    currentNodeId: undefined,
-    searchResults: [],
-    finalResult: null,
-    nodeOutputs: {},
-  };
-
-  try {
-    for await (const event of await compiledGraph.stream(
-      initialState,
-      config,
-    )) {
-      yield event;
-    }
-  } catch (error) {
-    console.error("Graph execution error:", error);
-    throw error;
-  }
 }

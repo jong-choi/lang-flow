@@ -35,9 +35,8 @@ export async function googleSearchNode(
 
     const response = await fetch(searchUrl);
     const data: GoogleSearchResponse = await response.json();
-
     const searchResults =
-      data.items?.slice(0, 5).map((item: GoogleSearchItem) => ({
+      data.items?.map((item: GoogleSearchItem) => ({
         title: item.title,
         link: item.link,
         snippet: item.snippet,
@@ -54,7 +53,6 @@ export async function googleSearchNode(
           .join("\n"),
     );
 
-    console.log(resultMessage);
     return {
       messages: [resultMessage],
       searchResults,

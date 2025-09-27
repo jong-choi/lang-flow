@@ -1,6 +1,8 @@
 "use client";
 
 import { Bot, MessageSquare, SquareTerminal } from "lucide-react";
+import { ReactMarkdownApp } from "@/features/flow/components/ui/react-markdown-app";
+import "@/styles/small-header-markdown.css";
 
 export interface FlowResultsPanelProps {
   results: Array<{ nodeId: string; nodeType: string; text: string }>;
@@ -39,10 +41,8 @@ export const FlowResultsPanel = ({
                 <Bot className="size-4" /> {nodeType} • {nodeId}
               </div>
               <div className="p-4">
-                <div className="prose prose-slate dark:prose-invert max-w-none">
-                  <pre className="font-sans text-sm leading-6 whitespace-pre-wrap text-slate-900 dark:text-slate-100">
-                    {text}
-                  </pre>
+                <div className="new-york-small font-sans text-sm break-all text-slate-900 dark:text-slate-100">
+                  <ReactMarkdownApp>{text}</ReactMarkdownApp>
                 </div>
               </div>
             </div>

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Button } from "@/components/ui/button";
@@ -41,6 +41,12 @@ const renderStringList = (value: unknown): string => {
   return String(value);
 };
 
+const parseTagsFromString = (value: string): string[] =>
+  value
+    .split(/\r?\n|,/) // 쉼표 또는 줄바꿈으로 분리
+    .map((tag) => tag.trim()) // 앞뒤 공백 제거
+    .filter(Boolean); // 빈 문자열 제거
+
 export function WorkflowShareForm({
   formId = "workflow-share-form",
   defaultValues,
@@ -60,6 +66,10 @@ export function WorkflowShareForm({
     },
   });
 
+  const [tagsInput, setTagsInput] = useState<string>(() =>
+    renderStringList(defaultValues?.tags),
+  );
+
   useEffect(() => {
     form.reset({
       workflowId: workflow.id,
@@ -67,6 +77,7 @@ export function WorkflowShareForm({
       tags: defaultValues?.tags ?? [],
       priceInCredits: defaultValues?.priceInCredits ?? 0,
     });
+    setTagsInput(renderStringList(defaultValues?.tags));
   }, [workflow, defaultValues, form]);
 
   const handleSubmit = form.handleSubmit(async (values) => {
@@ -141,8 +152,11 @@ export function WorkflowShareForm({
               <FormControl>
                 <Textarea
                   placeholder="쉼표 또는 줄바꿈으로 태그를 구분하세요"
-                  value={renderStringList(field.value)}
-                  onChange={(event) => field.onChange(event.target.value)}
+                  value={tagsInput}
+                  onChange={(event) => {
+                    setTagsInput(event.target.value);
+                    field.onChange(parseTagsFromString(event.target.value));
+                  }}
                 />
               </FormControl>
               <FormMessage />

@@ -185,7 +185,7 @@ export const sidebarItems: SidebarItemConfig[] = [
   },
   {
     type: "messageNode",
-    name: "메시지 노드",
+    name: "프롬프트 노드",
     description: "템플릿 메시지 (1:1)",
     iconBg: "from-slate-100 to-slate-200",
   },
