@@ -55,8 +55,3 @@ export interface SchemaEdge
   targetHandle?: FlowEdgeRow["targetHandle"] | undefined;
   label?: FlowEdgeRow["label"] | undefined;
 }
-
-export type ReactFlowNode = SchemaNode;
-export type ReactFlowEdge = SchemaEdge;
-
-export type NodeId = FlowNodeId;

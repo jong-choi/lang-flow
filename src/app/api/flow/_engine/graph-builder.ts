@@ -18,7 +18,7 @@ import type {
   FlowState,
   LangGraphNodeType,
 } from "@/features/flow/types/execution";
-import type { ReactFlowEdge, ReactFlowNode } from "@/features/flow/types/graph";
+import type { SchemaEdge, SchemaNode } from "@/features/flow/types/graph";
 
 // LangGraph 상태 어노테이션 정의
 export const FlowStateAnnotation = Annotation.Root({
@@ -51,7 +51,7 @@ export const FlowStateAnnotation = Annotation.Root({
 export const checkpointer = new MemorySaver();
 
 // 타입 이름 파싱하는 함수
-function determineNodeType(node: ReactFlowNode): LangGraphNodeType {
+function determineNodeType(node: SchemaNode): LangGraphNodeType {
   if (node.type === "inputNode") return "input";
   if (node.type === "outputNode") return "output";
   if (node.data.job === "chat" || node.data.job === "채팅") {
@@ -81,7 +81,7 @@ function determineNodeType(node: ReactFlowNode): LangGraphNodeType {
 /**
  * 분기 노드의 대상 노드들을 찾는 헬퍼 함수
  */
-function findBranchTargets(nodeId: string, edges: ReactFlowEdge[]): string[] {
+function findBranchTargets(nodeId: string, edges: SchemaEdge[]): string[] {
   return edges
     .filter((edge) => edge.source === nodeId)
     .map((edge) => edge.target);
@@ -90,15 +90,15 @@ function findBranchTargets(nodeId: string, edges: ReactFlowEdge[]): string[] {
 /**
  * 병합 노드의 입력 노드들을 찾는 헬퍼 함수
  */
-function findMergeInputs(nodeId: string, edges: ReactFlowEdge[]): string[] {
+function findMergeInputs(nodeId: string, edges: SchemaEdge[]): string[] {
   return edges
     .filter((edge) => edge.target === nodeId)
     .map((edge) => edge.source);
 }
 
 export function buildGraphFromFlow(
-  reactFlowNodes: ReactFlowNode[],
-  reactFlowEdges: ReactFlowEdge[],
+  reactFlowNodes: SchemaNode[],
+  reactFlowEdges: SchemaEdge[],
 ) {
   const graph = new StateGraph(FlowStateAnnotation);
   const typeMap: Record<string, LangGraphNodeType> = {};

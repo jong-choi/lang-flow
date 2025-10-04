@@ -2,7 +2,6 @@ import type {
   FlowEdgeInsert,
   FlowNodeInsert,
   NodeData,
-  ReactFlowEdge,
   SchemaEdge,
   SchemaNode,
 } from "@/features/flow/types/graph";
@@ -87,7 +86,7 @@ export const serializeNodeForApi = (node: SchemaNode) => ({
   data: (node.data as Record<string, unknown>) ?? null,
 });
 
-export const serializeEdgeForApi = (edge: ReactFlowEdge | SchemaEdge) => ({
+export const serializeEdgeForApi = (edge: SchemaEdge | SchemaEdge) => ({
   id: edge.id,
   sourceId: edge.source,
   targetId: edge.target,

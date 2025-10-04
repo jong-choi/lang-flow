@@ -1,8 +1,8 @@
 import { describe, expect, it } from "vitest";
 import type {
   NodeData,
-  ReactFlowEdge,
-  ReactFlowNode,
+  SchemaEdge,
+  SchemaNode,
 } from "@/features/flow/types/graph";
 import { buildGraphFromFlow } from "../graph-builder";
 
@@ -13,7 +13,7 @@ const baseNodeData: NodeData = {
   runStatus: "idle",
 };
 
-const createNode = (overrides: Partial<ReactFlowNode>): ReactFlowNode => ({
+const createNode = (overrides: Partial<SchemaNode>): SchemaNode => ({
   id: "node-id",
   type: "messageNode",
   position: { x: 0, y: 0 },
@@ -21,7 +21,7 @@ const createNode = (overrides: Partial<ReactFlowNode>): ReactFlowNode => ({
   data: { ...baseNodeData, ...overrides.data },
 });
 
-const createEdge = (overrides: Partial<ReactFlowEdge>): ReactFlowEdge => ({
+const createEdge = (overrides: Partial<SchemaEdge>): SchemaEdge => ({
   id: "edge-id",
   source: "node-id",
   target: "node-id-2",
@@ -54,7 +54,7 @@ describe("buildGraphFromFlow", () => {
       position: { x: 200, y: 0 },
     });
 
-    const edges: ReactFlowEdge[] = [
+    const edges: SchemaEdge[] = [
       createEdge({
         id: "edge-1",
         source: searchNode.id,
@@ -92,7 +92,7 @@ describe("buildGraphFromFlow", () => {
       position: { x: 200, y: 0 },
     });
 
-    const edges: ReactFlowEdge[] = [
+    const edges: SchemaEdge[] = [
       createEdge({
         id: "edge-1",
         source: staleSearchNode.id,

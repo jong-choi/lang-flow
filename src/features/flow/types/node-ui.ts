@@ -1,9 +1,9 @@
 import type { CSSProperties, ComponentType } from "react";
 import type { Position } from "@xyflow/react";
 import type {
+  FlowNodeId,
   FlowNodeType,
   NodeData,
-  NodeId,
 } from "@/features/flow/types/graph";
 
 export interface NodeConfig {
@@ -31,7 +31,7 @@ export interface SidebarItemConfig {
 }
 
 export interface ConnectionLimit {
-  id: NodeId;
+  id: FlowNodeId;
   max: number;
 }
 
@@ -46,19 +46,19 @@ export interface ConnectionState {
   isConnectable: boolean;
 }
 
-export type ConnectionStateMap = Record<NodeId, ConnectionState>;
+export type ConnectionStateMap = Record<FlowNodeId, ConnectionState>;
 
 export interface HandleDefinition {
   type: "source" | "target";
   position: Position;
-  id: NodeId;
+  id: FlowNodeId;
   size?: "large" | "small";
   style?: CSSProperties;
 }
 
 export interface NodeProps {
   data: NodeData;
-  id: NodeId;
+  id: FlowNodeId;
 }
 
 export interface MenuItem {
