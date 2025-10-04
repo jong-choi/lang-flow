@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { AIMessage, HumanMessage } from "@langchain/core/messages";
+import { HumanMessage } from "@langchain/core/messages";
 import type { FlowStateAnnotation } from "@/app/api/flow/_engine/graph-builder";
 import { messageNode } from "@/app/api/flow/_engine/nodes/message-node";
 
@@ -8,7 +8,7 @@ describe("messageNode 노드", () => {
     const state = {
       messages: [
         new HumanMessage("중간 결과"),
-        new AIMessage("검색 결과 텍스트"),
+        new HumanMessage("검색 결과 텍스트"),
       ],
       prompt: "사용자 입력 프롬프트",
       currentNodeId: "message-node-1",

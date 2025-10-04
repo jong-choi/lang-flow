@@ -1,11 +1,11 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import type { AIMessage } from "@langchain/core/messages";
+import type { HumanMessage } from "@langchain/core/messages";
 import type { FlowStateAnnotation } from "@/app/api/flow/_engine/graph-builder";
 import { googleSearchNode } from "@/app/api/flow/_engine/nodes/google-search-node";
 
 const createState = () =>
   ({
-    messages: [] as AIMessage[],
+    messages: [] as HumanMessage[],
     prompt: "검색어",
     currentNodeId: "search-node-123",
     searchResults: [],
