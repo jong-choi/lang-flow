@@ -1,15 +1,15 @@
 import type { BaseMessage } from "@langchain/core/messages";
 import type {
-  NodeId,
-  ReactFlowEdge,
-  ReactFlowNode,
+  FlowNodeId,
+  SchemaEdge,
+  SchemaNode,
 } from "@/features/flow/types/graph";
 
 type Primitive = string | number | boolean | null | undefined;
 type ComplexValue = Primitive | object;
 
 interface FlowEventBase {
-  nodeId: NodeId;
+  nodeId: FlowNodeId;
   event: string;
   message?: string;
   error?: string;
@@ -52,15 +52,15 @@ export interface NodeOutput {
 export interface FlowState {
   messages: BaseMessage[];
   prompt: string;
-  currentNodeId?: NodeId;
+  currentNodeId?: FlowNodeId;
   searchResults?: ComplexValue[];
   finalResult?: ComplexValue;
-  nodeOutputs: Record<NodeId, NodeOutput>;
+  nodeOutputs: Record<FlowNodeId, NodeOutput>;
 }
 
 export interface FlowExecutionRequest {
-  nodes: ReactFlowNode[];
-  edges: ReactFlowEdge[];
+  nodes: SchemaNode[];
+  edges: SchemaEdge[];
   prompt: string;
 }
 
