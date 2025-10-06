@@ -86,7 +86,7 @@ export const serializeNodeForApi = (node: SchemaNode) => ({
   data: (node.data as Record<string, unknown>) ?? null,
 });
 
-export const serializeEdgeForApi = (edge: SchemaEdge | SchemaEdge) => ({
+export const serializeEdgeForApi = (edge: SchemaEdge) => ({
   id: edge.id,
   sourceId: edge.source,
   targetId: edge.target,
